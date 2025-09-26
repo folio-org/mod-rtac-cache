@@ -1,0 +1,66 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: mod-spring-template
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
+  datasource:
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DATABASE:db}?ApplicationName=${spring.application.name}
+  hikari:
+    data-source-properties:
+      # see https://jdbc.postgresql.org/documentation/use/#connection-parameters
+      ApplicationName: ${spring.application.name}
+  sql:
+    init:
+      # to boot up application despite of any DB connection issues
+      continue-on-error: true
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog-master.xml
+  jackson:
+    default-property-inclusion: non_empty
+    deserialization:
+      fail-on-unknown-properties: false
+      accept-single-value-as-array: true
+  mustache:
+    check-template-location: false
+folio:
+  tenant:
+    validation:
+      enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,env,httptrace
+      base-path: /admin
+  #  endpoint:
+  #    health:
+  #      show-details: always
+  #      show-components: always
+  ###################################################
+  # Disable all checks except for readiness
+  ###################################################
+  health:
+    defaults:
+      enabled: false
+    readinessstate:
+      enabled: true
+debug: false
