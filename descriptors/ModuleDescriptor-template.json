@@ -1,9 +1,9 @@
 {
   "id": "@artifactId@-@version@",
-  "name": "The blueprint module that could be used as a template for folio spring based backend modules.",
+  "name": "Fetches real time availability information from FOLIO for instances, items and holdings.",
   "provides": [
     {
-      "id": "spring-template",
+      "id": "rtac-cache",
       "version": "1.0",
       "handlers": []
     },

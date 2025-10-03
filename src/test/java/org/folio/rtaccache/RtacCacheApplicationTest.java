@@ -1,4 +1,4 @@
-package org.folio.template;
+package org.folio.rtaccache;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,7 +19,7 @@ import org.folio.tenant.rest.resource.TenantApi;
 
 @ActiveProfiles({"test", "testcontainers-pg"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class FolioSpringTemplateApplicationTest {
+class RtacCacheApplicationTest {
 
   @EnableAutoConfiguration(exclude = {FolioLiquibaseConfiguration.class})
   @RestController("folioTenantController")

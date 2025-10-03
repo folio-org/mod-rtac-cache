@@ -30,7 +30,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <sonar.exclusions>
       <!-- define sonar exclusions here -->
-      src/main/java/org/folio/template/FolioSpringTemplateApplication.java
+      src/main/java/org/folio/rtaccache/RtacCacheApplication.java
     </sonar.exclusions>
     <argLine/>
 
