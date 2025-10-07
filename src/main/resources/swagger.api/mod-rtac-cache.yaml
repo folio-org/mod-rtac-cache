@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info:
+  title: RTAC Cache API
+  version: 1.0.0
+paths: {}
+
+components:
+  schemas:
+    RtacHolding:
+      $ref: schemas/RtacHolding.json
