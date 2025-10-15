@@ -4,4 +4,36 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.4.xsd">
 
+  <changeSet id="create-rtac-holding-table-001" author="Ivan_Zhunkivskyi">
+    <preConditions>
+      <not>
+        <tableExists tableName="rtac_holding"/>
+      </not>
+    </preConditions>
+
+
+    <createTable tableName="rtac_holding">
+      <column name="instance_id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="type" type="varchar(20)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="id" type="uuid">
+        <constraints nullable="false"/>
+      </column>
+      <column name="rtac_holding_json" type="jsonb">
+        <constraints nullable="false"/>
+      </column>
+      <column name="created_at" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+    </createTable>
+
+    <addPrimaryKey tableName="rtac_holding" columnNames="instance_id,type,id" constraintName="pk_rtac_holding"/>
+
+    <rollback>
+      <dropTable tableName="rtac_holding"/>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>
