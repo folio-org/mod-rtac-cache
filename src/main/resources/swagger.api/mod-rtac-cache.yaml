@@ -8,3 +8,25 @@ components:
   schemas:
     RtacHolding:
       $ref: schemas/RtacHolding.json
+    HoldingRecords:
+      $ref: schemas/inventory/holdingsRecords.json
+    Items:
+      $ref: schemas/inventory/items.json
+    Locations:
+      $ref: schemas/inventory/locations.json
+    Libraries:
+      $ref: schemas/inventory/loclibs.json
+    HoldingsNoteTypes:
+      $ref: schemas/inventory/holdingsNoteTypes.json
+    Loans:
+      $ref: schemas/circulation/loans.json
+    Requests:
+      $ref: schemas/circulation/requests.json
+    Pieces:
+      $ref: schemas/orders/pieceCollection.json
+    HoldingsFacet:
+      $ref: schemas/search/holdingsFacet.json
+    UserTenants:
+      $ref: schemas/users/userTenants.json
+    Settings:
+      $ref: schemas/settings/settings.json
