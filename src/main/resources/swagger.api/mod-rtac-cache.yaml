@@ -2,9 +2,99 @@ openapi: 3.0.3
 info:
   title: RTAC Cache API
   version: 1.0.0
-paths: {}
+paths:
+  /rtac/{id}:
+    get:
+      summary: Retrieve RTAC holdings for a single instance
+      operationId: getRtacHoldingsById
+      parameters:
+        - name: id
+          in: path
+          description: The UUID of a FOLIO instance
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: RTAC holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacHoldings.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+
+  /rtac-batch:
+    post:
+      summary: Retrieve RTAC holdings in batch
+      operationId: postRtacBatchHoldings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas/rtacRequest.json'
+      responses:
+        '200':
+          description: RTAC batch holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacHoldingsBatch.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
 
 components:
   schemas:
-    RtacHolding:
-      $ref: schemas/RtacHolding.json
+    rtacHolding:
+      $ref: schemas/rtacHolding.json
+    rtacRequest:
+      $ref: schemas/rtacRequest.json
+    rtacHoldingsBatch:
+      $ref: schemas/rtacHoldingsBatch.json
+    rtacHoldings:
+      $ref: schemas/rtacHoldings.json
+    uuid:
+      $ref: schemas/uuid.json
+    error:
+      $ref: schemas/error.json
+    parameters:
+      $ref: schemas/parameters.json

@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Collection of holdings",
+  "properties": {
+    "instanceId": {
+      "description": "The FOLIO instance identifier",
+      "type": "string",
+      "$ref": "uuid.json"
+    },
+    "holdings": {
+      "description": "Collection of holdings",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "rtacHolding.json"
+      }
+    }
+  },
+  "required": [
+    "holdings"
+  ]
+}

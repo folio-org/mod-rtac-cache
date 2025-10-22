@@ -3,7 +3,13 @@
   "type": "array",
   "items": {
     "type": "object",
-    "$ref": "parameter.json"
-  },
-  "additionalProperties": false
+    "properties": {
+      "key": {
+        "type": "string"
+      },
+      "value": {
+        "type": "string"
+      }
+    }
+  }
 }
