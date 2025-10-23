@@ -18,6 +18,7 @@
     }
   },
   "required": [
-    "holdings"
+    "holdings",
+    "instanceId"
   ]
 }
