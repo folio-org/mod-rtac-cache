@@ -48,7 +48,7 @@ paths:
               schema:
                 $ref: 'schemas/error.json'
 
-  /rtac-cache-batch:
+  /rtac-cache/batch:
     post:
       summary: Retrieve RTAC holdings in batch
       operationId: postRtacCacheBatchHoldings

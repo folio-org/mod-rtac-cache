@@ -15,7 +15,7 @@ public class RtacHoldingStorageService {
 
   private final RtacHoldingRepository rtacHoldingRepository;
 
-  Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, int page, int size) {
+  public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, int page, int size) {
     return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), PageRequest.of(page, size))
       .map(RtacHoldingEntity::getRtacHolding);
   }

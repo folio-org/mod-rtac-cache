@@ -235,15 +235,8 @@
               <output>${project.build.directory}/generated-sources</output>
               <generatorName>spring</generatorName>
               <modelPackage>${project.groupId}.rtaccache.domain.dto</modelPackage>
-              <apiPackage>${project.groupId}.rtaccache.rest.resource</apiPackage>
-              <generateApis>true</generateApis>
-              <generateApiTests>true</generateApiTests>
-              <generateApiDocumentation>true</generateApiDocumentation>
+              <generateApis>false</generateApis>
               <generateModels>true</generateModels>
-              <generateModelTests>false</generateModelTests>
-              <generateSupportingFiles>true</generateSupportingFiles>
-              <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
-              <generateModelDocumentation>true</generateModelDocumentation>
               <configOptions>
                 <java8>true</java8>
                 <dateLibrary>java</dateLibrary>
