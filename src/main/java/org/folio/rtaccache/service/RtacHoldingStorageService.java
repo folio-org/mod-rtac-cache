@@ -1,10 +1,15 @@
 package org.folio.rtaccache.service;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.RtacHolding;
+import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.repository.RtacSummaryProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,4 +25,32 @@ public class RtacHoldingStorageService {
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
+  public List<RtacHoldingsSummary> getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
+    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummaryByInstanceIds(instanceIds);
+
+    Map<UUID, RtacSummaryProjection> summaryMap = projections.stream()
+      .collect(Collectors.toMap(RtacSummaryProjection::instanceId, p -> p));
+
+    return instanceIds.stream()
+      .map(id -> {
+        var summary = new RtacHoldingsSummary();
+        summary.setInstanceId(id.toString());
+
+        RtacSummaryProjection projection = summaryMap.get(id);
+        if (projection != null) {
+          long totalCopies = projection.totalCopies();
+          long availableCopies = projection.availableCopies();
+
+          String status = availableCopies > 0 ? "Available" : "Unavailable";
+          summary.setStatus(status);
+
+          String copiesRemaining = String.format("%d of %d copies remaining", availableCopies, totalCopies);
+          summary.setCopiesRemaining(copiesRemaining);
+        } else {
+          summary.setStatus("Unavailable");
+          summary.setCopiesRemaining("0 of 0 copies remaining");
+        }
+        return summary;
+      }).toList();
+  }
 }

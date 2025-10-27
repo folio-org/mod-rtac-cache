@@ -9,7 +9,7 @@
     },
     "id": {
       "type": "string",
-      "description": "The FOLIO id of the piece"
+      "description": "The FOLIO id of the piece, item or holding"
     },
     "type": {
       "enum": ["item", "piece", "holding"],
