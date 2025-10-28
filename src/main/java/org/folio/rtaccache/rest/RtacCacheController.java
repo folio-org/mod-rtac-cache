@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 
 @RestController
@@ -57,7 +56,7 @@ public class RtacCacheController {
 
     List<UUID> instanceIds = rtacRequest.getInstanceIds().stream()
       .map(UUID::fromString)
-      .collect(Collectors.toList());
+      .toList();
 
     List<RtacHoldingsSummary> summaries = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(instanceIds);
     return new ResponseEntity<>(summaries, HttpStatus.OK);

@@ -19,10 +19,11 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = "SELECT " +
                  "h.instance_id AS instanceId, " +
                  "COUNT(h.instance_id) AS totalCopies, " +
-                 "SUM(CASE WHEN (h.rtac_holding_json->>'status') = 'Available' THEN 1 ELSE 0 END) AS availableCopies " +
+                 "SUM(CASE WHEN (h.rtac_holding_json->>'status') = 'Available' THEN 1 ELSE 0 END) AS availableCopies, " +
+                 "bool_or(h.rtac_holding_json->>'volume' IS NOT NULL AND h.rtac_holding_json->>'volume' != '') AS hasVolumes " +
                  "FROM rtac_holding h " +
                  "WHERE h.instance_id IN :instanceIds " +
                  "GROUP BY h.instance_id",
          nativeQuery = true)
-  List<RtacSummaryProjection> findRtacSummaryByInstanceIds(@Param("instanceIds") List<UUID> instanceIds);
+  List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("instanceIds") List<UUID> instanceIds);
 }

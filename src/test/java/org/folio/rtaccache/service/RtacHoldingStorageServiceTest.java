@@ -82,6 +82,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     UUID instanceId1 = UUID.randomUUID();
     UUID instanceId2 = UUID.randomUUID();
     UUID instanceId3 = UUID.randomUUID();
+    UUID instanceId4 = UUID.randomUUID();
 
     // Instance 1: 3 total, 2 available
     rtacHoldingRepository.save(new RtacHoldingEntity(
@@ -103,32 +104,53 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
         new RtacHolding().status("Unavailable"), Instant.now()));
 
     // Instance 3: No holdings
+    // TODO Should this be instead an error in the errors array?
 
-    List<UUID> targetInstanceIds = List.of(instanceId1, instanceId2, instanceId3);
+    // Instance 4: 1 total, 1 available, with volume
+    rtacHoldingRepository.save(new RtacHoldingEntity(
+        new RtacHoldingId(instanceId4, TypeEnum.HOLDING, UUID.randomUUID()),
+        new RtacHolding().status("Available").volume("v.1"), Instant.now()));
+
+    List<UUID> targetInstanceIds = List.of(instanceId1, instanceId2, instanceId3, instanceId4);
 
     List<RtacHoldingsSummary> summaries = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(targetInstanceIds);
 
-    assertThat(summaries).hasSize(3);
+    assertThat(summaries).hasSize(4);
 
     // Assertions for Instance 1
     RtacHoldingsSummary summary1 = summaries.stream()
         .filter(s -> s.getInstanceId().equals(instanceId1.toString()))
         .findFirst().orElseThrow();
     assertThat(summary1.getStatus()).isEqualTo("Available");
-    assertThat(summary1.getCopiesRemaining()).isEqualTo("2 of 3 copies remaining");
+    assertThat(summary1.getHasVolumes()).isFalse();
+    assertThat(summary1.getCopiesRemaining().getTotal()).isEqualTo(3);
+    assertThat(summary1.getCopiesRemaining().getAvailable()).isEqualTo(2);
 
     // Assertions for Instance 2
     RtacHoldingsSummary summary2 = summaries.stream()
         .filter(s -> s.getInstanceId().equals(instanceId2.toString()))
         .findFirst().orElseThrow();
     assertThat(summary2.getStatus()).isEqualTo("Unavailable");
-    assertThat(summary2.getCopiesRemaining()).isEqualTo("0 of 2 copies remaining");
+    assertThat(summary2.getHasVolumes()).isFalse();
+    assertThat(summary2.getCopiesRemaining().getTotal()).isEqualTo(2);
+    assertThat(summary2.getCopiesRemaining().getAvailable()).isZero();
 
     // Assertions for Instance 3 (no holdings)
     RtacHoldingsSummary summary3 = summaries.stream()
         .filter(s -> s.getInstanceId().equals(instanceId3.toString()))
         .findFirst().orElseThrow();
     assertThat(summary3.getStatus()).isEqualTo("Unavailable");
-    assertThat(summary3.getCopiesRemaining()).isEqualTo("0 of 0 copies remaining");
+    assertThat(summary3.getHasVolumes()).isFalse();
+    assertThat(summary3.getCopiesRemaining().getTotal()).isZero();
+    assertThat(summary3.getCopiesRemaining().getAvailable()).isZero();
+
+    // Assertions for Instance 4
+    RtacHoldingsSummary summary4 = summaries.stream()
+        .filter(s -> s.getInstanceId().equals(instanceId4.toString()))
+        .findFirst().orElseThrow();
+    assertThat(summary4.getStatus()).isEqualTo("Available");
+    assertThat(summary4.getHasVolumes()).isTrue();
+    assertThat(summary4.getCopiesRemaining().getTotal()).isEqualTo(1);
+    assertThat(summary4.getCopiesRemaining().getAvailable()).isEqualTo(1);
   }
 }

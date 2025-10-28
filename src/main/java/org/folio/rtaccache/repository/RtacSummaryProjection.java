@@ -5,5 +5,6 @@ import java.util.UUID;
 public record RtacSummaryProjection(
     UUID instanceId,
     long totalCopies,
-    long availableCopies
+    long availableCopies,
+    boolean hasVolumes
 ) {}

@@ -5,21 +5,37 @@
   "properties": {
     "instanceId": {
       "type": "string",
-      "description": "The FOLIO id of the instance"
+      "description": "The FOLIO instance id"
     },
     "status": {
       "type": "string",
-      "description": "The availability status of the holding"
+      "description": "The status of the RTAC holdings summary"
+    },
+    "hasVolumes": {
+      "type": "boolean",
+      "description": "Indicates if the holding has volume information"
     },
     "copiesRemaining": {
-      "description": "The number of copies remaining in the form of 'n of n copies remaining'",
-      "type": "string"
+      "description": "The number of copies remaining",
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer"
+        },
+        "available": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total",
+        "available"
+      ]
     }
   },
   "required": [
     "instanceId",
-    "id",
-    "type",
-    "status"
+    "status",
+    "hasVolumes",
+    "copiesRemaining"
   ]
 }
