@@ -7,8 +7,12 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.RtacHolding;
+import java.util.ArrayList;
+import org.folio.rtaccache.domain.dto.Error;
+import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummaryCopiesRemaining;
+import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
 import org.springframework.data.domain.Page;
@@ -26,37 +30,44 @@ public class RtacHoldingStorageService {
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
-  public List<RtacHoldingsSummary> getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
+  private static final String INSTANCE_NOT_FOUND_MESSAGE = "Instance %s can not be retrieved";
+
+  public RtacHoldingsBatch getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
     List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(instanceIds);
 
     Map<UUID, RtacSummaryProjection> summaryMap = projections.stream()
       .collect(Collectors.toMap(RtacSummaryProjection::instanceId, p -> p));
 
-    return instanceIds.stream()
-      .map(id -> {
+    final var result = new RtacHoldingsBatch();
+    final var holdings = new ArrayList<RtacHoldingsSummary>();
+    final var errors = new ArrayList<Error>();
+
+    instanceIds.forEach(id -> {
+      RtacSummaryProjection projection = summaryMap.get(id);
+      if (projection != null) {
         var summary = new RtacHoldingsSummary();
         summary.setInstanceId(id.toString());
-
-        RtacSummaryProjection projection = summaryMap.get(id);
         var copiesRemaining = new RtacHoldingsSummaryCopiesRemaining();
-        if (projection != null) {
-          long totalCopies = projection.totalCopies();
-          long availableCopies = projection.availableCopies();
+        long totalCopies = projection.totalCopies();
+        long availableCopies = projection.availableCopies();
 
-          String status = availableCopies > 0 ? "Available" : "Unavailable";
-          summary.setStatus(status);
-          summary.setHasVolumes(projection.hasVolumes());
+        String status = availableCopies > 0 ? "Available" : "Unavailable";
+        summary.setStatus(status);
+        summary.setHasVolumes(projection.hasVolumes());
 
-          copiesRemaining.total((int) totalCopies);
-          copiesRemaining.available((int) availableCopies);
-        } else {
-          summary.setStatus("Unavailable");
-          summary.setHasVolumes(false);
-          copiesRemaining.total(0);
-          copiesRemaining.available(0);
-        }
+        copiesRemaining.total((int) totalCopies);
+        copiesRemaining.available((int) availableCopies);
         summary.setCopiesRemaining(copiesRemaining);
-        return summary;
-      }).toList();
+        holdings.add(summary);
+      } else {
+        var error = new Error();
+        error.setCode(String.valueOf(HttpStatus.NOT_FOUND.value()));
+        error.setMessage(String.format(INSTANCE_NOT_FOUND_MESSAGE, id));
+        errors.add(error);
+      }
+    });
+    result.setHoldings(holdings);
+    result.setErrors(errors);
+    return result;
   }
 }

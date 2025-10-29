@@ -12,7 +12,10 @@ import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.dto.Error;
+import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
+import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
@@ -113,12 +116,13 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
     List<UUID> targetInstanceIds = List.of(instanceId1, instanceId2, instanceId3, instanceId4);
 
-    List<RtacHoldingsSummary> summaries = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(targetInstanceIds);
+    RtacHoldingsBatch rtacHoldingsBatch = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(targetInstanceIds);
 
-    assertThat(summaries).hasSize(4);
+    assertThat(rtacHoldingsBatch.getHoldings()).hasSize(3);
+    assertThat(rtacHoldingsBatch.getErrors()).hasSize(1);
 
     // Assertions for Instance 1
-    RtacHoldingsSummary summary1 = summaries.stream()
+    RtacHoldingsSummary summary1 = rtacHoldingsBatch.getHoldings().stream()
         .filter(s -> s.getInstanceId().equals(instanceId1.toString()))
         .findFirst().orElseThrow();
     assertThat(summary1.getStatus()).isEqualTo("Available");
@@ -127,7 +131,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertThat(summary1.getCopiesRemaining().getAvailable()).isEqualTo(2);
 
     // Assertions for Instance 2
-    RtacHoldingsSummary summary2 = summaries.stream()
+    RtacHoldingsSummary summary2 = rtacHoldingsBatch.getHoldings().stream()
         .filter(s -> s.getInstanceId().equals(instanceId2.toString()))
         .findFirst().orElseThrow();
     assertThat(summary2.getStatus()).isEqualTo("Unavailable");
@@ -135,22 +139,20 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertThat(summary2.getCopiesRemaining().getTotal()).isEqualTo(2);
     assertThat(summary2.getCopiesRemaining().getAvailable()).isZero();
 
-    // Assertions for Instance 3 (no holdings)
-    RtacHoldingsSummary summary3 = summaries.stream()
-        .filter(s -> s.getInstanceId().equals(instanceId3.toString()))
-        .findFirst().orElseThrow();
-    assertThat(summary3.getStatus()).isEqualTo("Unavailable");
-    assertThat(summary3.getHasVolumes()).isFalse();
-    assertThat(summary3.getCopiesRemaining().getTotal()).isZero();
-    assertThat(summary3.getCopiesRemaining().getAvailable()).isZero();
-
     // Assertions for Instance 4
-    RtacHoldingsSummary summary4 = summaries.stream()
+    RtacHoldingsSummary summary4 = rtacHoldingsBatch.getHoldings().stream()
         .filter(s -> s.getInstanceId().equals(instanceId4.toString()))
         .findFirst().orElseThrow();
     assertThat(summary4.getStatus()).isEqualTo("Available");
     assertThat(summary4.getHasVolumes()).isTrue();
     assertThat(summary4.getCopiesRemaining().getTotal()).isEqualTo(1);
     assertThat(summary4.getCopiesRemaining().getAvailable()).isEqualTo(1);
+
+    // Assertions for Instance 3 (error)
+    Error error3 = rtacHoldingsBatch.getErrors().stream()
+        .filter(e -> e.getMessage().contains(instanceId3.toString()))
+        .findFirst().orElseThrow();
+    assertThat(error3.getCode()).isEqualTo(String.valueOf(HttpStatus.NOT_FOUND.value()));
+    assertThat(error3.getMessage()).contains(instanceId3.toString());
   }
 }

@@ -1,6 +1,7 @@
 package org.folio.rtaccache.rest;
 
 import org.folio.rtaccache.domain.dto.RtacHoldings;
+import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.domain.dto.RtacHolding;
@@ -51,14 +52,14 @@ public class RtacCacheController {
   }
 
   @PostMapping("/batch")
-  public ResponseEntity<List<RtacHoldingsSummary>> postRtacCacheBatch(
+  public ResponseEntity<RtacHoldingsBatch> postRtacCacheBatch(
     @RequestBody RtacRequest rtacRequest) {
 
     List<UUID> instanceIds = rtacRequest.getInstanceIds().stream()
       .map(UUID::fromString)
       .toList();
 
-    List<RtacHoldingsSummary> summaries = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(instanceIds);
-    return new ResponseEntity<>(summaries, HttpStatus.OK);
+    RtacHoldingsBatch rtacHoldingsBatch = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(instanceIds);
+    return new ResponseEntity<>(rtacHoldingsBatch, HttpStatus.OK);
   }
 }
