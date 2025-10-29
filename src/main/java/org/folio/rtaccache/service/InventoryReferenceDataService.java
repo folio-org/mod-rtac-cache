@@ -5,10 +5,10 @@ import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.InventoryClient;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingsNoteType;
-import org.folio.rtaccache.domain.dto.Loantype;
+import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
-import org.folio.rtaccache.domain.dto.Materialtype;
+import org.folio.rtaccache.domain.dto.MaterialType;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -41,26 +41,26 @@ public class InventoryReferenceDataService {
       );
   }
 
-  Map<String, Materialtype> getMaterialTypesMap() {
+  Map<String, MaterialType> getMaterialTypesMap() {
     return inventoryClient.getMaterialTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getMtypes()
       .stream()
       .collect(
         java.util.stream.Collectors.toMap(
-          Materialtype::getId,
+          MaterialType::getId,
           materialtype -> materialtype
         )
       );
   }
 
-  Map<String, Loantype> getLoanTypesMap() {
+  Map<String, LoanType> getLoanTypesMap() {
     return inventoryClient.getLoanTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLoantypes()
       .stream()
       .collect(
         java.util.stream.Collectors.toMap(
-          Loantype::getId,
-          loantype -> loantype
+          LoanType::getId,
+          loanType -> loanType
         )
       );
   }

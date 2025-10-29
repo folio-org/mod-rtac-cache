@@ -16,10 +16,10 @@ import org.folio.rtaccache.domain.dto.HoldingsStatement;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
-import org.folio.rtaccache.domain.dto.Loantype;
+import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
-import org.folio.rtaccache.domain.dto.Materialtype;
+import org.folio.rtaccache.domain.dto.MaterialType;
 import org.folio.rtaccache.domain.dto.Piece;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,8 +40,8 @@ class RtacHoldingMappingServiceTest {
 
   private Map<String, Location> locationsMap;
   private Map<String, Loclib> libraryMap;
-  private Map<String, Materialtype> materialTypesMap;
-  private Map<String, Loantype> loanTypesMap;
+  private Map<String, MaterialType> materialTypesMap;
+  private Map<String, LoanType> loanTypesMap;
   private Map<String, HoldingsNoteType> holdingsNoteTypesMap;
 
   @BeforeEach
@@ -66,6 +66,7 @@ class RtacHoldingMappingServiceTest {
     item.setId(UUID.randomUUID().toString());
     item.setBarcode("123456");
     item.setItemLevelCallNumber("PS3545.H16");
+    item.setMaterialTypeId(UUID.randomUUID().toString());
 
     String holdingId = UUID.randomUUID().toString();
 
@@ -120,6 +121,7 @@ class RtacHoldingMappingServiceTest {
     item.setId(UUID.randomUUID().toString());
     item.setEffectiveLocationId(locationId);
     item.setStatus(status);
+    item.setMaterialTypeId(UUID.randomUUID().toString());
 
     RtacHolding result = rtacHoldingMappingService.mapFrom(holding, item);
 
@@ -175,5 +177,5 @@ class RtacHoldingMappingServiceTest {
     assertEquals("v.1-10", result.getHoldingsStatements().get(0).getStatement());
     assertEquals("Complete set", result.getHoldingsStatements().get(0).getNote());
   }
-
+  
 }
