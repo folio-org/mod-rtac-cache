@@ -4,8 +4,10 @@ import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingRecords;
 import org.folio.rtaccache.domain.dto.HoldingsNoteTypes;
 import org.folio.rtaccache.domain.dto.Items;
+import org.folio.rtaccache.domain.dto.LoanTypes;
 import org.folio.rtaccache.domain.dto.Locations;
 import org.folio.rtaccache.domain.dto.Loclibs;
+import org.folio.rtaccache.domain.dto.MaterialTypes;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,4 +31,10 @@ public interface InventoryClient {
 
   @GetMapping("/holdings-note-types")
   HoldingsNoteTypes getHoldingsNoteTypes(@SpringQueryMap FolioCqlRequest request);
+
+  @GetMapping("/loan-types")
+  LoanTypes getLoanTypes(@SpringQueryMap FolioCqlRequest request);
+
+  @GetMapping("/material-types")
+  MaterialTypes getMaterialTypes(@SpringQueryMap FolioCqlRequest request);
 }
