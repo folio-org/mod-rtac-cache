@@ -1,15 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "A collection of loan types",
+  "description": "A collection of material types",
   "type": "object",
   "properties": {
-    "loantypes": {
-      "description": "List of loan types",
-      "id": "loantype",
+    "mtypes": {
+      "description": "List of material types",
+      "id": "mtype",
       "type": "array",
       "items": {
         "type": "object",
-        "$ref": "loantype.json"
+        "$ref": "materialType.json"
       }
     },
     "totalRecords": {
@@ -18,7 +18,7 @@
     }
   },
   "required": [
-    "loantypes",
+    "mtypes",
     "totalRecords"
   ]
 }

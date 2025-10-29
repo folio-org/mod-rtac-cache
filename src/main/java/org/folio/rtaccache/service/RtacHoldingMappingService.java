@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.util.Strings;
 import org.folio.rtaccache.domain.dto.HoldingsNote;
@@ -123,7 +122,7 @@ public class RtacHoldingMappingService {
   }
 
   private RtacHoldingMaterialType mapMaterialTypeFrom(Item item) {
-    if (item.getMaterialTypeId() == null || item.getMaterialTypeId().isEmpty()) {
+    if (item.getMaterialTypeId().isEmpty()) {
       return null;
     }
     var materialType = inventoryReferenceDataService.getMaterialTypesMap().get(item.getMaterialTypeId());
@@ -149,7 +148,7 @@ public class RtacHoldingMappingService {
     return holding.getNotes().stream()
       .filter(note -> !note.getStaffOnly())
       .map(note -> mapHoldingsNoteFrom(note, noteTypesMap))
-      .collect(Collectors.toList());
+      .toList();
   }
 
   private RtacHoldingNotesInner mapHoldingsNoteFrom(HoldingsNote note, Map<String, HoldingsNoteType> holdingsNoteTypeMap) {
@@ -256,6 +255,6 @@ public class RtacHoldingMappingService {
     }
     return sourceList.stream()
       .map(mapper)
-      .collect(Collectors.toList());
+      .toList();
   }
 }
