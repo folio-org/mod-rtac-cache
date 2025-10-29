@@ -30,3 +30,7 @@ components:
       $ref: schemas/users/userTenants.json
     Settings:
       $ref: schemas/settings/settings.json
+    MaterialTypes:
+      $ref: schemas/inventory/materialTypes.json
+    LoanTypes:
+      $ref: schemas/inventory/loanTypes.json

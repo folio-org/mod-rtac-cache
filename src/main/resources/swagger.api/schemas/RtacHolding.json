@@ -129,16 +129,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "properties": {
-          "statement": {
-            "description": "Name of the holdings note type",
-            "type": "string"
-          },
-          "note": {
-            "description": "Text content of the note",
-            "type": "string"
-          }
-        }
+        "$ref": "rtacHoldingsStatement.json"
       }
     },
     "holdingsStatementsForIndexes": {
@@ -146,16 +137,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "properties": {
-          "statement": {
-            "description": "Textual description of the holdings of indexes",
-            "type": "string"
-          },
-          "note": {
-            "description": "Note attached to a holdings statement",
-            "type": "string"
-          }
-        }
+        "$ref": "rtacHoldingsStatement.json"
       }
     },
     "holdingsStatementsForSupplements": {
@@ -163,16 +145,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "properties": {
-          "statement": {
-            "description": "Textual description of the holdings of supplementary material",
-            "type": "string"
-          },
-          "note": {
-            "description": "Note attached to a holdings statement",
-            "type": "string"
-          }
-        }
+        "$ref": "rtacHoldingsStatement.json"
       }
     },
     "holdingsCopyNumber": {

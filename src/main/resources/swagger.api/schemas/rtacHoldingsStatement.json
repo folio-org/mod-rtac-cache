@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Holdings record statement",
+  "additionalProperties": false,
+  "type": "object",
+  "properties": {
+    "statement": {
+      "description": "Textual description of the holdings of supplementary material",
+      "type": "string"
+    },
+    "note": {
+      "description": "Note attached to a holdings statement",
+      "type": "string"
+    }
+  }
+}
