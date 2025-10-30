@@ -1,22 +1,24 @@
 package org.folio.rtaccache.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
-import org.folio.rtaccache.domain.dto.RtacHolding;
-import java.util.ArrayList;
 import org.folio.rtaccache.domain.dto.Error;
+import org.folio.rtaccache.domain.dto.LocationAvailability;
+import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
-import org.folio.rtaccache.domain.dto.RtacHoldingsSummaryCopiesRemaining;
-import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class RtacHoldingStorageService {
 
   private final RtacHoldingRepository rtacHoldingRepository;
+  private final ObjectMapper objectMapper;
 
   public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, int page, int size) {
     return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), PageRequest.of(page, size))
@@ -47,17 +50,15 @@ public class RtacHoldingStorageService {
       if (projection != null) {
         var summary = new RtacHoldingsSummary();
         summary.setInstanceId(id.toString());
-        var copiesRemaining = new RtacHoldingsSummaryCopiesRemaining();
-        long totalCopies = projection.totalCopies();
-        long availableCopies = projection.availableCopies();
-
-        String status = availableCopies > 0 ? "Available" : "Unavailable";
-        summary.setStatus(status);
         summary.setHasVolumes(projection.hasVolumes());
-
-        copiesRemaining.total((int) totalCopies);
-        copiesRemaining.available((int) availableCopies);
-        summary.setCopiesRemaining(copiesRemaining);
+        try {
+          List<LocationAvailability> locationAvailabilities = objectMapper.readValue(
+            projection.locationAvailabilityJson(), new TypeReference<List<LocationAvailability>>() {});
+          summary.setLocationAvailability(locationAvailabilities);
+        } catch (Exception e) {
+          // Handle JSON parsing error, e.g., log it or add an error to the batch
+          System.err.println("Error parsing locationAvailabilityJson: " + e.getMessage());
+        }
         holdings.add(summary);
       } else {
         var error = new Error();
