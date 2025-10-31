@@ -11,12 +11,12 @@
       "type": "boolean",
       "description": "Indicates if the holding has volume information"
     },
-    "locationAvailability": {
+    "locationStatus": {
       "type": "array",
-      "description": "A summary of all availability summary statuses organized by library and location",
+      "description": "A summary of all statuses organized by library and location ids",
       "items": {
         "type": "object",
-        "$ref": "locationAvailability.json"
+        "$ref": "locationStatus.json"
       }
     }
   },

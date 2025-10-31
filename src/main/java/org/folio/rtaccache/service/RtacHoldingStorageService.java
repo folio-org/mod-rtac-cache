@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.Error;
-import org.folio.rtaccache.domain.dto.LocationAvailability;
+import org.folio.rtaccache.domain.dto.LocationStatus;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
@@ -52,12 +52,12 @@ public class RtacHoldingStorageService {
         summary.setInstanceId(id.toString());
         summary.setHasVolumes(projection.hasVolumes());
         try {
-          List<LocationAvailability> locationAvailabilities = objectMapper.readValue(
-            projection.locationAvailabilityJson(), new TypeReference<List<LocationAvailability>>() {});
-          summary.setLocationAvailability(locationAvailabilities);
+          List<LocationStatus> locationStatuses = objectMapper.readValue(
+            projection.locationStatusJson(), new TypeReference<List<LocationStatus>>() {});
+          summary.setLocationStatus(locationStatuses);
         } catch (Exception e) {
           // Handle JSON parsing error, e.g., log it or add an error to the batch
-          System.err.println("Error parsing locationAvailabilityJson: " + e.getMessage());
+          System.err.println("Error parsing locationStatusJson: " + e.getMessage());
         }
         holdings.add(summary);
       } else {

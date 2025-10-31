@@ -88,45 +88,32 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
     // Common location data
     var library1Id = UUID.randomUUID().toString();
-    var library1Code = "LIB1";
-    var library1Name = "Library One";
     var location1Id = UUID.randomUUID().toString();
-    var location1Code = "LOC1";
-    var location1Name = "Location One";
+
     var library2Id = UUID.randomUUID().toString();
-    var library2Code = "LIB2";
-    var library2Name = "Library Two";
     var location2Id = UUID.randomUUID().toString();
-    var location2Code = "LOC2";
-    var location2Name = "Location Two";
 
     // Instance 1: Multiple statuses in one location
     rtacHoldingRepository.save(new RtacHoldingEntity(
       new RtacHoldingId(instanceId1, TypeEnum.HOLDING, UUID.randomUUID()),
       new RtacHolding()
         .status("Available")
-        .location(new RtacHoldingLocation()
-          .id(location1Id).code(location1Code).name(location1Name))
-        .library(new RtacHoldingLibrary()
-          .id(library1Id).code(library1Code).name(library1Name)),
+        .location(new RtacHoldingLocation().id(location1Id))
+        .library(new RtacHoldingLibrary().id(library1Id)),
       Instant.now()));
     rtacHoldingRepository.save(new RtacHoldingEntity(
       new RtacHoldingId(instanceId1, TypeEnum.ITEM, UUID.randomUUID()),
       new RtacHolding()
         .status("Available")
-        .location(new RtacHoldingLocation()
-          .id(location1Id).code(location1Code).name(location1Name))
-        .library(new RtacHoldingLibrary()
-          .id(library1Id).code(library1Code).name(library1Name)),
+        .location(new RtacHoldingLocation().id(location1Id))
+        .library(new RtacHoldingLibrary().id(library1Id)),
       Instant.now()));
     rtacHoldingRepository.save(new RtacHoldingEntity(
       new RtacHoldingId(instanceId1, TypeEnum.PIECE, UUID.randomUUID()),
       new RtacHolding()
         .status("Unavailable")
-        .location(new RtacHoldingLocation()
-          .id(location1Id).code(location1Code).name(location1Name))
-        .library(new RtacHoldingLibrary()
-          .id(library1Id).code(library1Code).name(library1Name)),
+        .location(new RtacHoldingLocation().id(location1Id))
+        .library(new RtacHoldingLibrary().id(library1Id)),
       Instant.now()));
 
     // Instance 2: Multiple locations, different statuses
@@ -134,19 +121,15 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       new RtacHoldingId(instanceId2, TypeEnum.HOLDING, UUID.randomUUID()),
       new RtacHolding()
         .status("Available")
-        .location(new RtacHoldingLocation()
-          .id(location1Id).code(location1Code).name(location1Name))
-        .library(new RtacHoldingLibrary()
-          .id(library1Id).code(library1Code).name(library1Name)),
+        .location(new RtacHoldingLocation().id(location1Id))
+        .library(new RtacHoldingLibrary().id(library1Id)),
       Instant.now()));
     rtacHoldingRepository.save(new RtacHoldingEntity(
       new RtacHoldingId(instanceId2, TypeEnum.ITEM, UUID.randomUUID()),
       new RtacHolding()
         .status("Unavailable")
-        .location(new RtacHoldingLocation()
-          .id(location2Id).code(location2Code).name(location2Name))
-        .library(new RtacHoldingLibrary()
-          .id(library2Id).code(library2Code).name(library2Name)),
+        .location(new RtacHoldingLocation().id(location2Id))
+        .library(new RtacHoldingLibrary().id(library2Id)),
       Instant.now()));
 
     // Instance 3: No holdings
@@ -157,10 +140,8 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       new RtacHolding()
         .status("Available")
         .volume("v.1")
-        .location(new RtacHoldingLocation()
-          .id(location1Id).code(location1Code).name(location1Name))
-        .library(new RtacHoldingLibrary()
-          .id(library1Id).code(library1Code).name(library1Name)),
+        .location(new RtacHoldingLocation().id(location1Id))
+        .library(new RtacHoldingLibrary().id(library1Id)),
       Instant.now()));
 
     List<UUID> targetInstanceIds = List.of(instanceId1, instanceId2, instanceId3, instanceId4);
@@ -175,14 +156,14 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId1.toString()))
       .findFirst().orElseThrow();
     assertThat(summary1.getHasVolumes()).isFalse();
-    assertThat(summary1.getLocationAvailability()).hasSize(2); // Two distinct status/location combinations
+    assertThat(summary1.getLocationStatus()).hasSize(2); // Two distinct status/location combinations
 
-    var inst1Loc1Avail = summary1.getLocationAvailability().stream()
+    var inst1Loc1Avail = summary1.getLocationStatus().stream()
       .filter(la -> la.getLibraryId().equals(library1Id) && la.getLocationId().equals(location1Id) && la.getStatus().equals("Available"))
       .findFirst().orElseThrow();
     assertThat(inst1Loc1Avail.getStatusCount()).isEqualTo(2);
 
-    var inst1Loc1Unavail = summary1.getLocationAvailability().stream()
+    var inst1Loc1Unavail = summary1.getLocationStatus().stream()
       .filter(la -> la.getLibraryId().equals(library1Id) && la.getLocationId().equals(location1Id) && la.getStatus().equals("Unavailable"))
       .findFirst().orElseThrow();
     assertThat(inst1Loc1Unavail.getStatusCount()).isEqualTo(1);
@@ -192,14 +173,14 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId2.toString()))
       .findFirst().orElseThrow();
     assertThat(summary2.getHasVolumes()).isFalse();
-    assertThat(summary2.getLocationAvailability()).hasSize(2); // Two distinct status/location combinations
+    assertThat(summary2.getLocationStatus()).hasSize(2); // Two distinct status/location combinations
 
-    var inst2Loc1Avail = summary2.getLocationAvailability().stream()
+    var inst2Loc1Avail = summary2.getLocationStatus().stream()
       .filter(la -> la.getLibraryId().equals(library1Id) && la.getLocationId().equals(location1Id) && la.getStatus().equals("Available"))
       .findFirst().orElseThrow();
     assertThat(inst2Loc1Avail.getStatusCount()).isEqualTo(1);
 
-    var inst2Loc2Unavail = summary2.getLocationAvailability().stream()
+    var inst2Loc2Unavail = summary2.getLocationStatus().stream()
       .filter(la -> la.getLibraryId().equals(library2Id) && la.getLocationId().equals(location2Id) && la.getStatus().equals("Unavailable"))
       .findFirst().orElseThrow();
     assertThat(inst2Loc2Unavail.getStatusCount()).isEqualTo(1);
@@ -209,9 +190,9 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId4.toString()))
       .findFirst().orElseThrow();
     assertThat(summary4.getHasVolumes()).isTrue();
-    assertThat(summary4.getLocationAvailability()).hasSize(1); // One distinct status/location combination
+    assertThat(summary4.getLocationStatus()).hasSize(1); // One distinct status/location combination
 
-    var inst4Loc1Avail = summary4.getLocationAvailability().stream()
+    var inst4Loc1Avail = summary4.getLocationStatus().stream()
       .filter(la -> la.getLibraryId().equals(library1Id) && la.getLocationId().equals(location1Id) && la.getStatus().equals("Available"))
       .findFirst().orElseThrow();
     assertThat(inst4Loc1Avail.getStatusCount()).isEqualTo(1);

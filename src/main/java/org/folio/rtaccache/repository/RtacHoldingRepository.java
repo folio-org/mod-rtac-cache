@@ -20,11 +20,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
                  "SELECT " +
                  "h_inner.instance_id, " +
                  "(h_inner.rtac_holding_json->'library'->>'id') AS libraryId, " +
-                 "(h_inner.rtac_holding_json->'library'->>'code') AS libraryCode, " +
-                 "(h_inner.rtac_holding_json->'library'->>'name') AS libraryName, " +
                  "(h_inner.rtac_holding_json->'location'->>'id') AS locationId, " +
-                 "(h_inner.rtac_holding_json->'location'->>'code') AS locationCode, " +
-                 "(h_inner.rtac_holding_json->'location'->>'name') AS locationName, " +
                  "(h_inner.rtac_holding_json->>'status') AS status, " +
                  "COUNT(*) AS statusCount " +
                  "FROM " +
@@ -32,7 +28,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
                  "WHERE " +
                  "h_inner.instance_id IN :instanceIds " +
                  "GROUP BY " +
-                 "h_inner.instance_id, libraryId, libraryCode, libraryName, locationId, locationCode, locationName, status " +
+                 "h_inner.instance_id, libraryId, locationId, status " +
                  ") " +
                  "SELECT " +
                  "h.instance_id AS instanceId, " +
@@ -42,11 +38,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
                  "json_agg( " +
                  "json_build_object( " +
                  "'libraryId', lsc.libraryId, " +
-                 "'libraryCode', lsc.libraryCode, " +
-                 "'libraryName', lsc.libraryName, " +
                  "'locationId', lsc.locationId, " +
-                 "'locationCode', lsc.locationCode, " +
-                 "'locationName', lsc.locationName, " +
                  "'status', lsc.status, " +
                  "'statusCount', lsc.statusCount " +
                  ") " +

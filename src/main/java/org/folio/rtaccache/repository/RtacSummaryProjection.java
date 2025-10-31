@@ -1,20 +1,15 @@
 package org.folio.rtaccache.repository;
 
-import java.util.List;
 import java.util.UUID;
 
 public record RtacSummaryProjection(
     UUID instanceId,
     boolean hasVolumes,
-    String locationAvailabilityJson
+    String locationStatusJson
 ) {
-  public record LocationAvailability(
+  public record LocationStatus(
       String libraryId,
-      String libraryCode,
-      String libraryName,
       String locationId,
-      String locationCode,
-      String locationName,
       String status,
       Integer statusCount
   ) {}

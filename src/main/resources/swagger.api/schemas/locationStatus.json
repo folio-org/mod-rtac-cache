@@ -6,25 +6,9 @@
       "type": "string",
       "description": "The library id of the holding"
     },
-    "libraryCode": {
-      "type": "string",
-      "description": "The library code of the holding"
-    },
-    "libraryName": {
-      "type": "string",
-      "description": "The library name of the holding"
-    },
     "locationId": {
       "type": "string",
       "description": "The location id of the holding"
-    },
-    "locationCode": {
-      "type": "string",
-      "description": "The location code of the holding"
-    },
-    "locationName": {
-      "type": "string",
-      "description": "The location name of the holding"
     },
     "status": {
       "type": "string",

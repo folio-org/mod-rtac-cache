@@ -96,8 +96,8 @@ components:
       $ref: schemas/rtacHoldings.json
     rtacHoldingsSummary:
       $ref: schemas/rtacHoldingsSummary.json
-    locationAvailabilitySummary:
-      $ref: schemas/locationAvailability.json
+    locationStatus:
+      $ref: schemas/locationStatus.json
     uuid:
       $ref: schemas/uuid.json
     error:
