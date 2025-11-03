@@ -2,7 +2,6 @@ package org.folio.rtaccache.rest;
 
 import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
-import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.service.RtacHoldingStorageService;

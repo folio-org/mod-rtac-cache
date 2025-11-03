@@ -15,7 +15,6 @@
       "type": "array",
       "description": "A summary of all statuses organized by library and location ids",
       "items": {
-        "type": "object",
         "$ref": "locationStatus.json"
       }
     }
