@@ -5,7 +5,18 @@
     {
       "id": "rtac-cache",
       "version": "1.0",
-      "handlers": []
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/rtac-cache/{id}",
+          "permissionsRequired": [ "rtac-cache.collection.get" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/rtac-cache/batch",
+          "permissionsRequired": [ "rtac-cache.collection.post" ]
+        }
+      ]
     },
     {
       "id": "_tenant",
@@ -22,7 +33,18 @@
       ]
     }
   ],
-  "permissionSets" : [],
+  "permissionSets": [
+    {
+      "permissionName": "rtac-cache.collection.get",
+      "displayName": "RTAC Cache - Get collection",
+      "description": "Get RTAC cache collection"
+    },
+    {
+      "permissionName": "rtac-cache.collection.post",
+      "displayName": "RTAC Cache - Post collection",
+      "description": "Post RTAC cache collection"
+    }
+  ],
   "requires": [],
   "launchDescriptor": {
     "dockerImage": "@artifactId@:@version@",

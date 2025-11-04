@@ -35,12 +35,6 @@ paths:
           content:
             text/plain:
               example: "Access Denied"
-        '404':
-          description: Not found
-          content:
-            application/json:
-              schema:
-                $ref: 'schemas/error.json'
         '500':
           description: Internal server error
           content:
@@ -71,12 +65,11 @@ paths:
             application/json:
               schema:
                 $ref: 'schemas/error.json'
-        '404':
-          description: Not found
+        '403':
+          description: Access Denied
           content:
-            application/json:
-              schema:
-                $ref: 'schemas/error.json'
+            text/plain:
+              example: "Access Denied"
         '500':
           description: Internal server error
           content:
