@@ -9,15 +9,70 @@ spring:
     password: ${DB_PASSWORD}
   liquibase:
     enabled: true
+    change-log: classpath:db/changelog/changelog-master.xml
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: none
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      group-id: test-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
 folio:
+  environment: test
+  okapi-url: http://localhost:9130
+  system-user:
+    enabled: false
+    username: test-user
+    password: test-password
   tenant:
     validation:
       enabled: false
+  kafka:
+    topics:
+      holdings-record:
+        numPartitions: 2
+        replicationFactor: 1
+      item:
+        numPartitions: 2
+        replicationFactor: 1
+      location:
+        numPartitions: 2
+        replicationFactor: 1
+      library:
+        numPartitions: 2
+        replicationFactor: 1
+    listener:
+      holdings-record:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.holdings-record
+        group-id: ${folio.environment}-mod-rtac-cache-holdings-record-group
+      item:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.item
+        group-id: ${folio.environment}-mod-rtac-cache-item-group
+      location:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.location
+        group-id: ${folio.environment}-mod-rtac-cache-location-group
+      library:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.library
+        group-id: ${folio.environment}-mod-rtac-cache-library-group
 management:
   endpoints:
-    enabled-by-default: false
+    web:
+      exposure:
+        include: health,info
 logging:
   level:
     org.springframework.web: debug
+    liquibase: info

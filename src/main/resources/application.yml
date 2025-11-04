@@ -41,10 +41,54 @@ spring:
       accept-single-value-as-array: true
   mustache:
     check-template-location: false
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    consumer:
+      max-poll-records: ${MAX_POLL_RECORDS:50}
+    security:
+      protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+    ssl:
+      key-store-password: ${KAFKA_SSL_KEYSTORE_PASSWORD:}
+      key-store-location: ${KAFKA_SSL_KEYSTORE_LOCATION:}
+      trust-store-password: ${KAFKA_SSL_TRUSTSTORE_PASSWORD:}
+      trust-store-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
 folio:
   tenant:
     validation:
       enabled: true
+  kafka:
+    retry-interval-ms: ${KAFKA_RETRY_INTERVAL_MS:2000}
+    retry-delivery-attempts: ${KAFKA_RETRY_DELIVERY_ATTEMPTS:6}
+    topics:
+      - name: inventory.holdings-record
+        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:50}
+        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
+      - name: inventory.item
+        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:20}
+        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
+      - name: inventory.location
+        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:20}
+        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
+      - name: inventory.library
+        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:50}
+        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
+    listener:
+      holdings-record:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.holdings-record}
+        group-id: ${folio.environment}-mod-rtac-cache-holdings-record-group
+      item:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.item}
+        group-id: ${folio.environment}-mod-rtac-cache-item-group
+      location:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.location}
+        group-id: ${folio.environment}-mod-rtac-cache-location-group
+      library:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.library}
+        group-id: ${folio.environment}-mod-rtac-cache-library-group
 management:
   endpoints:
     web:

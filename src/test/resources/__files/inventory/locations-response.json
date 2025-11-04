@@ -1,0 +1,17 @@
+{
+  "locations": [
+    {
+      "id": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+      "name": "Updated Main Location",
+      "code": "UML",
+      "isActive": true,
+      "campusId": "3518baa8-8009-4114-883d-0a7c5ec21f28",
+      "libraryId": "db1f5cdb-17b6-492d-9e4e-57bac6b9d0c7",
+      "primaryServicePoint": "4f1c448b-e655-4f1d-8b60-97886986ac57",
+      "servicePointIds": ["4f1c448b-e655-4f1d-8b60-97886986ac57"],
+      "institutionId": "ef7dbebe-af7b-4fa1-a290-042cab0c1e5c"
+    }
+  ],
+  "totalRecords": 1
+}
+
