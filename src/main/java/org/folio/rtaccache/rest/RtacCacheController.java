@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.folio.spring.data.OffsetRequest;
 import org.springframework.data.domain.Page;
 
 @RestController
@@ -38,10 +39,8 @@ public class RtacCacheController {
     @RequestParam(value = "offset", defaultValue = "0") int offset,
     @RequestParam(value = "limit", defaultValue = "100") int limit) {
 
-    int page = offset / limit;
-
     Page<RtacHolding> pagedRtacHoldings =
-      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), page, limit);
+      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(offset, limit));
 
     var rtacHoldings = new RtacHoldings();
     rtacHoldings.setInstanceId(instanceId.toString());

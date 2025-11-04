@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
+import org.folio.spring.data.OffsetRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -62,7 +63,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       Instant.now()));
 
     Page<RtacHolding> page0 = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(targetInstanceId.toString(), 0, 2);
+      .getRtacHoldingsByInstanceId(targetInstanceId.toString(), OffsetRequest.of(0, 2));
 
     assertThat(page0.getContent()).hasSize(2);
     assertThat(page0.getTotalElements()).isEqualTo(3);
@@ -70,7 +71,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertThat(page0.getTotalPages()).isEqualTo(2);
 
     Page<RtacHolding> page1 = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(targetInstanceId.toString(), 1, 2);
+      .getRtacHoldingsByInstanceId(targetInstanceId.toString(), OffsetRequest.of(2, 2));
 
     assertThat(page1.getContent()).hasSize(1);
     assertThat(page1.getTotalElements()).isEqualTo(3);

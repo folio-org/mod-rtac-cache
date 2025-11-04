@@ -17,7 +17,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -28,8 +28,8 @@ public class RtacHoldingStorageService {
   private final RtacHoldingRepository rtacHoldingRepository;
   private final ObjectMapper objectMapper;
 
-  public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, int page, int size) {
-    return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), PageRequest.of(page, size))
+  public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
+    return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
