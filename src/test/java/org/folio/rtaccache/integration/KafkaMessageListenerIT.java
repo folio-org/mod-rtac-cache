@@ -29,12 +29,14 @@ import org.folio.spring.FolioModuleMetadata;
 import org.folio.spring.integration.XOkapiHeaders;
 import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers
+@TestMethodOrder(OrderAnnotation.class)
 @Log4j2
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
@@ -88,6 +90,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(1)
   void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -113,6 +116,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(2)
   void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -136,6 +140,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(3)
   void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -158,6 +163,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(4)
   void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -181,6 +187,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(5)
   void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -198,6 +205,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(6)
   void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -219,6 +227,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(7)
   void shouldUpdateRtacHolding_withItemType_whenItemUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -240,6 +249,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Order(8)
   void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given

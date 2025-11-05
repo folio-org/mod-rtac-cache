@@ -8,8 +8,8 @@ spring:
       okhttp:
         enabled: true
   datasource:
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    username: ${DB_USERNAME:folio_admin}
+    password: ${DB_PASSWORD:folio_admin}
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DATABASE:db}?ApplicationName=${spring.application.name}
   hikari:
     data-source-properties:
@@ -42,7 +42,7 @@ spring:
   mustache:
     check-template-location: false
   kafka:
-    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
     consumer:
       max-poll-records: ${MAX_POLL_RECORDS:50}
     security:
@@ -53,6 +53,7 @@ spring:
       trust-store-password: ${KAFKA_SSL_TRUSTSTORE_PASSWORD:}
       trust-store-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
 folio:
+  environment: ${ENV:folio}
   tenant:
     validation:
       enabled: true
@@ -89,6 +90,11 @@ folio:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.library}
         group-id: ${folio.environment}-mod-rtac-cache-library-group
+  system-user:
+    enabled: ${SYSTEM_USER_ENABLED:false}
+    username: ${SYSTEM_USER_USERNAME:mod-rtac-cache}
+    password: ${SYSTEM_USER_PASSWORD}
+    lastname: System
 management:
   endpoints:
     web:

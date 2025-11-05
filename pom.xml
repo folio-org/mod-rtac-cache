@@ -45,8 +45,7 @@
 
     <!-- test dependencies -->
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
-    <wiremock.version>3.12.1</wiremock.version>
-<!--    <spring-cloud-contract-wiremock.version>4.0.1</spring-cloud-contract-wiremock.version>-->
+    <spring-cloud-contract-wiremock.version>4.1.5</spring-cloud-contract-wiremock.version>
   </properties>
 
   <dependencies>
@@ -160,7 +159,7 @@
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-contract-wiremock</artifactId>
-      <version>4.1.5</version>
+      <version>${spring-cloud-contract-wiremock.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -285,6 +284,11 @@
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+          <includes>
+            <include>**/*IT.java</include>
+            <include>**/*Test.java</include>
+            <include>**/*Tests.java</include>
+          </includes>
         </configuration>
       </plugin>
 
