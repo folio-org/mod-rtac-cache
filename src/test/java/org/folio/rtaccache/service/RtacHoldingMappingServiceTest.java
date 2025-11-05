@@ -177,5 +177,88 @@ class RtacHoldingMappingServiceTest {
     assertEquals("v.1-10", result.getHoldingsStatements().get(0).getStatement());
     assertEquals("Complete set", result.getHoldingsStatements().get(0).getNote());
   }
-  
+
+  @Test
+  void testMapForItemTypeFromHolding() {
+    String instanceId = UUID.randomUUID().toString();
+    String holdingId = UUID.randomUUID().toString();
+
+    RtacHolding existingRtacHolding = new RtacHolding();
+    existingRtacHolding.setId(UUID.randomUUID().toString());
+    existingRtacHolding.setBarcode("barcode-123");
+    existingRtacHolding.setCallNumber("existing-call-number");
+
+    HoldingsRecord holding = new HoldingsRecord();
+    holding.setInstanceId(instanceId);
+    holding.setId(holdingId);
+    holding.setCopyNumber("copy-1");
+
+    RtacHolding result = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, holding);
+
+    assertNotNull(result);
+    assertEquals(existingRtacHolding.getId(), result.getId());
+    assertEquals(RtacHolding.TypeEnum.ITEM, result.getType());
+    assertEquals(instanceId, result.getInstanceId());
+    assertEquals(holdingId, result.getHoldingsId());
+    assertEquals("barcode-123", result.getBarcode());
+    assertEquals("existing-call-number", result.getCallNumber());
+    assertEquals("copy-1", result.getHoldingsCopyNumber());
+  }
+
+  @Test
+  void testMapForItemTypeFromItem() {
+    String instanceId = UUID.randomUUID().toString();
+    String holdingId = UUID.randomUUID().toString();
+    String itemId = UUID.randomUUID().toString();
+
+    RtacHolding existingRtacHolding = new RtacHolding();
+    existingRtacHolding.setInstanceId(instanceId);
+    existingRtacHolding.setHoldingsId(holdingId);
+
+    Item item = new Item();
+    item.setId(itemId);
+    item.setBarcode("new-barcode");
+    item.setItemLevelCallNumber("new-call-number");
+    item.setMaterialTypeId(UUID.randomUUID().toString());
+    ItemStatus status = new ItemStatus();
+    status.setName(NameEnum.AVAILABLE);
+    item.setStatus(status);
+
+    RtacHolding result = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
+
+    assertNotNull(result);
+    assertEquals(itemId, result.getId());
+    assertEquals(RtacHolding.TypeEnum.ITEM, result.getType());
+    assertEquals(instanceId, result.getInstanceId());
+    assertEquals(holdingId, result.getHoldingsId());
+    assertEquals("new-barcode", result.getBarcode());
+    assertEquals("new-call-number", result.getCallNumber());
+    assertEquals(NameEnum.AVAILABLE.getValue(), result.getStatus());
+  }
+
+  @Test
+  void testMapForPieceTypeFromHolding() {
+    String instanceId = UUID.randomUUID().toString();
+    String holdingId = UUID.randomUUID().toString();
+
+    RtacHolding existingRtacHolding = new RtacHolding();
+    existingRtacHolding.setId(UUID.randomUUID().toString());
+    existingRtacHolding.setStatus(Piece.ReceivingStatusEnum.EXPECTED.getValue());
+
+    HoldingsRecord holding = new HoldingsRecord();
+    holding.setInstanceId(instanceId);
+    holding.setId(holdingId);
+    holding.setCallNumber("holding-call-number");
+
+    RtacHolding result = rtacHoldingMappingService.mapForPieceTypeFrom(existingRtacHolding, holding);
+
+    assertNotNull(result);
+    assertEquals(existingRtacHolding.getId(), result.getId());
+    assertEquals(RtacHolding.TypeEnum.PIECE, result.getType());
+    assertEquals(instanceId, result.getInstanceId());
+    assertEquals(holdingId, result.getHoldingsId());
+    assertEquals("holding-call-number", result.getCallNumber());
+    assertEquals(Piece.ReceivingStatusEnum.EXPECTED.getValue(), result.getStatus());
+  }
+
 }

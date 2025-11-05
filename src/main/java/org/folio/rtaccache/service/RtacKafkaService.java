@@ -65,10 +65,6 @@ public class RtacKafkaService {
     log.info("Handling holdings record event for tenant {}: {}", tenantId, resourceEvent);
     var type = resourceEvent.getType();
     var handler = holdingsHandlers.get(type);
-    if (handler == null) {
-      log.warn("Unsupported or null holdings event type: {}", type);
-      return;
-    }
     handler.accept(resourceEvent);
   }
 
@@ -82,19 +78,11 @@ public class RtacKafkaService {
     log.info("Handling item record event for tenant {}: {}", tenantId, resourceEvent);
     var type = resourceEvent.getType();
     var handler = itemHandlers.get(type);
-    if (handler == null) {
-      log.warn("Unsupported or null item event type: {}", type);
-      return;
-    }
     handler.accept(resourceEvent);
   }
 
   private void handleHoldingsCreateEvent(ResourceEvent resourceEvent) {
     var holdingsData = getNew(resourceEvent, HoldingsRecord.class);
-    if (holdingsData == null) {
-      log.warn("New holdings data is null. Skipping create.");
-      return;
-    }
     var rtacHoldingId = createRtacHoldingIdFromHoldings(holdingsData);
     var rtacHolding = rtacHoldingMappingService.mapFrom(holdingsData);
     var rtacHoldingEntity = new RtacHoldingEntity();
@@ -106,10 +94,6 @@ public class RtacKafkaService {
 
   private void handleHoldingsUpdateEvent(ResourceEvent resourceEvent) {
     var holdingsData = getNew(resourceEvent, HoldingsRecord.class);
-    if (holdingsData == null) {
-      log.warn("New holdings data is null. Skipping update.");
-      return;
-    }
     var updatedEntities = holdingRepository.findAllByHoldingsId(holdingsData.getId())
       .stream()
       .peek(entity -> {
@@ -126,10 +110,6 @@ public class RtacKafkaService {
 
   private void handleHoldingsDeleteEvent(ResourceEvent resourceEvent) {
     var holdingsData = getOld(resourceEvent, HoldingsRecord.class);
-    if (holdingsData == null) {
-      log.warn("Old holdings data is null. Skipping delete.");
-      return;
-    }
     var holdingsId = holdingsData.getId();
     holdingRepository.deleteAllByHoldingsId(holdingsId);
   }
@@ -168,17 +148,11 @@ public class RtacKafkaService {
 
   private <T> T getNew(ResourceEvent event, Class<T> type) {
     var payload = event.getNew();
-    if (payload == null) {
-      return null;
-    }
     return convert(payload, type);
   }
 
   private <T> T getOld(ResourceEvent event, Class<T> type) {
     var payload = event.getOld();
-    if (payload == null) {
-      return null;
-    }
     return convert(payload, type);
   }
 

@@ -3,11 +3,13 @@ package org.folio.rtaccache.service;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -76,6 +78,17 @@ class RtacKafkaServiceTest {
     service.handleHoldingsResourceEvent(event, TENANT);
 
     verify(holdingRepository).saveAll(anyList());
+  }
+
+  @Test
+  void holdingsUpdate_shouldNotUpdate_whenNoRtacHoldingExists() {
+    var event = new ResourceEvent().type(ResourceEventType.UPDATE)._new(holdingsRecord());
+    when(objectMapper.convertValue(event.getNew(), HoldingsRecord.class)).thenReturn(holdingsRecord());
+    when(holdingRepository.findAllByHoldingsId(HOLDINGS_ID)).thenReturn(Collections.emptyList());
+
+    service.handleHoldingsResourceEvent(event, TENANT);
+
+    verify(holdingRepository, never()).saveAll(anyList());
   }
 
   @Test
