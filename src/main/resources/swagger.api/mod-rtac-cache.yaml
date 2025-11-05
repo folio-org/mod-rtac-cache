@@ -97,4 +97,6 @@ components:
       $ref: schemas/error.json
     parameters:
       $ref: schemas/parameters.json
+    parameter:
+      $ref: schemas/parameter.json
 

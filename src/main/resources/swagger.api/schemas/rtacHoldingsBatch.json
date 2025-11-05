@@ -6,7 +6,6 @@
       "description": "Real Time Availability Check (RTAC) holding details",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "rtacHoldingsSummary.json"
       }
     },

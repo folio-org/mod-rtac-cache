@@ -5,7 +5,6 @@ import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +61,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
 
     var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
-      .andDo(print())
       .andExpect(status().isOk())
       .andReturn();
 
@@ -92,7 +90,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     var result = mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(new ObjectMapper().writeValueAsString(rtacRequest)))
-      .andDo(print())
       .andExpect(status().isOk())
       .andReturn();
 
@@ -116,14 +113,20 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     var result = mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(new ObjectMapper().writeValueAsString(rtacRequest)))
-      .andDo(print())
       .andExpect(status().isOk())
       .andReturn();
 
     var rtacHoldingsBatch = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldingsBatch.class);
     assertThat(rtacHoldingsBatch.getHoldings()).hasSize(1);
-    assertThat(rtacHoldingsBatch.getErrors()).hasSize(1);
-    assertThat(rtacHoldingsBatch.getErrors().getFirst().getMessage()).contains(invalidInstanceId.toString());
+        assertThat(rtacHoldingsBatch.getErrors()).hasSize(1);
+
+        var error = rtacHoldingsBatch.getErrors().get(0);
+        assertThat(error.getMessage()).contains(invalidInstanceId.toString());
+        assertThat(error.getParameters()).hasSize(1);
+
+        var parameter = error.getParameters().get(0);
+        assertThat(parameter.getKey()).isEqualTo("instanceId");
+        assertThat(parameter.getValue()).isEqualTo(invalidInstanceId.toString());
   }
 
   @Test
@@ -133,7 +136,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(new ObjectMapper().writeValueAsString(rtacRequest)))
-      .andDo(print())
       .andExpect(status().isBadRequest());
   }
 
@@ -144,7 +146,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(malformedJson))
-      .andDo(print())
       .andExpect(status().isBadRequest());
   }
 
@@ -155,7 +156,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     var result = mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(new ObjectMapper().writeValueAsString(rtacRequest)))
-      .andDo(print())
       .andExpect(status().isOk())
       .andReturn();
 
@@ -169,7 +169,6 @@ class RtacCacheControllerTest extends BaseIntegrationTest {
     mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(""))
-      .andDo(print())
       .andExpect(status().isBadRequest());
   }
 }

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.Error;
 import org.folio.rtaccache.domain.dto.LocationStatus;
+import org.folio.rtaccache.domain.dto.Parameter;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
@@ -20,10 +21,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
 public class RtacHoldingStorageService {
+
+  private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class); // Added logger
 
   private final RtacHoldingRepository rtacHoldingRepository;
   private final ObjectMapper objectMapper;
@@ -52,21 +58,25 @@ public class RtacHoldingStorageService {
         summary.setInstanceId(id.toString());
         summary.setHasVolumes(projection.hasVolumes());
         try {
-          List<LocationStatus> locationStatuses = objectMapper.readValue(
-            projection.locationStatusJson(), new TypeReference<List<LocationStatus>>() {});
+          List<LocationStatus> locationStatuses = objectMapper.readValue(projection.locationStatusJson(), new TypeReference<>() {});
           summary.setLocationStatus(locationStatuses);
-        } catch (Exception e) {
-          // Handle JSON parsing error, e.g., log it or add an error to the batch
-          System.err.println("Error parsing locationStatusJson: " + e.getMessage());
+        } catch (JsonProcessingException e) {
+          throw new RtacDataProcessingException(String.format("Failed to parse locationStatusJson for instanceId %s", id), e);
         }
         holdings.add(summary);
       } else {
+        var parameter = new Parameter();
+        parameter.setKey("instanceId");
+        parameter.setValue(id.toString());
         var error = new Error();
         error.setCode(String.valueOf(HttpStatus.NOT_FOUND.value()));
         error.setMessage(String.format(INSTANCE_NOT_FOUND_MESSAGE, id));
+        error.setParameters(List.of(parameter));
         errors.add(error);
+        log.warn("Instance ID not found: {}", id);
       }
     });
+
     result.setHoldings(holdings);
     result.setErrors(errors);
     return result;

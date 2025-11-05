@@ -47,7 +47,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
                  "LocationStatusCounts lsc " +
                  "WHERE " +
                  "lsc.instance_id = h.instance_id " +
-                 ") AS locationAvailability " +
+                 ") AS locationStatusJson " +
                  "FROM " +
                  "rtac_holding h " +
                  "WHERE " +

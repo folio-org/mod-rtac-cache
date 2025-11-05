@@ -205,4 +205,38 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertThat(error3.getCode()).isEqualTo(String.valueOf(HttpStatus.NOT_FOUND.value()));
     assertThat(error3.getMessage()).contains(instanceId3.toString());
   }
+
+  @Test
+  void testGetRtacHoldingsSummaryForInstanceIds_noLocationInfo() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    UUID instanceIdNoLocation = UUID.randomUUID();
+
+    // Create a holding with no location or library information
+    rtacHoldingRepository.save(new RtacHoldingEntity(
+      new RtacHoldingId(instanceIdNoLocation, TypeEnum.HOLDING, UUID.randomUUID()),
+      new RtacHolding()
+        .status("Available"), // Only set status, no location or library
+      Instant.now()));
+
+    List<UUID> targetInstanceIds = List.of(instanceIdNoLocation);
+
+    RtacHoldingsBatch rtacHoldingsBatch = rtacHoldingStorageService.getRtacHoldingsSummaryForInstanceIds(targetInstanceIds);
+
+    assertThat(rtacHoldingsBatch.getHoldings()).hasSize(1);
+    assertThat(rtacHoldingsBatch.getErrors()).isEmpty();
+
+    RtacHoldingsSummary summaryNoLocation = rtacHoldingsBatch.getHoldings().stream()
+      .filter(s -> s.getInstanceId().equals(instanceIdNoLocation.toString()))
+      .findFirst().orElseThrow();
+
+    assertThat(summaryNoLocation.getHasVolumes()).isFalse(); // Assuming no volume info either
+    assertThat(summaryNoLocation.getLocationStatus()).hasSize(1);
+
+    var locationStatus = summaryNoLocation.getLocationStatus().get(0);
+    assertThat(locationStatus.getLibraryId()).isNull();
+    assertThat(locationStatus.getLocationId()).isNull();
+    assertThat(locationStatus.getStatus()).isEqualTo("Available");
+    assertThat(locationStatus.getStatusCount()).isEqualTo(1);
+  }
 }
