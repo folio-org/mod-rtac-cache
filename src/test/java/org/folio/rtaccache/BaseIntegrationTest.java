@@ -38,6 +38,7 @@ public abstract class BaseIntegrationTest {
     WireMockSpring.options()
       .dynamicPort()
       .extensions(new ResponseTemplateTransformer(false)));
+
   private static final String IMAGE_VERSION = "postgres:16-alpine";
   private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.1.3";
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(IMAGE_VERSION);
