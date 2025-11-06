@@ -23,8 +23,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -40,9 +40,9 @@ public abstract class BaseIntegrationTest {
       .extensions(new ResponseTemplateTransformer(false)));
 
   private static final String IMAGE_VERSION = "postgres:16-alpine";
-  private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.1.3";
+  private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.6.1";
+  public static final ConfluentKafkaContainer kafkaContainer = new ConfluentKafkaContainer(DockerImageName.parse(KAFKA_IMAGE_VERSION));
   public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(IMAGE_VERSION);
-  public static KafkaContainer kafkaContainer = new KafkaContainer(DockerImageName.parse(KAFKA_IMAGE_VERSION));
 
   static {
     postgreSQLContainer.start();
@@ -60,7 +60,6 @@ public abstract class BaseIntegrationTest {
     registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
     registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
     registry.add("folio.okapiUrl", WIRE_MOCK::baseUrl);
-    registry.add("application.keycloak.url", WIRE_MOCK::baseUrl);
   }
 
   @BeforeAll

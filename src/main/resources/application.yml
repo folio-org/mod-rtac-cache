@@ -60,19 +60,7 @@ folio:
   kafka:
     retry-interval-ms: ${KAFKA_RETRY_INTERVAL_MS:2000}
     retry-delivery-attempts: ${KAFKA_RETRY_DELIVERY_ATTEMPTS:6}
-    topics:
-      - name: inventory.holdings-record
-        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:50}
-        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
-      - name: inventory.item
-        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:20}
-        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
-      - name: inventory.location
-        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:20}
-        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
-      - name: inventory.library
-        numPartitions: ${KAFKA_CONTRIBUTORS_TOPIC_PARTITIONS:50}
-        replicationFactor: ${KAFKA_CONTRIBUTORS_TOPIC_REPLICATION_FACTOR:}
+    topics: []
     listener:
       holdings-record:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}

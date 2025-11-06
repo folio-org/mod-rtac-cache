@@ -38,17 +38,11 @@ folio:
       enabled: false
   kafka:
     topics:
-      holdings-record:
-        numPartitions: 2
+      - name: inventory.holdings-record
+        numPartitions: 1
         replicationFactor: 1
-      item:
-        numPartitions: 2
-        replicationFactor: 1
-      location:
-        numPartitions: 2
-        replicationFactor: 1
-      library:
-        numPartitions: 2
+      - name: inventory.item
+        numPartitions: 1
         replicationFactor: 1
     listener:
       holdings-record:

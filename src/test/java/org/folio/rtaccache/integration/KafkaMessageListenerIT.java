@@ -199,7 +199,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
-        assertThat(ZERO_COUNT).isEqualTo(count);
+        assertThat(count).isEqualTo(ZERO_COUNT);
       });
     }
   }
@@ -260,7 +260,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
-        assertThat(ZERO_COUNT).isEqualTo(count);
+        assertThat(count).isEqualTo(ZERO_COUNT);
       });
     }
   }
@@ -299,13 +299,13 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   private void sendHoldingsKafkaMessage(ResourceEvent event, String id) {
-    ProducerRecord<String, ResourceEvent> record = new ProducerRecord<>(HOLDINGS_TOPIC, id, event);
-    kafkaTemplate.send(record);
+    ProducerRecord<String, ResourceEvent> holdingsRecord = new ProducerRecord<>(HOLDINGS_TOPIC, id, event);
+    kafkaTemplate.send(holdingsRecord);
   }
 
   private void sendItemKafkaMessage(ResourceEvent event, String id) {
-    ProducerRecord<String, ResourceEvent> record = new ProducerRecord<>(ITEM_TOPIC, id, event);
-    kafkaTemplate.send(record);
+    ProducerRecord<String, ResourceEvent> itemRecord = new ProducerRecord<>(ITEM_TOPIC, id, event);
+    kafkaTemplate.send(itemRecord);
   }
 
   private FolioExecutionContext folioExecutionContext() {

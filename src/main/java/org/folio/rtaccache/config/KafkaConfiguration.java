@@ -8,6 +8,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.folio.rtaccache.domain.dto.ResourceEvent;
 import org.folio.rtaccache.integration.KafkaMessageListener;
 import org.folio.rtaccache.service.RtacKafkaService;
 import org.folio.spring.service.SystemUserScopedExecutionService;
@@ -18,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
-import org.folio.rtaccache.domain.dto.ResourceEvent;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 

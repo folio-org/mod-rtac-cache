@@ -11,13 +11,13 @@ import org.springframework.stereotype.Service;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class LocateKafkaAdminService implements ApplicationRunner {
+public class RtacKafkaAdminService implements ApplicationRunner {
 
   private final KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
   private final ApplicationContext applicationContext;
 
   /**
-   * Restarts kafka event listeners in mod-search-ebsco application.
+   * Restarts kafka event listeners in mod-rtac-cache application.
    */
   public void restartEventListeners() {
     log.info("Restarting kafka consumer to update topic pattern");

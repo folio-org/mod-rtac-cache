@@ -1,7 +1,7 @@
 package org.folio.rtaccache.service;
 
 import lombok.extern.log4j.Log4j2;
-import org.folio.rtaccache.integration.LocateKafkaAdminService;
+import org.folio.rtaccache.integration.RtacKafkaAdminService;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.liquibase.FolioSpringLiquibase;
 import org.folio.spring.service.TenantService;
@@ -15,18 +15,18 @@ import org.springframework.stereotype.Service;
 @Log4j2
 public class RtacTenantService extends TenantService {
 
-  private final LocateKafkaAdminService locateKafkaAdminService;
+  private final RtacKafkaAdminService rtacKafkaAdminService;
 
   public RtacTenantService(JdbcTemplate jdbcTemplate,
     FolioExecutionContext context,
     FolioSpringLiquibase folioSpringLiquibase,
-    LocateKafkaAdminService locateKafkaAdminService) {
+    RtacKafkaAdminService rtacKafkaAdminService) {
     super(jdbcTemplate, context, folioSpringLiquibase);
-    this.locateKafkaAdminService = locateKafkaAdminService;
+    this.rtacKafkaAdminService = rtacKafkaAdminService;
   }
 
   @Override
   protected void afterTenantUpdate(TenantAttributes tenantAttributes) {
-    locateKafkaAdminService.restartEventListeners();
+    rtacKafkaAdminService.restartEventListeners();
   }
 }

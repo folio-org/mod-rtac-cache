@@ -1,7 +1,6 @@
 package org.folio.rtaccache.service;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -136,7 +135,7 @@ class RtacKafkaServiceTest {
 
     service.handleItemResourceEvent(event, TENANT);
 
-    verify(holdingRepository).save(eq(itemEntity));
+    verify(holdingRepository).save(itemEntity);
   }
 
   @Test

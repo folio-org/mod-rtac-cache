@@ -96,10 +96,11 @@ public class RtacKafkaService {
     var holdingsData = getNew(resourceEvent, HoldingsRecord.class);
     var updatedEntities = holdingRepository.findAllByHoldingsId(holdingsData.getId())
       .stream()
-      .peek(entity -> {
+      .map(entity -> {
         var existingRtacHolding = entity.getRtacHolding();
         var handler = holdingsUpdateHandlers.get(existingRtacHolding.getType());
         entity.setRtacHolding(handler.apply(existingRtacHolding, holdingsData));
+        return entity;
       })
       .toList();
 
