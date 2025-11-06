@@ -1,0 +1,31 @@
+{
+  "old": {
+    "id": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "_version": 3,
+    "sourceId": "f32d531e-df79-46b3-8932-cdd35f7a2264",
+    "hrid": "colho00000680893",
+    "formerIds": [],
+    "instanceId": "1b0cec61-d129-4642-8489-255c68cb0978",
+    "permanentLocationId": "108ef496-ef5b-421b-baa9-109833493599",
+    "effectiveLocationId": "108ef496-ef5b-421b-baa9-109833493599",
+    "electronicAccess": [],
+    "callNumber": "OLD-CALL-456",
+    "administrativeNotes": [],
+    "notes": [],
+    "holdingsStatements": [],
+    "holdingsStatementsForIndexes": [],
+    "holdingsStatementsForSupplements": [],
+    "discoverySuppress": false,
+    "statisticalCodeIds": [],
+    "metadata": {
+      "createdDate": "2024-08-07T14:04:36.888+00:00",
+      "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+      "updatedDate": "2025-06-02T08:31:22.688+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "type": "DELETE",
+  "tenant": "testTenant",
+  "eventId": "d05aca1c-e33c-45ee-b624-859a1ad91f35",
+  "eventTs": 1762186771227
+}

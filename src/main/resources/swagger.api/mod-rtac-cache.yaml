@@ -8,6 +8,8 @@ components:
   schemas:
     RtacHolding:
       $ref: schemas/RtacHolding.json
+    ResourceEvent:
+      $ref: schemas/resourceEvent.json
     HoldingRecords:
       $ref: schemas/inventory/holdingsRecords.json
     Items:

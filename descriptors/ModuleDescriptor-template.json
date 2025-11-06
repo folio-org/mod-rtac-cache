@@ -24,6 +24,18 @@
   ],
   "permissionSets" : [],
   "requires": [],
+  "metadata": {
+    "user": {
+      "type": "system",
+      "permissions": [
+        "inventory-storage.holdings-note-types.collection.get",
+        "inventory-storage.material-types.collection.get",
+        "inventory-storage.loan-types.collection.get",
+        "inventory-storage.locations.collection.get",
+        "inventory-storage.location-units.libraries.collection.get"
+      ]
+    }
+  },
   "launchDescriptor": {
     "dockerImage": "@artifactId@:@version@",
     "dockerPull": false,

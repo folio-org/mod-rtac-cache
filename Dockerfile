@@ -6,8 +6,15 @@ USER root
 RUN apk upgrade --no-cache
 USER folio
 
-# Copy your fat jar to the container; if multiple *.jar files exist the .dockerignore file excludes others
-COPY target/*.jar ${JAVA_APP_DIR}
+# Copy your fat jar to the container;
+ENV APP_FILE mod-rtac-cache-fat.jar
+
+# - should be a single jar file
+ARG JAR_FILE=./target/*.jar
+
+# - copy
+COPY ${JAR_FILE} ${JAVA_APP_DIR}/${APP_FILE}
 
 # Expose this port locally in the container.
 EXPOSE 8081
+
