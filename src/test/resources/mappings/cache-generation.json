@@ -1,0 +1,122 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "POST",
+        "urlPath": "/holdings-storage/holdings/retrieve",
+        "bodyPatterns": [
+          {
+            "contains": "instanceId==4de861ab-af9e-4247-bc16-c547d982eb5d"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holdings-records-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "urlPath": "/item-storage/items/retrieve",
+        "bodyPatterns": [
+          {
+            "contains": "holdingsRecordId==f34d3c43-695d-468a-8b05-93a52f2c39a3"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding1-items-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "urlPath": "/item-storage/items/retrieve",
+        "bodyPatterns": [
+          {
+            "contains": "holdingsRecordId==fff4579a-be80-464e-9307-bd1c6d5e1ce0"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding2-items-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/orders/pieces",
+        "queryParameters": {
+          "query": { "contains": "holdingId==(f34d3c43-695d-468a-8b05-93a52f2c39a3)" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding1-pieces-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/orders/pieces",
+        "queryParameters": {
+          "query": { "contains": "holdingId==(fff4579a-be80-464e-9307-bd1c6d5e1ce0)" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding2-empty-pieces-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/loan-storage/loans",
+        "queryParameters": {
+          "query": { "contains": "9a772288-ead3-4033-b07b-87eff643710f" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/hodling1-item1-loans-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/circulation/requests",
+        "queryParameters": {
+          "query": { "contains": "9a772288-ead3-4033-b07b-87eff643710f" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding1-item1-requests-response.json"
+      }
+    }
+  ]
+}

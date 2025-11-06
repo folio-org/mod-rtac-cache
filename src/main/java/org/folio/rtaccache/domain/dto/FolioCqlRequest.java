@@ -1,3 +1,12 @@
 package org.folio.rtaccache.domain.dto;
 
-public record FolioCqlRequest(String query, Integer limit, Integer offset) { }
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@AllArgsConstructor
+@Data
+public class FolioCqlRequest {
+  private String query;
+  private Integer limit;
+  private Integer offset;
+}

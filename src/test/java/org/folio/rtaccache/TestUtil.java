@@ -10,6 +10,8 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
+import org.folio.rtaccache.domain.dto.FolioCqlRequest;
+import org.mockito.ArgumentMatcher;
 
 public class TestUtil {
 
@@ -38,5 +40,9 @@ public class TestUtil {
   @SneakyThrows
   public static String asString(Object value) {
     return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(value);
+  }
+
+  public static ArgumentMatcher<FolioCqlRequest> queryContains(String str) {
+    return arg -> arg != null && arg.getQuery().contains(str);
   }
 }

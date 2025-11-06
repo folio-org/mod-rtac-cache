@@ -1,0 +1,74 @@
+{
+  "items": [
+    {
+      "id": "9a772288-ead3-4033-b07b-87eff643710f",
+      "_version": 1,
+      "hrid": "colit00001477562",
+      "holdingsRecordId": "f34d3c43-695d-468a-8b05-93a52f2c39a3",
+      "formerIds": [],
+      "barcode": "222593901476",
+      "effectiveShelvingOrder": "QA76.73.J38 G67 2023",
+      "itemLevelCallNumber": "QA76.73.J38 G67 2023",
+      "effectiveCallNumberComponents": {
+        "callNumber": "QA76.73.J38 G67 2023"
+      },
+      "yearCaption": [],
+      "administrativeNotes": [],
+      "notes": [],
+      "circulationNotes": [],
+      "status": {
+        "name": "Paged",
+        "date": "2025-11-02T11:17:50.547+00:00"
+      },
+      "materialTypeId": "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+      "permanentLoanTypeId": "2b94c631-fca9-4892-a730-03ee529ffe27",
+      "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+      "electronicAccess": [],
+      "statisticalCodeIds": [],
+      "metadata": {
+        "createdDate": "2025-11-02T11:17:50.547+00:00",
+        "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+        "updatedDate": "2025-11-02T11:17:50.547+00:00",
+        "updatedByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42"
+      }
+    },
+    {
+      "id": "222a6b61-91a5-46bf-8e2d-962a23f1338e",
+      "_version": 1,
+      "hrid": "colit00001477563",
+      "holdingsRecordId": "f34d3c43-695d-468a-8b05-93a52f2c39a3",
+      "formerIds": [],
+      "barcode": "658102960199",
+      "effectiveShelvingOrder": "QA76.73.J38 G67 2023",
+      "itemLevelCallNumber": "QA76.73.J38 G67 2023",
+      "effectiveCallNumberComponents": {
+        "callNumber": "QA76.73.J38 G67 2023"
+      },
+      "yearCaption": [],
+      "administrativeNotes": [],
+      "notes": [],
+      "circulationNotes": [],
+      "status": {
+        "name": "Available",
+        "date": "2025-11-02T11:17:50.648+00:00"
+      },
+      "materialTypeId": "5ee11d91-f7e8-481d-b079-65d708582ccc",
+      "permanentLoanTypeId": "2b94c631-fca9-4892-a730-03ee529ffe27",
+      "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+      "electronicAccess": [],
+      "statisticalCodeIds": [],
+      "metadata": {
+        "createdDate": "2025-11-02T11:17:50.648+00:00",
+        "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+        "updatedDate": "2025-11-02T11:17:50.648+00:00",
+        "updatedByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42"
+      }
+    }
+  ],
+  "totalRecords": 2,
+  "resultInfo": {
+    "totalRecords": 2,
+    "facets": [],
+    "diagnostics": []
+  }
+}
