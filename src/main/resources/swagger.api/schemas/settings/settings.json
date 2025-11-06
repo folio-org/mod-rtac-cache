@@ -1,0 +1,45 @@
+{
+  "description": "Setting entries response",
+  "type": "object",
+  "properties": {
+    "items": {
+      "description": "List of settings",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Identifier",
+            "type": "string",
+            "format": "uuid"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Scope for this entry (normally a module)"
+          },
+          "key": {
+            "type": "string",
+            "description": "Key within scope for this setting"
+          },
+          "value": {
+            "description": "Settings value (any type)"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Owner of this setting (optional)"
+          }
+        }
+      }
+    },
+    "resultInfo": {
+      "description": "Common result set information",
+      "type": "object",
+      "$ref" : "../resultInfo.json"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "items"
+  ]
+}
