@@ -5,6 +5,8 @@ info:
 paths:
   /rtac-cache/{id}:
     get:
+      tags:
+        - rtac
       summary: Retrieve RTAC holdings for a single instance
       operationId: getRtacCacheHoldingsById
       parameters:
@@ -44,6 +46,8 @@ paths:
 
   /rtac-cache/batch:
     post:
+      tags:
+        - rtac
       summary: Retrieve RTAC holdings in batch
       operationId: postRtacCacheBatchHoldings
       requestBody:
@@ -89,16 +93,6 @@ components:
       $ref: schemas/rtacHoldings.json
     rtacHoldingsSummary:
       $ref: schemas/rtacHoldingsSummary.json
-    locationStatus:
-      $ref: schemas/locationStatus.json
-    uuid:
-      $ref: schemas/uuid.json
-    error:
-      $ref: schemas/error.json
-    parameters:
-      $ref: schemas/parameters.json
-    parameter:
-      $ref: schemas/parameter.json
     HoldingRecords:
       $ref: schemas/inventory/holdingsRecords.json
     Items:

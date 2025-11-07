@@ -11,8 +11,6 @@ spring:
     enabled: true
   jpa:
     show-sql: true
-    hibernate:
-      ddl-auto: create-drop
 folio:
   tenant:
     validation:

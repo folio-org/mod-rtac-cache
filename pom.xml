@@ -239,14 +239,17 @@
               <output>${project.build.directory}/generated-sources</output>
               <generatorName>spring</generatorName>
               <modelPackage>${project.groupId}.rtaccache.domain.dto</modelPackage>
-              <generateApis>false</generateApis>
+              <apiPackage>${project.groupId}.rtac.rest.resource</apiPackage>
+              <generateApis>true</generateApis>
               <generateModels>true</generateModels>
+              <generateApiDocumentation>true</generateApiDocumentation>
               <configOptions>
                 <java8>true</java8>
                 <dateLibrary>java</dateLibrary>
                 <interfaceOnly>true</interfaceOnly>
                 <useSpringBoot3>true</useSpringBoot3>
                 <useTags>true</useTags>
+                <useUUIDs>true</useUUIDs>
               </configOptions>
             </configuration>
           </execution>

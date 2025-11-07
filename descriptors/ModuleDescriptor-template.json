@@ -43,6 +43,10 @@
       "permissionName": "rtac-cache.collection.post",
       "displayName": "RTAC Cache - Post collection",
       "description": "Post RTAC cache collection"
+    },    {
+      "permissionName": "rtac-cache.all",
+      "displayName": "RTAC Cache - All permissions",
+      "description": "All RTAC cache permissions"
     }
   ],
   "requires": [],

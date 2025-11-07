@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-class RtacCacheControllerTest extends BaseIntegrationTest {
+class RtacCacheControllerIT extends BaseIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
