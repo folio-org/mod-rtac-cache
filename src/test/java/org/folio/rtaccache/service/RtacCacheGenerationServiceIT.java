@@ -15,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
-public class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
+class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
 
   @Autowired
   private RtacCacheGenerationService rtacCacheGenerationService;
