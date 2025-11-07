@@ -33,7 +33,7 @@ public class CirculationService {
 
   public Map<String, Date> getLoanDueDatesForItems(List<String> itemIds) {
     if (itemIds == null || itemIds.isEmpty()) {
-      return Collections.EMPTY_MAP;
+      return Collections.emptyMap();
     }
     return Lists.partition(itemIds, MAX_IDS_FOR_CQL).stream()
       .map(this::submitLoansBatch)
@@ -62,7 +62,7 @@ public class CirculationService {
 
   public Map<String, Long> getHoldRequestsCountForItems(List<String> itemIds) {
     if (itemIds == null || itemIds.isEmpty()) {
-      return Collections.EMPTY_MAP;
+      return Collections.emptyMap();
     }
     return Lists.partition(itemIds, MAX_IDS_FOR_CQL).stream()
       .map(this::submitRequestsBatch)

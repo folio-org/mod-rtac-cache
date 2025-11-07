@@ -37,7 +37,7 @@ public class RtacCacheGenerationService {
     log.info("Started RTAC cache generation for instance id: {}", instanceId);
     var holdingsOffset = 0;
     var totalHoldings = getHoldingsTotalRecords(instanceId);
-    var futures = new ArrayList<CompletableFuture>();
+    var futures = new ArrayList<CompletableFuture<Void>>();
     while (totalHoldings != 0 && holdingsOffset < totalHoldings) {
       var holdingsCql = getHoldingsByInstanceIdCql(instanceId);
       var holdingsRequest = new FolioCqlRequest(holdingsCql, HOLDINGS_BATCH_SIZE, holdingsOffset);
@@ -64,7 +64,7 @@ public class RtacCacheGenerationService {
   private CompletableFuture<Void> processItemsForHolding(HoldingsRecord holding) {
     var itemsOffset = 0;
     var totalItems = getItemsTotalRecords(holding.getId());
-    var futures = new ArrayList<CompletableFuture>();
+    var futures = new ArrayList<CompletableFuture<Void>>();
     while (totalItems != 0 && itemsOffset < totalItems) {
       var itemsCql = getItemsByHoldingIdCql(holding.getId());
       var itemsRequest = new FolioCqlRequest(itemsCql, ITEMS_BATCH_SIZE, itemsOffset);
@@ -78,7 +78,7 @@ public class RtacCacheGenerationService {
     return CompletableFuture.supplyAsync(() -> {
       log.info("Sending request for pieces for holding id: {}", holding.getId());
       return ordersService.getPiecesByHoldingId(holding.getId());
-    }, taskExecutor).thenAcceptAsync((response)-> {
+    }, taskExecutor).thenAcceptAsync(response -> {
       log.info("Processing pieces for holding id: {}", holding.getId());
       if (response.getTotalRecords() != 0) {
         var pieces = response.getPieces();

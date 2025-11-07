@@ -28,22 +28,22 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   private RtacHoldingRepository rtacHoldingRepository;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
-  private static final String instanceId = UUID.randomUUID().toString();
-  private static final String itemId1 = UUID.randomUUID().toString();
-  private static final String itemId2 = UUID.randomUUID().toString();
+  private static final String INSTANCE_ID = UUID.randomUUID().toString();
+  private static final String ITEM_ID_1 = UUID.randomUUID().toString();
+  private static final String ITEM_ID_2 = UUID.randomUUID().toString();
 
   @Test
   void testBulkUpsert_insertsRecords() throws SQLException, JsonProcessingException {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     var rtacHolding1 = new RtacHolding();
-    rtacHolding1.setId(itemId1);
+    rtacHolding1.setId(ITEM_ID_1);
     rtacHolding1.setType(TypeEnum.ITEM);
-    rtacHolding1.setInstanceId(instanceId);
+    rtacHolding1.setInstanceId(INSTANCE_ID);
 
     var rtacHolding2 = new RtacHolding();
-    rtacHolding2.setId(itemId2);
+    rtacHolding2.setId(ITEM_ID_2);
     rtacHolding2.setType(TypeEnum.ITEM);
-    rtacHolding2.setInstanceId(instanceId);
+    rtacHolding2.setInstanceId(INSTANCE_ID);
 
     var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now());
     var rtacHoldingEntity2 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), rtacHolding2, Instant.now());
@@ -62,15 +62,15 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   void testBulkUpsert_updatesRecords() throws SQLException, JsonProcessingException {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     var rtacHolding1 = new RtacHolding();
-    rtacHolding1.setId(itemId1);
+    rtacHolding1.setId(ITEM_ID_1);
     rtacHolding1.setType(TypeEnum.ITEM);
-    rtacHolding1.setInstanceId(instanceId);
+    rtacHolding1.setInstanceId(INSTANCE_ID);
     rtacHolding1.setBarcode("test");
 
     var rtacHolding2 = new RtacHolding();
-    rtacHolding2.setId(itemId2);
+    rtacHolding2.setId(ITEM_ID_2);
     rtacHolding2.setType(TypeEnum.ITEM);
-    rtacHolding2.setInstanceId(instanceId);
+    rtacHolding2.setInstanceId(INSTANCE_ID);
     rtacHolding2.setBarcode("test");
 
     var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now());
