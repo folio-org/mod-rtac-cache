@@ -93,8 +93,6 @@ components:
       $ref: schemas/rtacHoldings.json
     RtacHoldingsSummary:
       $ref: schemas/rtacHoldingsSummary.json
-    RtacHolding:
-      $ref: schemas/RtacHolding.json
     ResourceEvent:
       $ref: schemas/resourceEvent.json
     HoldingRecords:
