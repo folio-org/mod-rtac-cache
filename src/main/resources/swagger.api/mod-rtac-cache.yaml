@@ -83,16 +83,20 @@ paths:
 
 components:
   schemas:
-    rtacHolding:
+    RtacHolding:
       $ref: schemas/rtacHolding.json
-    rtacRequest:
+    RtacRequest:
       $ref: schemas/rtacRequest.json
-    rtacHoldingsBatch:
+    RtacHoldingsBatch:
       $ref: schemas/rtacHoldingsBatch.json
-    rtacHoldings:
+    RtacHoldings:
       $ref: schemas/rtacHoldings.json
-    rtacHoldingsSummary:
+    RtacHoldingsSummary:
       $ref: schemas/rtacHoldingsSummary.json
+    RtacHolding:
+      $ref: schemas/RtacHolding.json
+    ResourceEvent:
+      $ref: schemas/resourceEvent.json
     HoldingRecords:
       $ref: schemas/inventory/holdingsRecords.json
     Items:

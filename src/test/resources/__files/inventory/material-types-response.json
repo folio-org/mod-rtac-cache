@@ -1,0 +1,24 @@
+{
+  "mtypes" : [ {
+    "id" : "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+    "name" : "book",
+    "source" : "consortium",
+    "metadata" : {
+      "createdDate" : "2023-10-19T16:27:24.247+00:00",
+      "createdByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f",
+      "updatedDate" : "2023-10-19T16:27:24.247+00:00",
+      "updatedByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f"
+    }
+  }, {
+    "id" : "5ee11d91-f7e8-481d-b079-65d708582ccc",
+    "name" : "dvd",
+    "source" : "consortium",
+    "metadata" : {
+      "createdDate" : "2023-10-19T16:27:23.096+00:00",
+      "createdByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f",
+      "updatedDate" : "2023-10-19T16:27:23.096+00:00",
+      "updatedByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f"
+    }
+  } ],
+  "totalRecords" : 2
+}

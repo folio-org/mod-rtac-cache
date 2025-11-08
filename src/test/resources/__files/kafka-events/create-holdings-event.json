@@ -1,0 +1,44 @@
+{
+  "new": {
+    "id": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "version": 4,
+    "sourceId": "f32d531e-df79-46b3-8932-cdd35f7a2264",
+    "hrid": "oho00026200995",
+    "formerIds": [],
+    "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "permanentLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+    "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+    "electronicAccess": [],
+    "callNumber": "NEW-CALL-456",
+    "copyNumber": "Test",
+    "administrativeNotes": [],
+    "notes": [
+      {
+        "holdingsNoteTypeId": "de14ac4e-f705-404a-8027-4a69d9dc8075",
+        "note": "Test",
+        "staffOnly": false
+      }
+    ],
+    "holdingsStatements": [
+      {
+        "statement": "Test",
+        "note": "Test",
+        "staffNote": "Test"
+      }
+    ],
+    "holdingsStatementsForIndexes": [],
+    "holdingsStatementsForSupplements": [],
+    "discoverySuppress": false,
+    "statisticalCodeIds": [],
+    "metadata": {
+      "createdDate": "2024-08-07T14:04:36.888+00:00",
+      "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+      "updatedDate": "2025-11-03T16:19:30.969+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "type": "CREATE",
+  "tenant": "testTenant",
+  "eventId": "d05aca1c-e33c-45ee-b624-859a1ad91f35",
+  "eventTs": 1762186771227
+}

@@ -1,0 +1,23 @@
+{
+  "loantypes" : [ {
+    "id" : "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "name" : "Can circulate",
+    "source" : "consortium",
+    "metadata" : {
+      "createdDate" : "2023-10-19T16:27:21.944+00:00",
+      "createdByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f",
+      "updatedDate" : "2023-10-19T16:27:21.944+00:00",
+      "updatedByUserId" : "3843bbaa-983e-4412-8cff-eb947963cd2f"
+    }
+  }, {
+    "id" : "3a8ddade-dab3-4d6d-b281-2010500bf381",
+    "name" : "Contact Collections Officer,CALM, x7-7400",
+    "metadata" : {
+      "createdDate" : "2024-11-15T17:49:32.112+00:00",
+      "createdByUserId" : "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+      "updatedDate" : "2024-11-15T17:49:32.112+00:00",
+      "updatedByUserId" : "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42"
+    }
+  } ],
+  "totalRecords" : 2
+}

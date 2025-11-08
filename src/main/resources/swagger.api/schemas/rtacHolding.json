@@ -5,11 +5,15 @@
   "properties": {
     "instanceId": {
       "type": "string",
-      "description": "The FOLIO id of the instance"
+      "description": "The FOLIO id of the instance record"
     },
     "id": {
       "type": "string",
-      "description": "The FOLIO id of the piece, item or holding"
+      "description": "The id of the record, can be itemId, pieceId or holdingsId depending on the type"
+    },
+    "holdingsId": {
+      "type": "string",
+      "description": "The FOLIO id of the holdings record"
     },
     "type": {
       "enum": ["item", "piece", "holding"],
