@@ -45,11 +45,7 @@ public class CirculationService {
   private CompletableFuture<Map<String, Date>> submitLoansBatch(List<String> itemIds) {
     return CompletableFuture.supplyAsync(() -> {
       var itemDueDateMap = new HashMap<String, Date>();
-      var cql = String.format("itemId==(%s) AND status.name==open", itemIds.stream()
-        .map(id -> "\"" + id + "\"")
-        .collect(Collectors.joining(" OR ")));
-      var request = new FolioCqlRequest(cql, MAX_RECORDS, 0);
-      var response = circulationClient.getLoans(request);
+      var response = circulationClient.getLoans(getLoansBatchRequest(itemIds));
       if (response.getTotalRecords() == 0) {
         return itemDueDateMap;
       }
@@ -60,25 +56,28 @@ public class CirculationService {
     }, taskExecutor);
   }
 
+  private FolioCqlRequest getLoansBatchRequest(List<String> itemIds) {
+    var cql = String.format("itemId==(%s) AND status.name==open", itemIds.stream()
+      .map(id -> "\"" + id + "\"")
+      .collect(Collectors.joining(" OR ")));
+    return new FolioCqlRequest(cql, MAX_RECORDS, 0);
+  }
+
   public Map<String, Long> getHoldRequestsCountForItems(List<String> itemIds) {
     if (itemIds == null || itemIds.isEmpty()) {
       return Collections.emptyMap();
     }
     return Lists.partition(itemIds, MAX_IDS_FOR_CQL).stream()
-      .map(this::submitRequestsBatch)
+      .map(this::submitHoldsBatch)
       .map(CompletableFuture::join)
       .flatMap(map -> map.entrySet().stream())
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
-  private CompletableFuture<Map<String, Long>> submitRequestsBatch(List<String> itemIds) {
+  private CompletableFuture<Map<String, Long>> submitHoldsBatch(List<String> itemIds) {
     return CompletableFuture.supplyAsync(() -> {
       var itemHoldCountMap = new HashMap<String, Long>();
-      var cql = String.format("itemId==(%s)", itemIds.stream()
-        .map(id -> "\"" + id + "\"")
-        .collect(Collectors.joining(" OR ")));
-      var request = new FolioCqlRequest(cql, MAX_RECORDS, 0);
-      var response = circulationClient.getRequests(request);
+      var response = circulationClient.getRequests(getHoldsBatchRequest(itemIds));
       if (response.getTotalRecords() == 0) {
         return itemHoldCountMap;
       }
@@ -88,6 +87,13 @@ public class CirculationService {
       itemHoldCountMap.putAll(holdCounts);
       return itemHoldCountMap;
     }, taskExecutor);
+  }
+
+  private FolioCqlRequest getHoldsBatchRequest(List<String> itemIds) {
+    var cql = String.format("itemId==(%s)", itemIds.stream()
+      .map(id -> "\"" + id + "\"")
+      .collect(Collectors.joining(" OR ")));
+    return new FolioCqlRequest(cql, MAX_RECORDS, 0);
   }
 
   private boolean isOpenStatus(Request itemRequest) {

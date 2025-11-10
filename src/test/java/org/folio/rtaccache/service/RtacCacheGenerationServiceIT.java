@@ -32,7 +32,8 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
 
-    rtacCacheGenerationService.generateRtacCache(INSTANCE_ID);
+    var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID);
+    future.join();
 
     var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID), PageRequest.of(0, 50));
     var itemWithLoans = holdings.get()

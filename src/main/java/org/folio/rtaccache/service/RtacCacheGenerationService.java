@@ -33,7 +33,7 @@ public class RtacCacheGenerationService {
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
 
-  public void generateRtacCache(String instanceId) {
+  public CompletableFuture<Void> generateRtacCache(String instanceId) {
     log.info("Started RTAC cache generation for instance id: {}", instanceId);
     var holdingsOffset = 0;
     var totalHoldings = getHoldingsTotalRecords(instanceId);
@@ -45,10 +45,9 @@ public class RtacCacheGenerationService {
       for (var holding : holdingsResponse.getHoldingsRecords()) {
         futures.add(taskExecutor.submitCompletable(processIndividualHolding(holding)));
       }
-      futures.stream().forEach(CompletableFuture::join);
       holdingsOffset += HOLDINGS_BATCH_SIZE;
     }
-    log.info("Finished RTAC cache generation for instance id: {}", instanceId);
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
   private Runnable processIndividualHolding(HoldingsRecord holding) {
