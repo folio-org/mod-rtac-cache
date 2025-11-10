@@ -3,7 +3,9 @@ package org.folio.rtaccache.service;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -54,6 +56,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setHoldingsStatementsForIndexes(mapArraySafe(holding.getHoldingsStatementsForIndexes(), this::mapHoldingsStatementFrom));
     rtacHolding.setHoldingsStatementsForSupplements(mapArraySafe(holding.getHoldingsStatementsForSupplements(), this::mapHoldingsStatementFrom));
     rtacHolding.setNotes(mapHoldingsNotesFrom(holding));
+    rtacHolding.setCreatedAt(Date.from(Instant.now()));
     return rtacHolding;
   }
 
@@ -73,6 +76,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setHoldingsStatementsForIndexes(mapArraySafe(holding.getHoldingsStatementsForIndexes(), this::mapHoldingsStatementFrom));
     rtacHolding.setHoldingsStatementsForSupplements(mapArraySafe(holding.getHoldingsStatementsForSupplements(), this::mapHoldingsStatementFrom));
     rtacHolding.setNotes(mapHoldingsNotesFrom(holding));
+    rtacHolding.setCreatedAt(Date.from(Instant.now()));
     return rtacHolding;
   }
 
@@ -93,6 +97,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setHoldingsStatementsForIndexes(mapArraySafe(holding.getHoldingsStatementsForIndexes(), this::mapHoldingsStatementFrom));
     rtacHolding.setHoldingsStatementsForSupplements(mapArraySafe(holding.getHoldingsStatementsForSupplements(), this::mapHoldingsStatementFrom));
     rtacHolding.setNotes(mapHoldingsNotesFrom(holding));
+    rtacHolding.setCreatedAt(Date.from(Instant.now()));
     return rtacHolding;
   }
 

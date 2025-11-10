@@ -3,6 +3,9 @@ server:
 spring:
   application:
     name: mod-rtac-cache
+  threads:
+    virtual:
+      enabled: true
   cloud:
     openfeign:
       okhttp:
