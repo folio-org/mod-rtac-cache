@@ -9,6 +9,7 @@ import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
 import org.folio.rtaccache.domain.dto.MaterialType;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,6 +18,7 @@ public class InventoryReferenceDataService {
 
   private final InventoryClient inventoryClient;
 
+  @Cacheable(value = "locationsMap", unless = "#result == null || #result.isEmpty()")
   Map<String, Location> getLocationsMap() {
     return inventoryClient.getLocations(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLocations()
@@ -29,6 +31,7 @@ public class InventoryReferenceDataService {
       );
   }
 
+  @Cacheable(value = "libraryMap", unless = "#result == null || #result.isEmpty()")
   Map<String, Loclib> getLibraryMap() {
     return inventoryClient.getLibraries(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLoclibs()
@@ -41,6 +44,7 @@ public class InventoryReferenceDataService {
       );
   }
 
+  @Cacheable(value = "materialTypesMap", unless = "#result == null || #result.isEmpty()")
   Map<String, MaterialType> getMaterialTypesMap() {
     return inventoryClient.getMaterialTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getMtypes()
@@ -53,6 +57,7 @@ public class InventoryReferenceDataService {
       );
   }
 
+  @Cacheable(value = "loanTypesMap", unless = "#result == null || #result.isEmpty()")
   Map<String, LoanType> getLoanTypesMap() {
     return inventoryClient.getLoanTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLoantypes()
@@ -65,6 +70,7 @@ public class InventoryReferenceDataService {
       );
   }
 
+  @Cacheable(value = "holdingsNoteTypesMap", unless = "#result == null || #result.isEmpty()")
   Map<String, HoldingsNoteType> getHoldingsNoteTypesMap() {
     return inventoryClient.getHoldingsNoteTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getHoldingsNoteTypes()

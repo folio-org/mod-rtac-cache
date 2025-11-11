@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 @RequiredArgsConstructor
 public class RtacHoldingStorageService {
 
-  private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class); // Added logger
+  private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class);
 
   private final RtacHoldingRepository rtacHoldingRepository;
   private final ObjectMapper objectMapper;

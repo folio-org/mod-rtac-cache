@@ -30,4 +30,12 @@ public class RtacHoldingId implements Serializable {
 
   @Column(name = "id", nullable = false)
   private UUID id;
+
+  public static RtacHoldingId from(RtacHolding rtacHolding) {
+    return new RtacHoldingId(
+        UUID.fromString(rtacHolding.getInstanceId()),
+        rtacHolding.getType(),
+        UUID.fromString(rtacHolding.getId())
+    );
+  }
 }
