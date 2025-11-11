@@ -17,6 +17,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
@@ -37,6 +38,11 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   private FolioModuleMetadata folioModuleMetadata;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
+
+  @AfterEach
+  void tearDown() {
+    rtacHoldingRepository.deleteAll();
+  }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId,
                                                     RtacHolding.TypeEnum type,

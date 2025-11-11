@@ -10,6 +10,7 @@ import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,11 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
   private static final String INSTANCE_ID = "4de861ab-af9e-4247-bc16-c547d982eb5d";
   private static final String ITEM_WITH_LOANS_AND_REQUESTS_ID = "9a772288-ead3-4033-b07b-87eff643710f";
   private static final String PIECE_ID = "aaf7be29-a8cc-4b0a-9975-bf39e9a71696";
+
+  @AfterEach
+  void tearDown() {
+    rtacHoldingRepository.deleteAll();
+  }
 
   @Test
   void generateRtacCache_shouldFetchAndProcessRtacData() {

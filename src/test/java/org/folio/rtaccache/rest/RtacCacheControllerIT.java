@@ -23,6 +23,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -33,9 +34,14 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   @Autowired
   private MockMvc mockMvc;
   @Autowired
-  private RtacHoldingRepository repository;
+  private RtacHoldingRepository rtacHoldingRepository;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
+
+  @AfterEach
+  void tearDown() {
+    rtacHoldingRepository.deleteAll();
+  }
 
   @Test
   void holdingsByInstanceId_success() throws Exception {
@@ -48,8 +54,8 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     var rtacHolding2 = new RtacHolding().id(holdingId2.toString());
     var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.HOLDING, holdingId1), rtacHolding1, Instant.now());
     var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.HOLDING, holdingId2), rtacHolding2, Instant.now());
-    repository.save(entity1);
-    repository.save(entity2);
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
 
     var result = mockMvc.perform(get("/rtac-cache/" + instanceId + "?offset=0&limit=1")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
@@ -92,8 +98,8 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId1, TypeEnum.HOLDING, holdingId1), rtacHolding1, Instant.now());
     var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId2, TypeEnum.HOLDING, holdingId2), rtacHolding2, Instant.now());
 
-    repository.save(entity1);
-    repository.save(entity2);
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
 
     var rtacRequest = new RtacRequest().instanceIds(List.of(instanceId1.toString(), instanceId2.toString()));
 
@@ -118,7 +124,7 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
 
     var rtacHolding = new RtacHolding().id(holdingId.toString());
     var entity = new RtacHoldingEntity(new RtacHoldingId(validInstanceId, TypeEnum.HOLDING, holdingId), rtacHolding, Instant.now());
-    repository.save(entity);
+    rtacHoldingRepository.save(entity);
 
     var rtacRequest = new RtacRequest().instanceIds(List.of(validInstanceId.toString(), invalidInstanceId.toString()));
 

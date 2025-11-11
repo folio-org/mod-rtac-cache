@@ -16,6 +16,7 @@ import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.spring.FolioExecutionContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -31,6 +32,11 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   private static final String INSTANCE_ID = UUID.randomUUID().toString();
   private static final String ITEM_ID_1 = UUID.randomUUID().toString();
   private static final String ITEM_ID_2 = UUID.randomUUID().toString();
+
+  @AfterEach
+  void tearDown() {
+    rtacHoldingRepository.deleteAll();
+  }
 
   @Test
   void testBulkUpsert_insertsRecords() throws SQLException, JsonProcessingException {
