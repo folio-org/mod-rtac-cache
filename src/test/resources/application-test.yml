@@ -47,6 +47,15 @@ folio:
       - name: inventory.item
         numPartitions: 1
         replicationFactor: 1
+      - name: circulation.loan
+        numPartitions: 1
+        replicationFactor: 1
+      - name: circulation.request
+        numPartitions: 1
+        replicationFactor: 1
+      - name: ACQ_PIECE_CHANGED
+        numPartitions: 1
+        replicationFactor: 1
     listener:
       holdings-record:
         concurrency: 1
@@ -63,6 +72,18 @@ folio:
       library:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.inventory\.library
+        group-id: ${folio.environment}-mod-rtac-cache-library-group
+      loan:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.circulation\.loan
+        group-id: ${folio.environment}-mod-rtac-cache-library-group
+      request:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.circulation\.request
+        group-id: ${folio.environment}-mod-rtac-cache-library-group
+      piece:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.Default\.ALL\.ACQ_PIECE_CHANGED
         group-id: ${folio.environment}-mod-rtac-cache-library-group
 management:
   endpoints:

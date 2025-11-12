@@ -10,15 +10,19 @@ import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.header.internals.RecordHeader;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestUtil;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
-import org.folio.rtaccache.domain.dto.ResourceEvent;
+import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
+import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
+import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
@@ -42,6 +46,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   private static final String HOLDINGS_TOPIC = "test.ALL.inventory.holdings-record";
   private static final String ITEM_TOPIC = "test.ALL.inventory.item";
+  private static final String LOAN_TOPIC = "test.ALL.circulation.loan";
+  private static final String REQUEST_TOPIC = "test.ALL.circulation.request";
+  private static final String PIECE_TOPIC = "test.Default.ALL.ACQ_PIECE_CHANGED";
 
   private static final String HOLDINGS_ID = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
   private static final String ITEM_ID = "522d41d3-0e04-416d-9f52-90ac67685a78";
@@ -54,6 +61,13 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
+  private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
+  private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
+  private static final String CREATE_REQUEST_EVENT_PATH = "__files/kafka-events/create-request-event.json";
+  private static final String UPDATE_REQUEST_EVENT_PATH = "__files/kafka-events/update-request-event.json";
+  private static final String CREATE_PIECE_EVENT_PATH = "__files/kafka-events/create-piece-event.json";
+  private static final String DELETE_PIECE_EVENT_PATH = "__files/kafka-events/delete-piece-event.json";
+  private static final String UPDATE_PIECE_EVENT_PATH = "__files/kafka-events/update-piece-event.json";
 
   private static final String OLD_CALL_NUMBER = "OLD-CALL-123";
   private static final String NEW_CALL_NUMBER = "NEW-CALL-456";
@@ -67,13 +81,17 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String OLD_STATUS = "Available";
   private static final String NEW_MATERIAL_TYPE_NAME = "book";
   private static final String NEW_BARCODE = "1232323232";
-
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final String NEW_VOLUME = "(Test)";
   private static final long ZERO_COUNT = 0L;
 
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   @Autowired
-  private KafkaTemplate<String, ResourceEvent> kafkaTemplate;
+  private KafkaTemplate<String, InventoryResourceEvent> inventoryKafkaTemplate;
+  @Autowired
+  private KafkaTemplate<String, CirculationResourceEvent> circualationKafkaTemplate;
+  @Autowired
+  private KafkaTemplate<String, PieceResourceEvent> pieceKafkaTemplate;
   @Autowired
   private RtacHoldingRepository holdingRepository;
   @Autowired
@@ -94,7 +112,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      ResourceEvent event = loadResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
+      var event = loadInventoryResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
 
       // When
       sendHoldingsKafkaMessage(event, HOLDINGS_ID);
@@ -120,8 +138,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(HOLDINGS_ID, TypeEnum.HOLDING);
-      ResourceEvent event = loadResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
+      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
       sendHoldingsKafkaMessage(event, HOLDINGS_ID);
       // Then
@@ -144,8 +162,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(ITEM_ID, TypeEnum.ITEM);
-      ResourceEvent event = loadResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
       sendHoldingsKafkaMessage(event, HOLDINGS_ID);
       // Then
@@ -167,8 +185,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(PIECE_ID, TypeEnum.PIECE);
-      ResourceEvent event = loadResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
+      createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
+      var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
       sendHoldingsKafkaMessage(event, HOLDINGS_ID);
       // Then
@@ -191,9 +209,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(HOLDINGS_ID, TypeEnum.HOLDING);
-      createExistingRtacHolding(ITEM_ID, TypeEnum.ITEM);
-      ResourceEvent event = loadResourceEvent(DELETE_HOLDINGS_EVENT_PATH);
+      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(DELETE_HOLDINGS_EVENT_PATH);
       // When
       sendHoldingsKafkaMessage(event, HOLDINGS_ID);
       // Then
@@ -209,8 +227,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(HOLDINGS_ID, TypeEnum.HOLDING);
-      ResourceEvent event = loadResourceEvent(CREATE_ITEM_EVENT_PATH);
+      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      var event = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
       // When
       sendItemKafkaMessage(event, ITEM_ID);
       // Then
@@ -231,8 +249,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldUpdateRtacHolding_withItemType_whenItemUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(ITEM_ID, TypeEnum.ITEM);
-      ResourceEvent event = loadResourceEvent(UPDATE_ITEM_EVENT_PATH);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(UPDATE_ITEM_EVENT_PATH);
       // When
       sendItemKafkaMessage(event, ITEM_ID);
       // Then
@@ -253,8 +271,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHolding(ITEM_ID, TypeEnum.ITEM);
-      ResourceEvent event = loadResourceEvent(DELETE_ITEM_EVENT_PATH);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(DELETE_ITEM_EVENT_PATH);
       // When
       sendItemKafkaMessage(event, ITEM_ID);
       // Then
@@ -265,7 +283,132 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     }
   }
 
-  private void createExistingRtacHolding(String id, TypeEnum type) {
+  @Test
+  @Order(9)
+  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadCirculationResourceEvent(CREATE_LOAN_EVENT_PATH);
+      // When
+      sendLoanKafkaMessage(event, ITEM_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getDueDate()).isEqualTo("2026-01-12T23:59:59.000+00:00");
+      });
+    }
+  }
+
+  @Test
+  @Order(10)
+  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanUpdateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadCirculationResourceEvent(UPDATE_LOAN_EVENT_PATH);
+      // When
+      sendLoanKafkaMessage(event, ITEM_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getDueDate()).isEqualTo("2026-01-19T23:59:00.000+00:00");
+      });
+    }
+  }
+
+  @Test
+  @Order(11)
+  void shouldUpdateRtacHoldingRequestCount_withItemType_whenOpenRequestCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadCirculationResourceEvent(CREATE_REQUEST_EVENT_PATH);
+      // When
+      sendRequestKafkaMessage(event, ITEM_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getTotalHoldRequests()).isEqualTo(2);
+      });
+    }
+  }
+
+  @Test
+  @Order(12)
+  void shouldDecreaseRtacHoldingRequestCount_withItemType_whenClosedRequestUpdateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadCirculationResourceEvent(UPDATE_REQUEST_EVENT_PATH);
+      // When
+      sendRequestKafkaMessage(event, ITEM_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getTotalHoldRequests()).isEqualTo(0);
+      });
+    }
+  }
+
+  @Test
+  @Order(13)
+  void shouldCreateRtacHolding_withPieceType_whenPieceCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      var event = loadPieceResourceEvent(CREATE_PIECE_EVENT_PATH);
+      // When
+      sendPieceKafkaMessage(event, PIECE_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(PIECE_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo("Expected");
+      });
+    }
+  }
+
+  @Test
+  @Order(14)
+  void shouldUpdateRtacHolding_withPieceType_whenPieceUpdateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
+      var event = loadPieceResourceEvent(UPDATE_PIECE_EVENT_PATH);
+      // When
+      sendPieceKafkaMessage(event, PIECE_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(PIECE_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getVolume()).isEqualTo(NEW_VOLUME);
+      });
+    }
+  }
+
+  @Test
+  @Order(15)
+  void shouldDeleteRtacHolding_withPieceType_whenPieceDeleteEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
+      var event = loadPieceResourceEvent(DELETE_PIECE_EVENT_PATH);
+      // When
+      sendPieceKafkaMessage(event, PIECE_ID);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var count = holdingRepository.count();
+        assertThat(count).isEqualTo(ZERO_COUNT);
+      });
+    }
+  }
+
+  private void createExistingRtacHoldingEntity(String id, TypeEnum type) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
 
     RtacHoldingId rtacHoldingId = new RtacHoldingId();
@@ -274,38 +417,69 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHoldingId.setType(type);
     entity.setId(rtacHoldingId);
 
-    var rtacHolding = new RtacHolding();
-    rtacHolding.setCallNumber(KafkaMessageListenerIT.OLD_CALL_NUMBER);
-    rtacHolding.setId(id);
-    rtacHolding.setInstanceId(INSTANCE_ID);
-    rtacHolding.setHoldingsId(KafkaMessageListenerIT.HOLDINGS_ID);
-    rtacHolding.setType(type);
-    rtacHolding.setStatus(OLD_STATUS);
-    rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
-
-    var location = new RtacHoldingLocation();
-    location.setId(KafkaMessageListenerIT.OLD_LOCATION_ID);
-    rtacHolding.setLocation(location);
+    var rtacHolding = createRtacHolding(id, type);
 
     entity.setRtacHolding(rtacHolding);
     entity.setCreatedAt(Instant.now());
     holdingRepository.save(entity);
   }
 
-  private ResourceEvent loadResourceEvent(String path) throws JsonProcessingException {
+  private RtacHolding createRtacHolding(String id, TypeEnum type) {
+    var rtacHolding = new RtacHolding();
+    rtacHolding.setCallNumber(OLD_CALL_NUMBER);
+    rtacHolding.setId(id);
+    rtacHolding.setInstanceId(INSTANCE_ID);
+    rtacHolding.setHoldingsId(HOLDINGS_ID);
+    rtacHolding.setType(type);
+    rtacHolding.setStatus(OLD_STATUS);
+    rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
+    rtacHolding.setTotalHoldRequests(1);
+
+    var location = new RtacHoldingLocation();
+    location.setId(KafkaMessageListenerIT.OLD_LOCATION_ID);
+    rtacHolding.setLocation(location);
+    return rtacHolding;
+  }
+
+  private InventoryResourceEvent loadInventoryResourceEvent(String path) throws JsonProcessingException {
     var content = TestUtil.readFileContentFromResources(path);
-    return OBJECT_MAPPER.readValue(content, ResourceEvent.class);
-
+    return OBJECT_MAPPER.readValue(content, InventoryResourceEvent.class);
   }
 
-  private void sendHoldingsKafkaMessage(ResourceEvent event, String id) {
-    ProducerRecord<String, ResourceEvent> holdingsRecord = new ProducerRecord<>(HOLDINGS_TOPIC, id, event);
-    kafkaTemplate.send(holdingsRecord);
+  private CirculationResourceEvent loadCirculationResourceEvent(String path) throws JsonProcessingException {
+    var content = TestUtil.readFileContentFromResources(path);
+    return OBJECT_MAPPER.readValue(content, CirculationResourceEvent.class);
   }
 
-  private void sendItemKafkaMessage(ResourceEvent event, String id) {
-    ProducerRecord<String, ResourceEvent> itemRecord = new ProducerRecord<>(ITEM_TOPIC, id, event);
-    kafkaTemplate.send(itemRecord);
+  private PieceResourceEvent loadPieceResourceEvent(String path) throws JsonProcessingException {
+    var content = TestUtil.readFileContentFromResources(path);
+    return OBJECT_MAPPER.readValue(content, PieceResourceEvent.class);
+  }
+
+  private void sendHoldingsKafkaMessage(InventoryResourceEvent event, String id) {
+    ProducerRecord<String, InventoryResourceEvent> holdingsRecord = new ProducerRecord<>(HOLDINGS_TOPIC, id, event);
+    inventoryKafkaTemplate.send(holdingsRecord);
+  }
+
+  private void sendItemKafkaMessage(InventoryResourceEvent event, String id) {
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(ITEM_TOPIC, id, event);
+    inventoryKafkaTemplate.send(itemRecord);
+  }
+
+  private void sendLoanKafkaMessage(CirculationResourceEvent event, String id) {
+    var loanRecord = new ProducerRecord<>(LOAN_TOPIC, id, event);
+    circualationKafkaTemplate.send(loanRecord);
+  }
+
+  private void sendRequestKafkaMessage(CirculationResourceEvent event, String id) {
+    var requestRecord = new ProducerRecord<>(REQUEST_TOPIC, id, event);
+    circualationKafkaTemplate.send(requestRecord);
+  }
+
+  private void sendPieceKafkaMessage(PieceResourceEvent event, String id) {
+    var header = new RecordHeader("folio.tenantId", TEST_TENANT.getBytes());
+    var pieceRecord = new ProducerRecord<>(PIECE_TOPIC, 0, id, event, List.of(header));
+    pieceKafkaTemplate.send(pieceRecord);
   }
 
   private FolioExecutionContext folioExecutionContext() {

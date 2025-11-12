@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Circulation event body",
+  "properties": {
+    "id": {
+      "description": "Event id",
+      "type": "string"
+    },
+    "type": {
+      "description": "Resource event type",
+      "$ref": "circulationEventType.json"
+    },
+    "tenant": {
+      "description": "Tenant id",
+      "type": "string"
+    },
+    "timestamp": {
+      "description": "Event timestamp",
+      "type": "integer",
+      "format": "int64"
+    },
+    "data": {
+      "description": "Event data",
+      "type": "object",
+      "properties": {
+        "new": {
+          "description": "Record new fields",
+          "type": "object"
+        },
+        "old": {
+          "description": "Record old fields",
+          "type": "object"
+        }
+      }
+    }
+  }
+}

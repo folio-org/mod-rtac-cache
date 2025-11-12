@@ -1,15 +1,15 @@
 {
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "User event body",
+  "description": "Inventory event body",
   "properties": {
     "eventId": {
       "description": "Event id",
       "type": "string"
     },
     "type": {
-      "description": "users event operation type",
-      "$ref": "resourceEventType.json"
+      "description": "Resource event type",
+      "$ref": "inventoryEventType.json"
     },
     "tenant": {
       "description": "Tenant id",
@@ -21,11 +21,11 @@
       "format": "int64"
     },
     "new": {
-      "description": "record new fields",
+      "description": "Record new fields",
       "type": "object"
     },
     "old": {
-      "description": "record old fields",
+      "description": "Record old fields",
       "type": "object"
     }
   }

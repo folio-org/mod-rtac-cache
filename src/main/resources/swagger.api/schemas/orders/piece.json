@@ -59,7 +59,7 @@
       "type": "boolean",
       "default": false
     },
-    "enumeration": {
+      "enumeration": {
       "type": "string",
       "description": "Enumeration is the descriptive information for the numbering scheme of a serial. Synchronized with inventory item."
     },
