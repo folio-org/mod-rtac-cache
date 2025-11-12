@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "description": "Real Time Availability Check (RTAC) holding summary details",
+  "additionalProperties": false,
+  "properties": {
+    "instanceId": {
+      "type": "string",
+      "description": "The FOLIO instance id"
+    },
+    "hasVolumes": {
+      "type": "boolean",
+      "description": "Indicates if the holding has volume information"
+    },
+    "locationStatus": {
+      "type": "array",
+      "description": "A summary of all statuses organized by library and location ids",
+      "items": {
+        "$ref": "locationStatus.json"
+      }
+    }
+  },
+  "required": [
+    "instanceId",
+    "hasVolumes"
+  ]
+}

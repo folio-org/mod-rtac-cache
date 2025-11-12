@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Collection of holdings",
+  "properties": {
+    "instanceId": {
+      "$ref": "uuid.json"
+    },
+    "holdings": {
+      "description": "Collection of holdings",
+      "type": "array",
+      "items": {
+        "$ref": "rtacHolding.json"
+      }
+    },
+    "totalRecords": {
+      "description": "Total number of records available",
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "holdings",
+    "instanceId",
+    "totalRecords"
+  ]
+}

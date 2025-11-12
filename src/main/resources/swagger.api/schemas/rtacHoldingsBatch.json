@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "description": "Batch holdings response",
+  "properties": {
+    "holdings": {
+      "description": "Real Time Availability Check (RTAC) holding details",
+      "type": "array",
+      "items": {
+        "$ref": "rtacHoldingsSummary.json"
+      }
+    },
+    "errors": {
+      "description": "Errors",
+      "type": "array",
+      "items": {
+        "$ref": "error.json"
+      },
+      "minimum": 0
+    }
+  },
+  "additionalItems": false,
+  "additionalProperties": false
+}

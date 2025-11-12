@@ -86,6 +86,10 @@
       <version>${spring-kafka.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
+    </dependency>
+      <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
     </dependency>
@@ -264,7 +268,7 @@
               <output>${project.build.directory}/generated-sources</output>
               <generatorName>spring</generatorName>
               <modelPackage>${project.groupId}.rtaccache.domain.dto</modelPackage>
-              <apiPackage>${project.groupId}.rtaccache.rest.resource</apiPackage>
+              <apiPackage>${project.groupId}.rtac.rest.resource</apiPackage>
               <generateApis>true</generateApis>
               <generateApiTests>true</generateApiTests>
               <generateApiDocumentation>true</generateApiDocumentation>
@@ -279,6 +283,7 @@
                 <interfaceOnly>true</interfaceOnly>
                 <useSpringBoot3>true</useSpringBoot3>
                 <useTags>true</useTags>
+                <useUUIDs>true</useUUIDs>
               </configOptions>
             </configuration>
           </execution>
