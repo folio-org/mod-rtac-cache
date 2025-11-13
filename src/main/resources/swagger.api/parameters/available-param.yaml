@@ -1,0 +1,6 @@
+name: available
+in: query
+description: Filter by holdings that are available
+required: false
+schema:
+  type: boolean
