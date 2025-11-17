@@ -19,10 +19,18 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   @Query(value = """
       SELECT * FROM rtac_holding h
-      WHERE (cast(h.rtac_holding_json ->> 'volume' as text) ILIKE '%' || :query || '%'
-      OR cast(h.rtac_holding_json ->> 'callNumber' as text) ILIKE '%' || :query || '%'
-      OR cast(h.rtac_holding_json -> 'location' ->> 'name' as text) ILIKE '%' || :query || '%'
-      OR cast(h.rtac_holding_json -> 'library' ->> 'name' as text) ILIKE '%' || :query || '%')
+      WHERE
+      (:query is null OR
+        (SELECT bool_and(exists) FROM (
+          SELECT (
+            cast(h.rtac_holding_json ->> 'volume' as text) ILIKE '%' || term || '%' OR
+            cast(h.rtac_holding_json ->> 'callNumber' as text) ILIKE '%' || term || '%' OR
+            cast(h.rtac_holding_json -> 'location' ->> 'name' as text) ILIKE '%' || term || '%' OR
+            cast(h.rtac_holding_json -> 'library' ->> 'name' as text) ILIKE '%' || term || '%'
+          ) as exists
+          FROM unnest(string_to_array(:query, ' ')) as term
+        ) as terms)
+      )
       AND (:available is null OR cast(h.rtac_holding_json ->> 'status' as text) = 'Available')
       """, nativeQuery = true)
   Page<RtacHoldingEntity> search(@Param("query") String query, @Param("available") Boolean available, Pageable pageable);
