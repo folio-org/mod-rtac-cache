@@ -76,15 +76,15 @@ folio:
       loan:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.circulation\.loan
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-loan-group
       request:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.circulation\.request
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-request-group
       piece:
         concurrency: 1
         topic-pattern: ${folio.environment}\.Default\.ALL\.ACQ_PIECE_CHANGED
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-piece-group
 management:
   endpoints:
     web:

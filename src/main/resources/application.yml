@@ -84,15 +84,15 @@ folio:
       loan:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.circulation\.loan}
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-loan-group
       request:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.circulation\.request}
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-request-group
       piece:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.Default\.ALL\.ACQ_PIECE_CHANGED}
-        group-id: ${folio.environment}-mod-rtac-cache-library-group
+        group-id: ${folio.environment}-mod-rtac-cache-piece-group
   system-user:
     enabled: ${SYSTEM_USER_ENABLED:false}
     username: ${SYSTEM_USER_USERNAME:mod-rtac-cache}
