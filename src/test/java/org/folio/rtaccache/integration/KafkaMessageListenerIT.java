@@ -82,7 +82,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String NEW_MATERIAL_TYPE_NAME = "book";
   private static final String NEW_BARCODE = "1232323232";
   private static final String NEW_VOLUME = "(Test)";
-  private static final long ZERO_COUNT = 0L;
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -217,7 +216,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
-        assertThat(count).isEqualTo(ZERO_COUNT);
+        assertThat(count).isZero();
       });
     }
   }
@@ -278,7 +277,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
-        assertThat(count).isEqualTo(ZERO_COUNT);
+        assertThat(count).isZero();
       });
     }
   }
@@ -350,7 +349,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getTotalHoldRequests()).isEqualTo(0);
+        assertThat(holding.get().getRtacHolding().getTotalHoldRequests()).isZero();
       });
     }
   }
@@ -403,7 +402,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
-        assertThat(count).isEqualTo(ZERO_COUNT);
+        assertThat(count).isZero();
       });
     }
   }

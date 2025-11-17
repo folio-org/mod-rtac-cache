@@ -1,6 +1,5 @@
 package org.folio.rtaccache.service.handler.impl;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;

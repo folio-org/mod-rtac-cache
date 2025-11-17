@@ -30,14 +30,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class HoldingsUpdateEventHandlerTest {
 
-  private static final String TENANT = "test";
   private static final String INSTANCE_ID = UUID.randomUUID().toString();
   private static final String HOLDINGS_ID = UUID.randomUUID().toString();
-  private static final String ITEM_ID = UUID.randomUUID().toString();
-  private static final String PIECE_ID = UUID.randomUUID().toString();
 
   @InjectMocks
-  HoldingsUpdateEventHandler service;
+  HoldingsUpdateEventHandler handler;
 
   @Mock
   RtacHoldingRepository holdingRepository;
@@ -48,7 +45,7 @@ class HoldingsUpdateEventHandlerTest {
 
   @BeforeEach
   void setUp() {
-    service.init();
+    handler.init();
   }
 
   @Test
@@ -63,7 +60,7 @@ class HoldingsUpdateEventHandlerTest {
     when(holdingRepository.findAllByHoldingsId(HOLDINGS_ID)).thenReturn(List.of(existing));
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID));
 
-    service.handle(event);
+    handler.handle(event);
 
     verify(holdingRepository).saveAll(anyList());
   }
@@ -74,7 +71,7 @@ class HoldingsUpdateEventHandlerTest {
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
     when(holdingRepository.findAllByHoldingsId(HOLDINGS_ID)).thenReturn(Collections.emptyList());
 
-    service.handle(event);
+    handler.handle(event);
 
     verify(holdingRepository, never()).saveAll(anyList());
   }

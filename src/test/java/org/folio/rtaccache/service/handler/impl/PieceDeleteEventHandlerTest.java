@@ -9,7 +9,6 @@ import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,8 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class PieceDeleteEventHandlerTest {
 
-  private static final String INSTANCE_ID = UUID.randomUUID().toString();
-  private static final String HOLDINGS_ID = UUID.randomUUID().toString();
   private static final String PIECE_ID = UUID.randomUUID().toString();
 
   @InjectMocks
@@ -28,8 +25,6 @@ class PieceDeleteEventHandlerTest {
 
   @Mock
   RtacHoldingRepository holdingRepository;
-  @Mock
-  RtacHoldingMappingService mappingService;
   @Mock
   RtacHoldingEntity rtacHoldingEntity;
 
