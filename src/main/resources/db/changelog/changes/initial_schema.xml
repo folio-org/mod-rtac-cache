@@ -36,4 +36,18 @@
       <dropTable tableName="rtac_holding"/>
     </rollback>
   </changeSet>
+
+  <changeSet id="create-rtac-holding-gin-index-001" author="folio">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists indexName="idx_rtac_holding_json" tableName="rtac_holding"/>
+      </not>
+    </preConditions>
+    <sql>
+      CREATE INDEX idx_rtac_holding_json ON rtac_holding USING gin (rtac_holding_json);
+    </sql>
+    <rollback>
+      <dropIndex indexName="idx_rtac_holding_json" tableName="rtac_holding"/>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>

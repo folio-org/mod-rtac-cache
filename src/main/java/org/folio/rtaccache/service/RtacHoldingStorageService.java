@@ -35,6 +35,11 @@ public class RtacHoldingStorageService {
   private final RtacHoldingRepository rtacHoldingRepository;
   private final ObjectMapper objectMapper;
 
+  public Page<RtacHolding> searchRtacHoldings(String query, Boolean available, Pageable pageable) {
+    return rtacHoldingRepository.search(query, available, pageable)
+      .map(RtacHoldingEntity::getRtacHolding);
+  }
+
   public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
     return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), pageable)
       .map(RtacHoldingEntity::getRtacHolding);

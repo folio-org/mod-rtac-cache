@@ -17,6 +17,16 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId> {
 
+  @Query(value = """
+      SELECT * FROM rtac_holding h
+      WHERE (cast(h.rtac_holding_json ->> 'volume' as text) ILIKE '%' || :query || '%'
+      OR cast(h.rtac_holding_json ->> 'callNumber' as text) ILIKE '%' || :query || '%'
+      OR cast(h.rtac_holding_json -> 'location' ->> 'name' as text) ILIKE '%' || :query || '%'
+      OR cast(h.rtac_holding_json -> 'library' ->> 'name' as text) ILIKE '%' || :query || '%')
+      AND (:available is null OR cast(h.rtac_holding_json ->> 'status' as text) = 'Available')
+      """, nativeQuery = true)
+  Page<RtacHoldingEntity> search(@Param("query") String query, @Param("available") Boolean available, Pageable pageable);
+
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
   Optional<RtacHoldingEntity> findByIdId(UUID id);
