@@ -32,11 +32,11 @@ public class RtacCacheController implements RtacApi {
 
 
   @Override
-  public ResponseEntity<RtacHoldings> searchRtacCacheHoldings(String query, Boolean available, Integer offset, Integer limit) {
+  public ResponseEntity<RtacHoldings> searchRtacCacheHoldings(UUID instanceId, String query, Boolean available, Integer offset, Integer limit) {
     log.info("Received request to search RTAC holdings by query: {}, available: {}, offset: {}, limit: {}", query, available, offset, limit);
 
     Page<RtacHolding> pagedRtacHoldings =
-      rtacHoldingStorageService.searchRtacHoldings(query, available, OffsetRequest.of(offset, limit));
+      rtacHoldingStorageService.searchRtacHoldings(instanceId, query, available, OffsetRequest.of(offset, limit));
 
     var rtacHoldings = new RtacHoldings();
     rtacHoldings.setHoldings(new ArrayList<>(pagedRtacHoldings.getContent()));

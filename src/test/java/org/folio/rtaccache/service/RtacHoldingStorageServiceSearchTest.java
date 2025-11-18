@@ -36,54 +36,61 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     rtacHoldingRepository.deleteAll();
   }
 
-  private RtacHoldingEntity createRtacHoldingEntity(String volume, String callNumber, String locationName, String libraryName, String status) {
-    final var rtacHolding = new RtacHolding().status(status)
+  private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {
+    final var rtacHolding = new RtacHolding()
+      .instanceId(instanceId.toString())
+      .status(status)
       .volume(volume)
       .callNumber(callNumber)
       .location(new RtacHoldingLocation().name(locationName))
       .library(new RtacHoldingLibrary().name(libraryName));
-    return new RtacHoldingEntity(new RtacHoldingId(UUID.randomUUID(), TypeEnum.ITEM, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), rtacHolding, Instant.now());
   }
 
   @Test
   void testSearchRtacHoldings() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
 
-    rtacHoldingRepository.save(createRtacHoldingEntity("vol1", "call1", "loc1", "lib1", "Available"));
-    rtacHoldingRepository.save(createRtacHoldingEntity("vol2", "call2", "loc2", "lib2", "Checked out"));
-    rtacHoldingRepository.save(createRtacHoldingEntity("vol3", "call3", "loc3", "lib3", "Available"));
+    var instanceId1 = UUID.randomUUID();
+    var instanceId2 = UUID.randomUUID();
 
-    Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings("vol1 call1", null, OffsetRequest.of(0, 10));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol1", "call1", "loc1", "lib1", "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol2", "call2", "loc2", "lib2", "Checked out"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId2,"vol3", "call3", "loc3", "lib3", "Available"));
+
+    Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "vol1 call1", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getVolume()).isEqualTo("vol1");
+    assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId1.toString());
 
-    page = rtacHoldingStorageService.searchRtacHoldings("call2 loc2", null, OffsetRequest.of(0, 10));
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "call2 loc2", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call2");
     assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc2");
 
-    page = rtacHoldingStorageService.searchRtacHoldings("loc2 call2", null, OffsetRequest.of(0, 10)); // Out of order
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"loc2 call2", null, OffsetRequest.of(0, 10)); // Out of order
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call2");
     assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc2");
 
-    page = rtacHoldingStorageService.searchRtacHoldings("loc3 lib3", null, OffsetRequest.of(0, 10));
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId2,"loc3 lib3", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc3");
     assertThat(page.getContent().getFirst().getLibrary().getName()).isEqualTo("lib3");
+    assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId2.toString());
 
-    page = rtacHoldingStorageService.searchRtacHoldings("lib1 vol1", null, OffsetRequest.of(0, 10));
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"lib1 vol1", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getLibrary().getName()).isEqualTo("lib1");
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call1");
 
-    page = rtacHoldingStorageService.searchRtacHoldings("vol", null, OffsetRequest.of(0, 10));
-    assertThat(page.getTotalElements()).isEqualTo(3);
-
-    page = rtacHoldingStorageService.searchRtacHoldings("vol", true, OffsetRequest.of(0, 10));
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "vol", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(2);
 
-    page = rtacHoldingStorageService.searchRtacHoldings("vol1 call2", null, OffsetRequest.of(0, 10));
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "vol", true, OffsetRequest.of(0, 10));
+    assertThat(page.getTotalElements()).isEqualTo(1);
+
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"vol1 call2", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(0);
   }
 }

@@ -20,6 +20,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = """
       SELECT * FROM rtac_holding h
       WHERE
+      h.instance_id = :instanceId AND
       (:query is null OR
         (SELECT bool_and(exists) FROM (
           SELECT (
@@ -33,7 +34,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
       )
       AND (:available is null OR cast(h.rtac_holding_json ->> 'status' as text) = 'Available')
       """, nativeQuery = true)
-  Page<RtacHoldingEntity> search(@Param("query") String query, @Param("available") Boolean available, Pageable pageable);
+  Page<RtacHoldingEntity> search(@Param("instanceId") UUID instanceId, @Param("query") String query, @Param("available") Boolean available, Pageable pageable);
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
