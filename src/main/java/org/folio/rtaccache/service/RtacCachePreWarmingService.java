@@ -31,41 +31,43 @@ public class RtacCachePreWarmingService {
   private final AsyncTaskExecutor taskExecutor;
   private static final int PRE_WARM_BATCH_SIZE = 30;
 
-  public RtacPreWarmingJob getPreWarmJobStatus(UUID jobId) {
+  public RtacPreWarmingJob getPreWarmingJobStatus(UUID jobId) {
     var preWarmJob = rtacPreWarmingJobRepository.findById(jobId)
       .orElseThrow(
         () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "RTAC Pre-Warming Job not found for id: " + jobId));
     return toResponse(preWarmJob);
   }
 
-  public Page<RtacPreWarmingJob> getPreWarmJobs(OffsetRequest offsetRequest) {
+  public Page<RtacPreWarmingJob> getPreWarmingJobs(OffsetRequest offsetRequest) {
     var jobEntitiesPage = rtacPreWarmingJobRepository.findAllByOrderByStartDateDesc(offsetRequest);
     return jobEntitiesPage.map(this::toResponse);
   }
 
-  public RtacPreWarmingJob submitPreWarmJob(List<UUID> instanceIds) {
+  public RtacPreWarmingJob submitPreWarmingJob(List<UUID> instanceIds) {
     log.info("Submitting RTAC cache pre-warming job for instances with instanceId count: {}", instanceIds.size());
     var preWarmJob = new RtacPreWarmingJobEntity();
     preWarmJob.setId(UUID.randomUUID());
     preWarmJob.setStatus(JobStatus.RUNNING);
     rtacPreWarmingJobRepository.save(preWarmJob);
-    taskExecutor.submit(() -> {
-      preWarmRtacCache(instanceIds)
-        .whenCompleteAsync((r, ex) -> {
-          if (ex != null) {
-            log.error("RTAC cache pre-warming job {} failed. Cause: {}", preWarmJob.getId(), ex.getMessage(), ex);
-            preWarmJob.setStatus(JobStatus.FAILED);
-            preWarmJob.setErrorMessage(ex.getCause().getMessage());
-          } else {
-            log.info("RTAC cache pre-warming job {} completed successfully.", preWarmJob.getId());
-            preWarmJob.setStatus(JobStatus.COMPLETED);
-          }
-          preWarmJob.setEndDate(Instant.now());
-          rtacPreWarmingJobRepository.save(preWarmJob);
-        }, taskExecutor);
-    });
+    taskExecutor.submit(() -> startPreWarmingJob(preWarmJob, instanceIds));
 
     return toResponse(preWarmJob);
+  }
+
+  private void startPreWarmingJob(RtacPreWarmingJobEntity preWarmJob, List<UUID> instanceIds) {
+    preWarmRtacCache(instanceIds)
+      .whenCompleteAsync((r, ex) -> {
+        if (ex != null) {
+          log.error("RTAC cache pre-warming job {} failed. Cause: {}", preWarmJob.getId(), ex.getMessage(), ex);
+          preWarmJob.setStatus(JobStatus.FAILED);
+          preWarmJob.setErrorMessage(ex.getCause().getMessage());
+        } else {
+          log.info("RTAC cache pre-warming job {} completed successfully.", preWarmJob.getId());
+          preWarmJob.setStatus(JobStatus.COMPLETED);
+        }
+        preWarmJob.setEndDate(Instant.now());
+        rtacPreWarmingJobRepository.save(preWarmJob);
+      }, taskExecutor);
   }
 
   private CompletableFuture<Void> preWarmRtacCache(List<UUID> instanceIds) {

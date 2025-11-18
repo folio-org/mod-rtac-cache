@@ -15,6 +15,7 @@ public class SameThreadAsyncTaskExecutor implements AsyncTaskExecutor {
   }
 
   @Override
+  @Deprecated
   public void execute(Runnable task, long startTimeout) throws TaskRejectedException {
     task.run();
   }

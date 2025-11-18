@@ -71,17 +71,17 @@ public class RtacCacheController implements RtacApi {
   @Override
   public ResponseEntity<RtacPreWarmingJob> postRtacCachePreWarmingJob(
     RtacSubmitPreWarming rtacSubmitPrewarmingRequest) {
-    return ResponseEntity.ok(rtacCachePreWarmingService.submitPreWarmJob(rtacSubmitPrewarmingRequest.getInstanceIds()));
+    return ResponseEntity.ok(rtacCachePreWarmingService.submitPreWarmingJob(rtacSubmitPrewarmingRequest.getInstanceIds()));
   }
 
   @Override
   public ResponseEntity<RtacPreWarmingJob> getRtacCachePreWarmingJob(UUID id) {
-    return ResponseEntity.ok(rtacCachePreWarmingService.getPreWarmJobStatus(id));
+    return ResponseEntity.ok(rtacCachePreWarmingService.getPreWarmingJobStatus(id));
   }
 
   @Override
   public ResponseEntity<RtacPreWarmingJobs> getRtacCachePreWarmingJobs(Integer offset, Integer limit) {
-    var jobs = rtacCachePreWarmingService.getPreWarmJobs(OffsetRequest.of(offset, limit));
+    var jobs = rtacCachePreWarmingService.getPreWarmingJobs(OffsetRequest.of(offset, limit));
     var response = new  RtacPreWarmingJobs();
     response.setJobs(jobs.getContent());
     response.setTotalRecords((int) jobs.getTotalElements());

@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
@@ -51,7 +50,7 @@ class RtacCachePreWarmingServiceTest {
   private RtacCachePreWarmingService service;
 
   @Test
-  void getPreWarmJobStatus_found() {
+  void getPreWarmingJobStatus_found() {
     var id = UUID.randomUUID();
     var entity = new RtacPreWarmingJobEntity();
     entity.setId(id);
@@ -59,7 +58,7 @@ class RtacCachePreWarmingServiceTest {
     entity.setEndDate(Instant.now());
     when(rtacPreWarmingJobRepository.findById(id)).thenReturn(Optional.of(entity));
 
-    RtacPreWarmingJob dto = service.getPreWarmJobStatus(id);
+    RtacPreWarmingJob dto = service.getPreWarmingJobStatus(id);
 
     assertEquals(id, dto.getId());
     assertEquals(RtacPreWarmingJob.StatusEnum.COMPLETED, dto.getStatus());
@@ -67,15 +66,15 @@ class RtacCachePreWarmingServiceTest {
   }
 
   @Test
-  void getPreWarmJobStatus_notFound() {
+  void getPreWarmingJobStatus_notFound() {
     var id = UUID.randomUUID();
     when(rtacPreWarmingJobRepository.findById(id)).thenReturn(Optional.empty());
-    ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.getPreWarmJobStatus(id));
+    ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> service.getPreWarmingJobStatus(id));
     assertEquals(404, ex.getStatusCode().value());
   }
 
   @Test
-  void getPreWarmJobs_mapping() {
+  void getPreWarmingJobs_mapping() {
     var e1 = new RtacPreWarmingJobEntity();
     e1.setId(UUID.randomUUID());
     e1.setStatus(JobStatus.FAILED);
@@ -86,7 +85,7 @@ class RtacCachePreWarmingServiceTest {
     when(rtacPreWarmingJobRepository.findAllByOrderByStartDateDesc(any()))
       .thenReturn(new PageImpl<>(List.of(e1, e2)));
 
-    var page = service.getPreWarmJobs(new OffsetRequest(0, 10));
+    var page = service.getPreWarmingJobs(new OffsetRequest(0, 10));
 
     assertEquals(2, page.getTotalElements());
     assertEquals(RtacPreWarmingJob.StatusEnum.FAILED, page.getContent().get(0).getStatus());
@@ -94,12 +93,12 @@ class RtacCachePreWarmingServiceTest {
   }
 
   @Test
-  void submitPreWarmJob_success() throws InterruptedException {
+  void submitPreWarmingJob_success() {
     when(rtacCacheGenerationService.generateRtacCache(anyString()))
       .thenReturn(CompletableFuture.completedFuture(null));
     when(rtacPreWarmingJobRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    var result = service.submitPreWarmJob(List.of(UUID.randomUUID(), UUID.randomUUID()));
+    var result = service.submitPreWarmingJob(List.of(UUID.randomUUID(), UUID.randomUUID()));
 
     assertNotNull(result.getId());
     RtacPreWarmingJobEntity captured = captureJobEntity(result.getId());
@@ -111,16 +110,16 @@ class RtacCachePreWarmingServiceTest {
   }
 
   @Test
-  void submitPreWarmJob_failureRollback() throws InterruptedException {
+  void submitPreWarmingJob_failureRollback() {
     UUID successInstanceId = UUID.randomUUID();
     UUID failedInstanceId = UUID.randomUUID();
-    when(rtacCacheGenerationService.generateRtacCache(eq(successInstanceId.toString())))
+    when(rtacCacheGenerationService.generateRtacCache(successInstanceId.toString()))
       .thenReturn(CompletableFuture.completedFuture(null));
-    when(rtacCacheGenerationService.generateRtacCache(eq(failedInstanceId.toString())))
+    when(rtacCacheGenerationService.generateRtacCache(failedInstanceId.toString()))
       .thenReturn(CompletableFuture.failedFuture(new RuntimeException("failed")));
     when(rtacPreWarmingJobRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-    var result = service.submitPreWarmJob(List.of(successInstanceId, failedInstanceId));
+    var result = service.submitPreWarmingJob(List.of(successInstanceId, failedInstanceId));
 
     RtacPreWarmingJobEntity job = captureJobEntity(result.getId());
 
