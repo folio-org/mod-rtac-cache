@@ -1,0 +1,21 @@
+{
+  "title": "RtacPreWarmingJobs",
+  "type": "object",
+  "description": "Represents a pre-warming job statuses and metadata.",
+  "properties": {
+    "jobs": {
+      "description": "List of pre-warming jobs.",
+      "type": "array",
+      "items": {
+        "$ref": "rtacPreWarmingJob.json"
+      }
+    },
+    "totalRecords": {
+      "description": "Total number of pre-warming jobs.",
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["totalRecords"],
+  "additionalProperties": false
+}

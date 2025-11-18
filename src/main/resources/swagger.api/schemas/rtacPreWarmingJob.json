@@ -1,0 +1,33 @@
+{
+  "title": "RtacPreWarmingJob",
+  "type": "object",
+  "description": "Represents a pre-warming job status and metadata.",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Job unique identifier."
+    },
+    "startDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Job start timestamp (UTC)."
+    },
+    "endDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Job end timestamp (UTC) if completed or failed."
+    },
+    "status": {
+      "type": "string",
+      "description": "Current job status.",
+      "enum": ["RUNNING", "COMPLETED", "FAILED"]
+    },
+    "errorMessage": {
+      "type": "string",
+      "description": "Error details if job failed."
+    }
+  },
+  "required": ["id", "startDate", "status", "minItemsCount"],
+  "additionalProperties": false
+}
