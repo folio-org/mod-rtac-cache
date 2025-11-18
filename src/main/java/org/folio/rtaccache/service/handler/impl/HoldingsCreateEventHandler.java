@@ -30,13 +30,16 @@ public class HoldingsCreateEventHandler implements InventoryEventHandler {
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
-    var rtacHoldingId = createRtacHoldingIdFromHoldings(holdingsData);
-    var rtacHolding = rtacHoldingMappingService.mapFrom(holdingsData);
-    var rtacHoldingEntity = new RtacHoldingEntity();
-    rtacHoldingEntity.setId(rtacHoldingId);
-    rtacHoldingEntity.setCreatedAt(Instant.now());
-    rtacHoldingEntity.setRtacHolding(rtacHolding);
-    holdingRepository.save(rtacHoldingEntity);
+    var instanceId = UUID.fromString(holdingsData.getInstanceId());
+    if (holdingRepository.countByIdInstanceId(instanceId) > 0) {
+      var rtacHoldingId = createRtacHoldingIdFromHoldings(holdingsData);
+      var rtacHolding = rtacHoldingMappingService.mapFrom(holdingsData);
+      var rtacHoldingEntity = new RtacHoldingEntity();
+      rtacHoldingEntity.setId(rtacHoldingId);
+      rtacHoldingEntity.setCreatedAt(Instant.now());
+      rtacHoldingEntity.setRtacHolding(rtacHolding);
+      holdingRepository.save(rtacHoldingEntity);
+    }
   }
 
   private RtacHoldingId createRtacHoldingIdFromHoldings(HoldingsRecord holdingsData) {

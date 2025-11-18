@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,14 +38,27 @@ class HoldingsCreateEventHandlerTest {
   ResourceEventUtil resourceEventUtil;
 
   @Test
-  void holdingsCreate_shouldSaveEntity() {
+  void holdingsCreate_shouldSaveNewEntity_whenRecordWithTheSameInstanceIdExists() {
     var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(INSTANCE_ID))).thenReturn(1);
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID));
+
 
     handler.handle(event);
 
     verify(holdingRepository).save(any(RtacHoldingEntity.class));
+  }
+
+  @Test
+  void holdingsCreate_shouldNotSaveNewEntity_whenNoRecordWithTheSameInstanceIdExists() {
+    var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(INSTANCE_ID))).thenReturn(0);
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {

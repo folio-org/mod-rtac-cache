@@ -50,7 +50,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String REQUEST_TOPIC = "test.ALL.circulation.request";
   private static final String PIECE_TOPIC = "test.Default.ALL.ACQ_PIECE_CHANGED";
 
-  private static final String HOLDINGS_ID = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
+  private static final String HOLDINGS_ID_1 = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
+  private static final String HOLDINGS_ID_2 = "48525495-05b0-488e-a0c5-0f3ec5c7a0f2";
   private static final String ITEM_ID = "522d41d3-0e04-416d-9f52-90ac67685a78";
   private static final String PIECE_ID = "d892d70b-96be-4e5b-ab11-05839eb5df40";
   private static final String INSTANCE_ID = "843b368d-411c-4dce-bd64-99afc53f508d";
@@ -112,15 +113,16 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
       var event = loadInventoryResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING);
 
       // When
-      sendHoldingsKafkaMessage(event, HOLDINGS_ID);
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
 
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var holding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID));
+        var holding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID_1));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getId()).isEqualTo(HOLDINGS_ID);
+        assertThat(holding.get().getRtacHolding().getId()).isEqualTo(HOLDINGS_ID_1);
         assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.HOLDING);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATEMENT);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
@@ -137,13 +139,13 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
-      sendHoldingsKafkaMessage(event, HOLDINGS_ID);
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var holding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID));
+        var holding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID_1));
         assertThat(holding).isPresent();
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATEMENT);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
@@ -164,7 +166,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
-      sendHoldingsKafkaMessage(event, HOLDINGS_ID);
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
@@ -187,7 +189,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
       // When
-      sendHoldingsKafkaMessage(event, HOLDINGS_ID);
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(PIECE_ID));
@@ -208,11 +210,11 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(DELETE_HOLDINGS_EVENT_PATH);
       // When
-      sendHoldingsKafkaMessage(event, HOLDINGS_ID);
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var count = holdingRepository.count();
@@ -226,7 +228,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
       // When
       sendItemKafkaMessage(event, ITEM_ID);
@@ -359,7 +361,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldCreateRtacHolding_withPieceType_whenPieceCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      createExistingRtacHoldingEntity(HOLDINGS_ID, TypeEnum.HOLDING);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadPieceResourceEvent(CREATE_PIECE_EVENT_PATH);
       // When
       sendPieceKafkaMessage(event, PIECE_ID);
@@ -428,7 +430,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHolding.setCallNumber(OLD_CALL_NUMBER);
     rtacHolding.setId(id);
     rtacHolding.setInstanceId(INSTANCE_ID);
-    rtacHolding.setHoldingsId(HOLDINGS_ID);
+    rtacHolding.setHoldingsId(HOLDINGS_ID_1);
     rtacHolding.setType(type);
     rtacHolding.setStatus(OLD_STATUS);
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
