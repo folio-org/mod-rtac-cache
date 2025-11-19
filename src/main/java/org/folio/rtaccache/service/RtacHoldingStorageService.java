@@ -1,5 +1,6 @@
 package org.folio.rtaccache.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -18,13 +19,13 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.exception.RtacDataProcessingException;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -33,9 +34,21 @@ public class RtacHoldingStorageService {
   private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class);
 
   private final RtacHoldingRepository rtacHoldingRepository;
+  private final RtacCacheGenerationService rtacCacheGenerationService;
   private final ObjectMapper objectMapper;
 
   public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
+    if (rtacHoldingRepository.countByIdInstanceId(UUID.fromString(instanceId)) == 0) {
+      var future = rtacCacheGenerationService.generateRtacCache(instanceId);
+      try {
+        future.join();
+      } catch (Exception ex) {
+        log.error("RTAC cache generation failed for instanceId: {}", instanceId, ex);
+        rtacHoldingRepository.deleteAllByIdInstanceId(UUID.fromString(instanceId));
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+          String.format("RTAC cache generation failed for instanceId: %s", instanceId));
+      }
+    }
     return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }

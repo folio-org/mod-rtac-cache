@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -22,10 +23,12 @@ import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.service.RtacCacheGenerationService;
 import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,6 +38,8 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   private MockMvc mockMvc;
   @Autowired
   private RtacHoldingRepository rtacHoldingRepository;
+  @MockitoBean
+  private RtacCacheGenerationService rtacCacheGenerationService;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
 
@@ -70,9 +75,9 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   @Test
   void holdingsByInstanceId_notFound() throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
-
     var instanceId = UUID.randomUUID();
 
+    when(rtacCacheGenerationService.generateRtacCache(instanceId.toString())).thenReturn(CompletableFuture.completedFuture(null));
     var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
       .andExpect(status().isOk())

@@ -9,12 +9,36 @@
         {
           "methods": [ "GET" ],
           "pathPattern": "/rtac-cache/{id}",
-          "permissionsRequired": [ "rtac-cache.collection.get" ]
+          "permissionsRequired": [ "rtac-cache.collection.get" ],
+          "modulePermissions":[
+            "inventory-storage.items.retrieve.collection.post",
+            "inventory-storage.holdings.retrieve.collection.post",
+            "inventory-storage.location-units.libraries.collection.get",
+            "inventory-storage.locations.collection.get",
+            "inventory-storage.material-types.collection.get",
+            "inventory-storage.loan-types.collection.get",
+            "inventory-storage.holdings-note-types.collection.get",
+            "circulation-storage.loans.collection.get",
+            "circulation.requests.collection.get",
+            "orders.pieces.collection.get"
+          ]
         },
         {
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/batch",
-          "permissionsRequired": [ "rtac-cache.collection.post" ]
+          "permissionsRequired": [ "rtac-cache.collection.post" ],
+          "modulePermissions":[
+            "inventory-storage.items.retrieve.collection.post",
+            "inventory-storage.holdings.retrieve.collection.post",
+            "inventory-storage.location-units.libraries.collection.get",
+            "inventory-storage.locations.collection.get",
+            "inventory-storage.material-types.collection.get",
+            "inventory-storage.loan-types.collection.get",
+            "inventory-storage.holdings-note-types.collection.get",
+            "circulation-storage.loans.collection.get",
+            "circulation.requests.collection.get",
+            "orders.pieces.collection.get"
+          ]
         }
       ]
     },
@@ -49,7 +73,60 @@
       "description": "All RTAC cache permissions"
     }
   ],
-  "requires": [],
+  "requires": [
+    {
+      "id": "item-storage",
+      "version": "10.2"
+    },
+    {
+      "id": "holdings-storage",
+      "version": "8.0"
+    },
+    {
+      "id": "loan-types",
+      "version": "2.3"
+    },
+    {
+      "id": "material-types",
+      "version": "2.2"
+    },
+    {
+      "id": "location-units",
+      "version": "2.0"
+    },
+    {
+      "id": "locations",
+      "version": "3.1"
+    },
+    {
+      "id": "holdings-note-types",
+      "version": "1.0"
+    },
+    {
+      "id": "loan-storage",
+      "version": "7.1 7.3"
+    },
+    {
+      "id": "circulation",
+      "version": "14.2 14.6"
+    },
+    {
+      "id": "pieces",
+      "version": "3.0 3.1"
+    },
+    {
+      "id": "user-tenants",
+      "version": "1.0"
+    },
+    {
+      "id": "search-facets",
+      "version": "1.0"
+    },
+    {
+      "id": "settings",
+      "version": "1.1 1.2"
+    }
+  ],
   "metadata": {
     "user": {
       "type": "system",
