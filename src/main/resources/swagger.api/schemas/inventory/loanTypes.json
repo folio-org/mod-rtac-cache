@@ -8,7 +8,6 @@
       "id": "loantype",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "loanType.json"
       }
     },

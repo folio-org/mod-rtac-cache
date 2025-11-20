@@ -66,9 +66,7 @@
       "type": "boolean"
     },
     "metadata": {
-      "type": "object",
-      "$ref": "../metadata.json",
-      "readonly": true
+      "$ref": "../metadata.json"
     }
   },
   "required": [

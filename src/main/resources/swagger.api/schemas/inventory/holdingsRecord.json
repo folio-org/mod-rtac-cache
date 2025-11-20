@@ -51,7 +51,6 @@
       "description": "List of electronic access items",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "electronicAccessItem.json"
       }
     },
@@ -99,7 +98,6 @@
       "type": "array",
       "description": "Notes about action, copy, binding etc.",
       "items": {
-        "type": "object",
         "$ref": "holdingsNote.json"
       }
     },
@@ -119,7 +117,6 @@
       "description": "Holdings record statements",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "holdingsStatement.json"
       }
     },
@@ -127,7 +124,6 @@
       "description": "Holdings record indexes statements",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "holdingsStatement.json"
       }
     },
@@ -135,7 +131,6 @@
       "description": "Holdings record supplements statements",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "holdingsStatement.json"
       }
     },
@@ -160,15 +155,10 @@
       "uniqueItems": true
     },
     "tags": {
-      "description": "arbitrary tags associated with this holding",
-      "id": "tags",
-      "type": "object",
       "$ref": "../tags.json"
     },
     "metadata": {
-      "type": "object",
-      "$ref": "../metadata.json",
-      "readonly": true
+      "$ref": "../metadata.json"
     }
   },
   "required": [

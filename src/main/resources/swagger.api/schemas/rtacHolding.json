@@ -130,7 +130,6 @@
       "description": "Notes about action, copy, binding etc.",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "rtacHoldingsStatement.json"
       }
     },
@@ -138,7 +137,6 @@
       "description": "Holdings record indexes statements",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "rtacHoldingsStatement.json"
       }
     },
@@ -146,7 +144,6 @@
       "description": "Holdings record supplements statements",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "rtacHoldingsStatement.json"
       }
     },

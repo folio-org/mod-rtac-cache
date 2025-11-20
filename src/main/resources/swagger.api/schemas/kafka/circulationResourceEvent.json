@@ -8,7 +8,6 @@
       "type": "string"
     },
     "type": {
-      "description": "Resource event type",
       "$ref": "circulationEventType.json"
     },
     "tenant": {

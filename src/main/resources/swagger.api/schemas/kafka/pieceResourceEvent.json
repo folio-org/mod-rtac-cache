@@ -8,8 +8,6 @@
       "type": "string"
     },
     "action": {
-      "description": "Action for piece (Create, Edit or Delete)",
-      "type": "string",
       "$ref": "pieceEventAction.json"
     },
     "pieceId": {
@@ -31,8 +29,6 @@
       "type": "string"
     },
     "pieceSnapshot": {
-      "description": "Full snapshot of the piece",
-      "type": "object",
       "$ref": "../orders/piece.json"
     }
   },

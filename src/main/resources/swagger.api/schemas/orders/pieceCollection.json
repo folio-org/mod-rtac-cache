@@ -8,7 +8,6 @@
       "type": "array",
       "id": "pieces",
       "items": {
-        "type": "object",
         "$ref": "piece.json"
       }
     },

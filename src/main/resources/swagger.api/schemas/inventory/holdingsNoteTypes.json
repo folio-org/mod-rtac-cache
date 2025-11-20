@@ -8,7 +8,6 @@
       "id": "holdingsNoteType",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "holdingsNoteType.json"
       }
     },

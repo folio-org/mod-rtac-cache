@@ -8,7 +8,6 @@
       "description": "List of (shelf) locations.",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "location.json"
       }
     },

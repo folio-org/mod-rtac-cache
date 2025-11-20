@@ -352,15 +352,10 @@
       "description": "ID referencing a remote purchase order object related to this item"
     },
     "tags": {
-      "description": "arbitrary tags associated with this item",
-      "id": "tags",
-      "type": "object",
       "$ref": "../tags.json"
     },
     "metadata": {
-      "type": "object",
-      "$ref": "../metadata.json",
-      "readonly": true
+      "$ref": "../metadata.json"
     }
   },
   "required": [

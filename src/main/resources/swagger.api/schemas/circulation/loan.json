@@ -5,13 +5,9 @@
   "description": "Links the item with the patron and applies certain conditions based on policies",
   "properties": {
     "id": {
-      "description": "Unique ID (generated UUID) of the loan",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "userId": {
-      "description": "ID of the patron the item was lent to. Required for open loans, not required for closed loans (for anonymization).",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "borrower": {
@@ -53,18 +49,12 @@
       "additionalProperties": false
     },
     "proxyUserId": {
-      "description": "ID of the user representing a proxy for the patron",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "itemId": {
-      "description": "ID of the item lent to the patron",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "loanPolicyId": {
-      "description": "ID of last policy used in relation to this loan",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "loanPolicy": {
@@ -80,8 +70,6 @@
       }
     },
     "overdueFinePolicyId": {
-      "description": "ID of last overdue fine policy used in relation to this loan",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "overdueFinePolicy": {
@@ -97,8 +85,6 @@
       }
     },
     "lostItemPolicyId": {
-      "description": "ID of last lost item policy used in relation to this loan",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "lostItemPolicy": {
@@ -114,8 +100,6 @@
       }
     },
     "itemEffectiveLocationIdAtCheckOut": {
-      "description": "The effective location, at the time of checkout, of the item loaned to the patron.",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "status": {
@@ -176,25 +160,15 @@
       "readonly": true
     },
     "checkoutServicePointId": {
-      "description": "ID of the Service Point where the last checkout occured",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "checkinServicePointId": {
-      "description": "ID of the Service Point where the last checkin occured",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "checkoutServicePoint": {
-      "description": "Service Point where the last checkout occurred",
-      "type": "object",
-      "readonly": true,
       "$ref": "servicePoint.json"
     },
     "checkinServicePoint": {
-      "description": "Service Point where the last checkin occurred",
-      "type": "object",
-      "readonly": true,
       "$ref": "servicePoint.json"
     },
     "patronGroupAtCheckout": {
@@ -202,9 +176,6 @@
       "type": "object",
       "properties": {
         "id": {
-          "description": "Unique ID (generated UUID) of the patron group",
-          "type": "string",
-          "readonly" : true,
           "$ref": "../uuid.json"
         },
         "name": {
@@ -237,8 +208,6 @@
       "type": "boolean"
     },
     "metadata": {
-      "description": "Metadata about creation and changes to loan, provided by the server (client should not provide)",
-      "type": "object",
       "$ref": "../metadata.json"
     }
   },
