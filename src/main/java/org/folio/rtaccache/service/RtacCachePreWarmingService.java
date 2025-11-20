@@ -82,27 +82,27 @@ public class RtacCachePreWarmingService {
       chain = chain.thenCompose(v -> {
         CompletableFuture<?>[] futures = batch.stream()
           .map(instanceId -> rtacCacheGenerationService.generateRtacCache(instanceId.toString())
-            .whenCompleteAsync((r, ex) -> {
-              if (ex != null) {
-                log.error("Pre-warming failed for instanceId {}. Rolling back. Cause: {}", instanceId, ex.getMessage(),
-                  ex);
-                try {
-                  rtacHoldingRepository.deleteByIdInstanceId(instanceId);
-                } catch (Exception deleteEx) {
-                  log.error("Rollback delete failed for instanceId {}. Cause: {}", instanceId, deleteEx.getMessage(),
-                    deleteEx);
-                }
-              } else {
-                log.info("Pre-warming completed for instanceId {}", instanceId);
-              }
-            }, taskExecutor))
+            .whenCompleteAsync((r, ex) -> handlePreWarmingCompletion(instanceId, ex), taskExecutor))
           .toArray(CompletableFuture[]::new);
-
         return CompletableFuture.allOf(futures);
       });
     }
 
     return chain;
+  }
+
+  private void handlePreWarmingCompletion(UUID instanceId, Throwable ex) {
+    if (ex != null) {
+      log.error("Pre-warming failed for instanceId {}. Rolling back. Cause: {}", instanceId, ex.getMessage(), ex);
+      try {
+        rtacHoldingRepository.deleteByIdInstanceId(instanceId);
+      } catch (Exception deleteEx) {
+        log.error("Rollback delete failed for instanceId {}. Cause: {}", instanceId, deleteEx.getMessage(),
+          deleteEx);
+      }
+    } else {
+      log.info("Pre-warming completed for instanceId {}", instanceId);
+    }
   }
 
   private RtacPreWarmingJob toResponse(RtacPreWarmingJobEntity entity) {
