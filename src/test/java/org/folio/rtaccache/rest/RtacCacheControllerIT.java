@@ -89,6 +89,20 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  void holdingsByInstanceId_notFoundAndFailedToGenerate() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var instanceId = UUID.randomUUID();
+
+    when(rtacCacheGenerationService.generateRtacCache(instanceId.toString())).thenReturn(CompletableFuture.failedFuture(
+      new RuntimeException("Failed to generate RTAC cache")
+    ));
+
+    mockMvc.perform(get("/rtac-cache/" + instanceId)
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isInternalServerError());
+  }
+
+  @Test
   void postRtacCacheBatch_success() throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
 
