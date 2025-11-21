@@ -125,7 +125,7 @@ class RtacCachePreWarmingServiceTest {
 
     assertEquals(JobStatus.FAILED, job.getStatus());
     assertEquals("failed", job.getErrorMessage());
-    verify(rtacHoldingRepository).deleteByIdInstanceId(failedInstanceId);
+    verify(rtacHoldingRepository).deleteAllByIdInstanceId(failedInstanceId);
   }
 
   private RtacPreWarmingJobEntity captureJobEntity(UUID id) {

@@ -95,7 +95,7 @@ public class RtacCachePreWarmingService {
     if (ex != null) {
       log.error("Pre-warming failed for instanceId {}. Rolling back. Cause: {}", instanceId, ex.getMessage(), ex);
       try {
-        rtacHoldingRepository.deleteByIdInstanceId(instanceId);
+        rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
       } catch (Exception deleteEx) {
         log.error("Rollback delete failed for instanceId {}. Cause: {}", instanceId, deleteEx.getMessage(),
           deleteEx);
