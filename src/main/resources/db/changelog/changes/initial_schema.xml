@@ -36,4 +36,30 @@
       <dropTable tableName="rtac_holding"/>
     </rollback>
   </changeSet>
+  <changeSet id="create-rtac-pre-warming-job-table-002" author="Ivan_Zhunkivskyi">
+    <preConditions>
+      <not>
+        <tableExists tableName="rtac_pre_warming_job"/>
+      </not>
+    </preConditions>
+
+
+    <createTable tableName="rtac_pre_warming_job">
+      <column name="id" type="uuid">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="start_date" type="timestamp" defaultValueComputed="CURRENT_TIMESTAMP">
+        <constraints nullable="false"/>
+      </column>
+      <column name="end_date" type="timestamp"/>
+      <column name="status" type="varchar(32)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="error_message" type="text"/>
+    </createTable>
+
+    <rollback>
+      <dropTable tableName="rtac_pre_warming_job"/>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>

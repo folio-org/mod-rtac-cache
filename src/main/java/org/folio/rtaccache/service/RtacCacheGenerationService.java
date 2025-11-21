@@ -16,6 +16,7 @@ import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -24,12 +25,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class RtacCacheGenerationService {
 
+  @Qualifier("applicationTaskExecutor")
+  private final AsyncTaskExecutor taskExecutor;
   private final InventoryClient inventoryClient;
   private final RtacHoldingBulkRepository rtacHoldingRepository;
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
-  private final AsyncTaskExecutor taskExecutor;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
 

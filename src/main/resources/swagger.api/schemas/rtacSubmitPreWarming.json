@@ -1,0 +1,18 @@
+{
+  "description": "Submit pre-warming request",
+  "type": "object",
+  "properties": {
+    "instanceIds": {
+      "description": "Prewarm instances with at least this many items",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "minItemCount"
+  ]
+}

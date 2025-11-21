@@ -81,6 +81,114 @@ paths:
               schema:
                 $ref: 'schemas/error.json'
 
+  /rtac-cache/prewarm:
+    get:
+      tags:
+        - rtac
+      summary: Get prewarming job statuses
+      operationId: getRtacCachePreWarmingJobs
+      parameters:
+        - $ref: 'parameters/offset-param.yaml'
+        - $ref: 'parameters/limit-param.yaml'
+      responses:
+        '200':
+          description: RTAC Prewarming Job status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacPreWarmingJobs.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+    post:
+      tags:
+        - rtac
+      summary: Submit cache prewarming job
+      operationId: postRtacCachePreWarmingJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas/rtacSubmitPreWarming.json'
+      responses:
+        '200':
+          description: RTAC Prewarming Job submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacPreWarmingJob.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+
+  /rtac-cache/prewarm/{id}:
+    get:
+      tags:
+        - rtac
+      summary: Get prewarming job status by ID
+      operationId: getRtacCachePreWarmingJob
+      parameters:
+        - name: id
+          in: path
+          description: The UUID of a RTAC prewarming job
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: RTAC Prewarming Job status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacPreWarmingJob.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+
 components:
   schemas:
     RtacHolding:

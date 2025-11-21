@@ -1,25 +1,28 @@
 package org.folio.rtaccache.rest;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.folio.rtac.rest.resource.RtacApi;
+import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
+import org.folio.rtaccache.domain.dto.RtacPreWarmingJob;
+import org.folio.rtaccache.domain.dto.RtacPreWarmingJobs;
 import org.folio.rtaccache.domain.dto.RtacRequest;
-import org.folio.rtaccache.domain.dto.RtacHolding;
+import org.folio.rtaccache.domain.dto.RtacSubmitPreWarming;
+import org.folio.rtaccache.service.RtacCachePreWarmingService;
 import org.folio.rtaccache.service.RtacHoldingStorageService;
 import org.folio.spring.data.OffsetRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import lombok.RequiredArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.data.domain.Page;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +32,7 @@ public class RtacCacheController implements RtacApi {
   private static final Logger log = LoggerFactory.getLogger(RtacCacheController.class);
 
   private final RtacHoldingStorageService rtacHoldingStorageService;
+  private final RtacCachePreWarmingService rtacCachePreWarmingService;
 
 
   @Override
@@ -62,5 +66,25 @@ public class RtacCacheController implements RtacApi {
 
     log.info("Returning batch summary with {} holdings and {} errors", rtacHoldingsBatch.getHoldings().size(), rtacHoldingsBatch.getErrors().size());
     return new ResponseEntity<>(rtacHoldingsBatch, HttpStatus.OK);
+  }
+
+  @Override
+  public ResponseEntity<RtacPreWarmingJob> postRtacCachePreWarmingJob(
+    RtacSubmitPreWarming rtacSubmitPrewarmingRequest) {
+    return ResponseEntity.ok(rtacCachePreWarmingService.submitPreWarmingJob(rtacSubmitPrewarmingRequest.getInstanceIds()));
+  }
+
+  @Override
+  public ResponseEntity<RtacPreWarmingJob> getRtacCachePreWarmingJob(UUID id) {
+    return ResponseEntity.ok(rtacCachePreWarmingService.getPreWarmingJobStatus(id));
+  }
+
+  @Override
+  public ResponseEntity<RtacPreWarmingJobs> getRtacCachePreWarmingJobs(Integer offset, Integer limit) {
+    var jobs = rtacCachePreWarmingService.getPreWarmingJobs(OffsetRequest.of(offset, limit));
+    var response = new  RtacPreWarmingJobs();
+    response.setJobs(jobs.getContent());
+    response.setTotalRecords((int) jobs.getTotalElements());
+    return ResponseEntity.ok(response);
   }
 }
