@@ -14,6 +14,7 @@ import org.folio.rtaccache.domain.dto.RtacPreWarmingJob.StatusEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacPreWarmingJobRepository;
 import org.folio.spring.data.OffsetRequest;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -25,10 +26,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class RtacCachePreWarmingService {
 
+  @Qualifier("applicationTaskExecutor")
+  private final AsyncTaskExecutor taskExecutor;
   private final RtacCacheGenerationService rtacCacheGenerationService;
   private final RtacHoldingRepository rtacHoldingRepository;
   private final RtacPreWarmingJobRepository rtacPreWarmingJobRepository;
-  private final AsyncTaskExecutor taskExecutor;
   private static final int PRE_WARM_BATCH_SIZE = 30;
 
   public RtacPreWarmingJob getPreWarmingJobStatus(UUID jobId) {

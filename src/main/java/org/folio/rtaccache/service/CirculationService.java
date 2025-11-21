@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.CirculationClient;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Request;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +27,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CirculationService {
 
-  private final CirculationClient circulationClient;
+  @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
+  private final CirculationClient circulationClient;
   private static final Integer MAX_RECORDS = 1000;
   private static final Integer MAX_IDS_FOR_CQL = 50;
 
