@@ -1,0 +1,21 @@
+{
+  "id": "9085d5a7-17b1-4fbb-9a53-c42f386b02fd",
+  "action": "Edit",
+  "pieceId": "d892d70b-96be-4e5b-ab11-05839eb5df40",
+  "userId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+  "eventDate": "2025-11-13T11:47:42.866+00:00",
+  "actionDate": "2025-11-13T11:47:42.829+00:00",
+  "pieceSnapshot": {
+    "id": "d892d70b-96be-4e5b-ab11-05839eb5df40",
+    "format": "Physical",
+    "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+    "poLineId": "a22efa99-4f2d-43d1-9c3e-0d98be3205eb",
+    "titleId": "b7aa8e9c-db80-4c6b-8e84-c85c6f10ff53",
+    "holdingId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "displayOnHolding": false,
+    "displayToPublic": false,
+    "receivingStatus": "Expected",
+    "isBound": false,
+    "displaySummary": "Test"
+  }
+}

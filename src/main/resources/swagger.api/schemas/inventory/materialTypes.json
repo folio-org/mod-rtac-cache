@@ -8,7 +8,6 @@
       "id": "mtype",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "materialType.json"
       }
     },

@@ -8,9 +8,11 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.folio.rtaccache.domain.dto.ResourceEvent;
+import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
+import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
+import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.integration.KafkaMessageListener;
-import org.folio.rtaccache.service.RtacKafkaService;
+import org.folio.rtaccache.service.handler.EventHandlerFactory;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
@@ -39,35 +41,58 @@ public class KafkaConfiguration {
    * @return {@link ConcurrentKafkaListenerContainerFactory} object as Spring bean.
    */
   @Bean
-  public ConcurrentKafkaListenerContainerFactory<String, ResourceEvent> kafkaListenerContainerFactory(
-    ConsumerFactory<String, ResourceEvent> jsonNodeConsumerFactory) {
-    var factory = new ConcurrentKafkaListenerContainerFactory<String, ResourceEvent>();
+  public ConcurrentKafkaListenerContainerFactory<String, InventoryResourceEvent> inventoryKafkaListenerContainerFactory() {
+    var factory = new ConcurrentKafkaListenerContainerFactory<String, InventoryResourceEvent>();
     factory.setBatchListener(false);
-    factory.setConsumerFactory(jsonNodeConsumerFactory);
+    factory.setConsumerFactory(getInventoryResourceEventConsumerFactory());
     return factory;
   }
 
-  /**
-   * Creates and configures {@link ConsumerFactory} as Spring bean.
-   *
-   * <p>Key type - {@link String}, value - {@link ResourceEvent}.</p>
-   *
-   * @return typed {@link ConsumerFactory} object as Spring bean.
-   */
   @Bean
-  public ConsumerFactory<String, ResourceEvent> jsonNodeConsumerFactory() {
-    var deserializer = new JsonDeserializer<>(ResourceEvent.class, false);
+  public ConcurrentKafkaListenerContainerFactory<String, CirculationResourceEvent> circulationKafkaListenerContainerFactory() {
+    var factory = new ConcurrentKafkaListenerContainerFactory<String, CirculationResourceEvent>();
+    factory.setBatchListener(false);
+    factory.setConsumerFactory(getCirculationResourceEventConsumerFactory());
+    return factory;
+  }
+
+  @Bean
+  public ConcurrentKafkaListenerContainerFactory<String, PieceResourceEvent> pieceKafkaListenerContainerFactory() {
+    var factory = new ConcurrentKafkaListenerContainerFactory<String, PieceResourceEvent>();
+    factory.setBatchListener(false);
+    factory.setConsumerFactory(getPieceResourceEventConsumerFactory());
+    return factory;
+  }
+
+  @Bean
+  @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+  public KafkaMessageListener kafkaMessageListener(SystemUserScopedExecutionService executionService,
+    EventHandlerFactory eventHandlerFactory) {
+    return new KafkaMessageListener(executionService, eventHandlerFactory);
+  }
+
+  private ConsumerFactory<String, InventoryResourceEvent> getInventoryResourceEventConsumerFactory() {
+    var deserializer = new JsonDeserializer<>(InventoryResourceEvent.class, false);
     Map<String, Object> config = new HashMap<>(kafkaProperties.buildConsumerProperties(null));
     config.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
     config.put(VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
     return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
   }
 
-  @Bean
-  @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-  public KafkaMessageListener kafkaMessageListener(RtacKafkaService rtacKafkaService,
-    SystemUserScopedExecutionService executionService) {
-    return new KafkaMessageListener(executionService, rtacKafkaService);
+  private ConsumerFactory<String, CirculationResourceEvent> getCirculationResourceEventConsumerFactory() {
+    var deserializer = new JsonDeserializer<>(CirculationResourceEvent.class, false);
+    Map<String, Object> config = new HashMap<>(kafkaProperties.buildConsumerProperties(null));
+    config.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    config.put(VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
+    return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
+  }
+
+  private ConsumerFactory<String, PieceResourceEvent> getPieceResourceEventConsumerFactory() {
+    var deserializer = new JsonDeserializer<>(PieceResourceEvent.class, false);
+    Map<String, Object> config = new HashMap<>(kafkaProperties.buildConsumerProperties(null));
+    config.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    config.put(VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
+    return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
   }
 
 }

@@ -1,0 +1,79 @@
+{
+  "id": "68f5f282-43d2-4f37-bf1f-3f813abfdd09",
+  "type": "CREATED",
+  "tenant": "testTenant",
+  "timestamp": 1762973817511,
+  "data": {
+    "new": {
+      "id": "ff1a21fb-ae27-4aaf-acf6-b405dc4eed89",
+      "requestLevel": "Item",
+      "requestType": "Page",
+      "requestDate": "2025-11-12T18:56:53.619+00:00",
+      "requesterId": "d5e9c535-ff27-4937-9875-c9ff71404fe0",
+      "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+      "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+      "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+      "status": "Open - Not yet filled",
+      "instance": {
+        "title": "\"Boss\" Tweed : the story of a grim generation / Denis Tilden Lynch.",
+        "identifiers": [
+          {
+            "value": "73019157",
+            "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb"
+          },
+          {
+            "value": "0405058799 : $23.00",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "0405058799",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "MSSCAAN2494",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": "TRUMANAAF9326",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": ".b12064300MOBNE",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": "810354",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          }
+        ]
+      },
+      "item": {
+        "barcode": "1232323232",
+        "itemEffectiveLocationId": "773e5ce3-c226-4818-a78d-4de7ee0c9418",
+        "itemEffectiveLocationName": "Special Collections",
+        "retrievalServicePointId": "650b2d28-dc05-4177-9dc3-c45316fe5aa6",
+        "retrievalServicePointName": "Main circ college"
+      },
+      "requester": {
+        "firstName": "EBSCOFseAdmin",
+        "lastName": "EBSCOFseAdmin",
+        "barcode": "555555"
+      },
+      "fulfillmentPreference": "Hold Shelf",
+      "pickupServicePointId": "be6cdc85-1202-4c48-99fa-56af591f5a3a",
+      "metadata": {
+        "createdDate": "2025-11-12T18:56:57.499+00:00",
+        "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+        "updatedDate": "2025-11-12T18:56:57.499+00:00",
+        "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+      },
+      "searchIndex": {
+        "callNumberComponents": {
+          "callNumber": "320.9/747/103"
+        },
+        "shelvingOrder": "3320.9 3747 3103",
+        "pickupServicePointName": "Application"
+      }
+    }
+  }
+}

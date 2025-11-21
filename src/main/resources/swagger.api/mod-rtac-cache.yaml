@@ -93,8 +93,16 @@ components:
       $ref: schemas/rtacHoldings.json
     RtacHoldingsSummary:
       $ref: schemas/rtacHoldingsSummary.json
-    ResourceEvent:
-      $ref: schemas/resourceEvent.json
+    InventoryResourceEvent:
+      $ref: schemas/kafka/inventoryResourceEvent.json
+    CirculationResourceEvent:
+      $ref: schemas/kafka/circulationResourceEvent.json
+    PieceResourceEvent:
+      $ref: schemas/kafka/pieceResourceEvent.json
+    InventoryEntityType:
+      $ref: schemas/kafka/inventoryEntityType.json
+    CirculationEntityType:
+      $ref: schemas/kafka/circulationEntityType.json
     HoldingRecords:
       $ref: schemas/inventory/holdingsRecords.json
     Items:

@@ -1,7 +1,7 @@
 {
   "type": "string",
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Resource event operation type - one of [updated, created, deleted]",
+  "description": "Inventory event operation type - one of [update, create, delete]",
   "enum": [
     "UPDATE",
     "CREATE",

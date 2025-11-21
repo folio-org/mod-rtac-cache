@@ -1,0 +1,9 @@
+{
+  "type": "string",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Inventory domain entity type of the resource",
+  "enum": [
+    "LOAN",
+    "REQUEST"
+  ]
+}
