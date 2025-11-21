@@ -15,6 +15,11 @@
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/batch",
           "permissionsRequired": [ "rtac-cache.collection.post" ]
+        },
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/search/{instanceId}",
+          "permissionsRequired": [ "rtac-cache.collection.search.get" ]
         }
       ]
     },
@@ -43,7 +48,13 @@
       "permissionName": "rtac-cache.collection.post",
       "displayName": "RTAC Cache - Post collection",
       "description": "Post RTAC cache collection"
-    },    {
+    },
+    {
+      "permissionName": "rtac-cache.collection.search.get",
+      "displayName": "RTAC Cache - Get collection search",
+      "description": "Get RTAC cache collection search"
+    },
+    {
       "permissionName": "rtac-cache.all",
       "displayName": "RTAC Cache - All permissions",
       "description": "All RTAC cache permissions"
