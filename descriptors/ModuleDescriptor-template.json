@@ -114,7 +114,7 @@
   "requires": [
     {
       "id": "item-storage",
-      "version": "10.2"
+      "version": "10.2 11.1"
     },
     {
       "id": "holdings-storage",
