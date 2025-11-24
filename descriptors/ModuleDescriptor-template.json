@@ -14,12 +14,12 @@
         {
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/batch",
-          "permissionsRequired": [ "rtac-cache.collection.post" ]
+          "permissionsRequired": [ "rtac-cache.batch.collection.post" ]
         },
         {
           "methods": [ "GET" ],
           "pathPattern": "/search/{instanceId}",
-          "permissionsRequired": [ "rtac-cache.collection.search.get" ]
+          "permissionsRequired": [ "rtac-cache.search.collection.get" ]
         }
       ]
     },
@@ -45,14 +45,14 @@
       "description": "Get RTAC cache collection"
     },
     {
-      "permissionName": "rtac-cache.collection.post",
-      "displayName": "RTAC Cache - Post collection",
-      "description": "Post RTAC cache collection"
+      "permissionName": "rtac-cache.batch.collection.post",
+      "displayName": "RTAC Cache - Post batch collection",
+      "description": "Post RTAC cache batch collection"
     },
     {
-      "permissionName": "rtac-cache.collection.search.get",
-      "displayName": "RTAC Cache - Get collection search",
-      "description": "Get RTAC cache collection search"
+      "permissionName": "rtac-cache.search.collection.get",
+      "displayName": "RTAC Cache - Collection search",
+      "description": "RTAC cache search collection"
     },
     {
       "permissionName": "rtac-cache.all",

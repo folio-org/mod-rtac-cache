@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
@@ -66,22 +67,22 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "call2 loc2", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call2");
-    assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc2");
+    assertThat(Objects.requireNonNull(page.getContent().getFirst().getLocation()).getName()).isEqualTo("loc2");
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"loc2 call2", null, OffsetRequest.of(0, 10)); // Out of order
     assertThat(page.getTotalElements()).isEqualTo(1);
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call2");
-    assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc2");
+    assertThat(Objects.requireNonNull(page.getContent().getFirst().getLocation()).getName()).isEqualTo("loc2");
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId2,"loc3 lib3", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
-    assertThat(page.getContent().getFirst().getLocation().getName()).isEqualTo("loc3");
-    assertThat(page.getContent().getFirst().getLibrary().getName()).isEqualTo("lib3");
+    assertThat(Objects.requireNonNull(page.getContent().getFirst().getLocation()).getName()).isEqualTo("loc3");
+    assertThat(Objects.requireNonNull(page.getContent().getFirst().getLibrary()).getName()).isEqualTo("lib3");
     assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId2.toString());
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"lib1 vol1", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
-    assertThat(page.getContent().getFirst().getLibrary().getName()).isEqualTo("lib1");
+    assertThat(Objects.requireNonNull(page.getContent().getFirst().getLibrary()).getName()).isEqualTo("lib1");
     assertThat(page.getContent().getFirst().getCallNumber()).isEqualTo("call1");
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "vol", null, OffsetRequest.of(0, 10));
@@ -133,7 +134,7 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     // Test fetching with a query that returns no results
     Page<RtacHolding> emptyPage = rtacHoldingStorageService
       .searchRtacHoldings(instanceId, "nonexistent", null, OffsetRequest.of(0, 10));
-    
+
     assertThat(emptyPage.getTotalElements()).isZero();
     assertThat(emptyPage.getContent()).isEmpty();
   }
