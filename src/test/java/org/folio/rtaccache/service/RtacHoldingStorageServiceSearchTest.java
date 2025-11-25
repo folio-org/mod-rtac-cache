@@ -92,7 +92,7 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     assertThat(page.getTotalElements()).isEqualTo(1);
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"vol1 call2", null, OffsetRequest.of(0, 10));
-    assertThat(page.getTotalElements()).isEqualTo(0);
+    assertThat(page.getTotalElements()).isZero();
   }
 
   @Test
