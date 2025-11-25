@@ -173,6 +173,27 @@ public class RtacHoldingMappingService {
     return newRtacHolding;
   }
 
+  public RtacHolding mapForPieceTypeFrom(RtacHolding existingRtacHolding, Piece piece) {
+    var newRtacHolding = new RtacHolding();
+    newRtacHolding.setId(piece.getId());
+    newRtacHolding.setType(TypeEnum.PIECE);
+    newRtacHolding.setInstanceId(existingRtacHolding.getInstanceId());
+    newRtacHolding.setHoldingsId(existingRtacHolding.getId());
+    newRtacHolding.setCallNumber(existingRtacHolding.getCallNumber());
+    newRtacHolding.setHoldingsCopyNumber(piece.getCopyNumber());
+    newRtacHolding.setStatus(piece.getReceivingStatus().getValue());
+    newRtacHolding.setVolume(mapVolumeFrom(piece));
+    newRtacHolding.setSuppressFromDiscovery(existingRtacHolding.getSuppressFromDiscovery());
+    newRtacHolding.setLocation(existingRtacHolding.getLocation());
+    newRtacHolding.setLibrary(existingRtacHolding.getLibrary());
+    newRtacHolding.setHoldingsStatements(existingRtacHolding.getHoldingsStatements());
+    newRtacHolding.setHoldingsStatementsForIndexes(existingRtacHolding.getHoldingsStatementsForIndexes());
+    newRtacHolding.setHoldingsStatementsForSupplements(existingRtacHolding.getHoldingsStatementsForSupplements());
+    newRtacHolding.setNotes(existingRtacHolding.getNotes());
+    newRtacHolding.setCreatedAt(Date.from(Instant.now()));
+    return newRtacHolding;
+  }
+
   private RtacHoldingLocation mapLocationFrom(String locationId) {
     var location = new RtacHoldingLocation();
     if (locationId == null || locationId.isEmpty()) {

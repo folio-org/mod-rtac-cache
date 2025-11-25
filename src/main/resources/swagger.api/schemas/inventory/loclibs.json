@@ -8,7 +8,6 @@
       "id": "loclibs",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "loclib.json"
       }
     },

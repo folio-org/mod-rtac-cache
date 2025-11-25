@@ -8,7 +8,6 @@
       "id": "holdingsRecord",
       "type": "array",
       "items": {
-        "type": "object",
         "$ref": "holdingsRecord.json"
       }
     },
@@ -17,8 +16,7 @@
       "type": "integer"
     },
     "resultInfo": {
-      "$ref": "../resultInfo.json",
-      "readonly": true
+      "$ref": "../resultInfo.json"
     }
   },
   "required": [

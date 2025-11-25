@@ -5,8 +5,6 @@
   "type": "object",
   "properties": {
     "id": {
-      "description": "UUID of the request",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "requestType": {
@@ -29,28 +27,18 @@
       "type": "string"
     },
     "requesterId": {
-      "description": "ID of the user who made the request",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "proxyUserId": {
-      "description": "ID of the user representing a proxy for the patron",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "instanceId": {
-      "description": "ID of the instance being requested",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "holdingsRecordId": {
-      "description": "ID of the holdings record being requested",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "itemId": {
-      "description": "ID of the item being requested",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "status": {
@@ -68,13 +56,9 @@
       ]
     },
     "cancellationReasonId": {
-      "description": "The id of the request reason",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "cancelledByUserId": {
-      "description": "The id of the user that cancelled the request",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "cancellationAdditionalInformation": {
@@ -111,8 +95,6 @@
                 "description": "Resource identifier value"
               },
               "identifierTypeId": {
-                "type": "string",
-                "description": "UUID of resource identifier type (e.g. ISBN, ISSN, LCCN, CODEN, Locally defined identifiers)",
                 "$ref": "../uuid.json"
               }
             },
@@ -162,9 +144,6 @@
           "readonly": true
         },
         "patronGroupId": {
-          "description": "UUID for the patron group that this user belongs to",
-          "type": "string",
-          "readonly": true,
           "$ref": "../uuid.json"
         },
         "patronGroup": {
@@ -174,9 +153,6 @@
           "readonly": true,
           "properties": {
             "id": {
-              "description": "ID of the patron group",
-              "type": "string",
-              "readonly": true,
               "$ref": "../uuid.json"
             },
             "group": {
@@ -220,9 +196,6 @@
           "readonly": true
         },
         "patronGroupId": {
-          "description": "UUID for the patrongroup that this user belongs to",
-          "type": "string",
-          "readonly": true,
           "$ref": "../uuid.json"
         },
         "patronGroup": {
@@ -232,9 +205,6 @@
           "additionalProperties": false,
           "properties": {
             "id": {
-              "description": "ID of the patrongroup",
-              "type": "string",
-              "readonly": true,
               "$ref": "../uuid.json"
             },
             "group": {
@@ -258,8 +228,6 @@
       "enum": ["Hold Shelf", "Delivery"]
     },
     "deliveryAddressTypeId": {
-      "description": "Deliver to the address of this type, for the requesting patron",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "deliveryAddress": {
@@ -298,9 +266,6 @@
           "readonly": true
         },
         "addressTypeId": {
-          "description": "Type of address (refers to address types)",
-          "type": "string",
-          "readonly": true,
           "$ref": "../uuid.json"
         }
       },
@@ -317,8 +282,6 @@
       "format": "date-time"
     },
     "pickupServicePointId": {
-      "description": "The ID of the Service Point where this request can be picked up",
-      "type": "string",
       "$ref": "../uuid.json"
     },
     "pickupServicePoint": {
@@ -409,13 +372,9 @@
       }
     },
     "tags": {
-      "type": "object",
-      "description": "Tags",
       "$ref": "../tags.json"
     },
     "metadata": {
-      "description": "Metadata about creation and changes to requests, provided by the server (client should not provide)",
-      "type": "object",
       "$ref": "../metadata.json"
     },
     "itemLocationCode": {

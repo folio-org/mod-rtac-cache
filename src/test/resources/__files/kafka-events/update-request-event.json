@@ -1,0 +1,142 @@
+{
+  "id": "e1fd6ce1-8908-4d9a-aef5-c66300c613a1",
+  "type": "UPDATED",
+  "tenant": "testTenant",
+  "timestamp": 1762973441588,
+  "data": {
+    "old": {
+      "id": "2a93ae85-d82b-437a-8e9d-69232f6cd0f9",
+      "requestLevel": "Item",
+      "requestType": "Page",
+      "requestDate": "2024-05-29T11:57:39.452+00:00",
+      "requesterId": "d5e9c535-ff27-4937-9875-c9ff71404fe0",
+      "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+      "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+      "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+      "status": "Open - Not yet filled",
+      "position": 1,
+      "instance": {
+        "title": "Annuals.",
+        "identifiers": [
+          {
+            "value": "88002308",
+            "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb"
+          },
+          {
+            "value": "0809466120",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "0809466139 (lib. bdg.)",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "TRUMANBAD2070",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": ".b13416650MOBNE",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": "17649206",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          }
+        ]
+      },
+      "item": {
+        "barcode": "1232323232"
+      },
+      "requester": {
+        "firstName": "EBSCOFseAdmin",
+        "lastName": "EBSCOFseAdmin"
+      },
+      "fulfillmentPreference": "Hold Shelf",
+      "pickupServicePointId": "9d1b77e8-f02e-4b7f-b296-3f2042ddac54",
+      "metadata": {
+        "createdDate": "2024-05-29T11:57:41.321+00:00",
+        "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+        "updatedDate": "2024-05-29T11:57:41.349+00:00",
+        "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+      },
+      "searchIndex": {
+        "callNumberComponents": {
+          "callNumber": "SB422"
+        },
+        "shelvingOrder": "SB422",
+        "pickupServicePointName": "DCB"
+      }
+    },
+    "new": {
+      "id": "2a93ae85-d82b-437a-8e9d-69232f6cd0f9",
+      "requestLevel": "Item",
+      "requestType": "Page",
+      "requestDate": "2024-05-29T11:57:39.452+00:00",
+      "requesterId": "d5e9c535-ff27-4937-9875-c9ff71404fe0",
+      "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+      "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+      "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+      "status": "Closed - Cancelled",
+      "cancellationReasonId": "50ed35b2-1397-4e83-a76b-642adf91ca2a",
+      "cancelledByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+      "cancellationAdditionalInformation": "cancell",
+      "cancelledDate": "2025-11-12T18:50:37.313+00:00",
+      "instance": {
+        "title": "Annuals.",
+        "identifiers": [
+          {
+            "value": "88002308",
+            "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb"
+          },
+          {
+            "value": "0809466120",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "0809466139 (lib. bdg.)",
+            "identifierTypeId": "8261054f-be78-422d-bd51-4ed9f33c3422"
+          },
+          {
+            "value": "TRUMANBAD2070",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": ".b13416650MOBNE",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          },
+          {
+            "value": "17649206",
+            "identifierTypeId": "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+          }
+        ]
+      },
+      "item": {
+        "barcode": "1232323232",
+        "itemEffectiveLocationId": "108ef496-ef5b-421b-baa9-109833493599",
+        "itemEffectiveLocationName": "Comic Collection",
+        "retrievalServicePointId": "650b2d28-dc05-4177-9dc3-c45316fe5aa6",
+        "retrievalServicePointName": "Main circ college"
+      },
+      "requester": {
+        "firstName": "EBSCOFseAdmin",
+        "lastName": "EBSCOFseAdmin",
+        "barcode": "555555"
+      },
+      "fulfillmentPreference": "Hold Shelf",
+      "pickupServicePointId": "9d1b77e8-f02e-4b7f-b296-3f2042ddac54",
+      "metadata": {
+        "createdDate": "2024-05-29T11:57:41.321+00:00",
+        "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+        "updatedDate": "2025-11-12T18:50:41.533+00:00",
+        "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+      },
+      "searchIndex": {
+        "callNumberComponents": {
+          "callNumber": "SB422"
+        },
+        "shelvingOrder": "SB422",
+        "pickupServicePointName": "DCB"
+      }
+    }
+  }
+}

@@ -17,32 +17,24 @@
       "type": "string"
     },
     "format": {
-      "description": "The format of the piece",
-      "type": "string",
       "$ref": "pieceFormat.json"
     },
     "itemId": {
-      "description": "UUID of the associated item record",
       "$ref": "../uuid.json"
     },
     "bindItemId": {
-      "description": "UUID of the associated bind item record",
       "$ref": "../uuid.json"
     },
     "locationId": {
-      "description": "UUID of the (inventory) location record",
       "$ref": "../uuid.json"
     },
     "poLineId": {
-      "description": "UUID of the purchase order line this record is associated with",
       "$ref": "../uuid.json"
     },
     "titleId": {
-      "description": "UUID of the title record",
       "$ref": "../uuid.json"
     },
     "holdingId": {
-      "description": "UUID of the holding record",
       "$ref": "../uuid.json"
     },
     "receivingTenantId": {
@@ -59,7 +51,7 @@
       "type": "boolean",
       "default": false
     },
-    "enumeration": {
+      "enumeration": {
       "type": "string",
       "description": "Enumeration is the descriptive information for the numbering scheme of a serial. Synchronized with inventory item."
     },
@@ -137,9 +129,7 @@
       "type": "string"
     },
     "metadata": {
-      "type": "object",
-      "$ref": "../metadata.json",
-      "readonly": true
+      "$ref": "../metadata.json"
     }
   },
   "additionalProperties": false,

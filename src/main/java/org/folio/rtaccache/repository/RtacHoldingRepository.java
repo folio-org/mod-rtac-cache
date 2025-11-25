@@ -38,6 +38,8 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
+  int countByIdInstanceId(UUID instanceId);
+
   Optional<RtacHoldingEntity> findByIdId(UUID id);
 
   Optional<RtacHoldingEntity> findByIdIdAndIdType(UUID id, RtacHolding.TypeEnum type);
@@ -50,6 +52,8 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   void deleteAllByHoldingsId(@Param("holdingsId") String holdingsId);
 
   void deleteByIdId(UUID id);
+
+  void deleteAllByIdInstanceId(UUID instanceId);
 
   @Query(value = """
                  WITH LocationStatusCounts AS (
