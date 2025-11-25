@@ -41,10 +41,14 @@
           ]
         },
         {
-          "methods": [ "GET" ],
+          "methods": [
+            "GET"
+          ],
           "pathPattern": "/search/{instanceId}",
-          "permissionsRequired": [ "rtac-cache.search.collection.get" ],
-          "modulePermissions":[
+          "permissionsRequired": [
+            "rtac-cache.search.collection.get"
+          ],
+          "modulePermissions": [
             "inventory-storage.items.retrieve.collection.post",
             "inventory-storage.holdings.retrieve.collection.post",
             "inventory-storage.location-units.libraries.collection.get",
@@ -55,8 +59,8 @@
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
             "orders.pieces.collection.get"
-          ],
-          },
+          ]
+        },
         {
           "methods": [ "GET" ],
           "pathPattern": "/rtac-cache/prewarm",
@@ -184,12 +188,12 @@
       "displayName": "RTAC Cache - All permissions",
       "description": "All RTAC cache permissions",
       "subPermissions": [
-            "rtac-cache.collection.get",
-            "rtac-cache.batch.collection.post",
-            "rtac-cache.search.collection.get",
-            "rtac-cache.prewarm.collection.get",
-            "rtac-cache.prewarm.get",
-            "rtac-cache.prewarm.post"
+        "rtac-cache.collection.get",
+        "rtac-cache.batch.collection.post",
+        "rtac-cache.search.collection.get",
+        "rtac-cache.prewarm.collection.get",
+        "rtac-cache.prewarm.get",
+        "rtac-cache.prewarm.post"
           ]
     }
   ],
