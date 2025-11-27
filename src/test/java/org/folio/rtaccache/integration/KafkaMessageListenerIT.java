@@ -17,14 +17,18 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.folio.rtaccache.BaseIntegrationTest;
+import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.TestUtil;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
+import org.folio.rtaccache.domain.dto.Location;
+import org.folio.rtaccache.domain.dto.Loclib;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.DefaultFolioExecutionContext;
@@ -38,17 +42,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.kafka.core.KafkaTemplate;
 
 @TestMethodOrder(OrderAnnotation.class)
 @Log4j2
 class KafkaMessageListenerIT extends BaseIntegrationTest {
-
-  private static final String HOLDINGS_TOPIC = "test.ALL.inventory.holdings-record";
-  private static final String ITEM_TOPIC = "test.ALL.inventory.item";
-  private static final String LOAN_TOPIC = "test.ALL.circulation.loan";
-  private static final String REQUEST_TOPIC = "test.ALL.circulation.request";
-  private static final String PIECE_TOPIC = "test.Default.ALL.ACQ_PIECE_CHANGED";
 
   private static final String HOLDINGS_ID_1 = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
   private static final String HOLDINGS_ID_2 = "48525495-05b0-488e-a0c5-0f3ec5c7a0f2";
@@ -69,11 +68,18 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_PIECE_EVENT_PATH = "__files/kafka-events/create-piece-event.json";
   private static final String DELETE_PIECE_EVENT_PATH = "__files/kafka-events/delete-piece-event.json";
   private static final String UPDATE_PIECE_EVENT_PATH = "__files/kafka-events/update-piece-event.json";
+  private static final String CREATE_LOCATION_EVENT_PATH = "__files/kafka-events/create-location-event.json";
+  private static final String DELETE_LOCATION_EVENT_PATH = "__files/kafka-events/delete-location-event.json";
+  private static final String UPDATE_LOCATION_EVENT_PATH = "__files/kafka-events/update-location-event.json";
+  private static final String CREATE_LIBRARY_EVENT_PATH = "__files/kafka-events/create-library-event.json";
+  private static final String DELETE_LIBRARY_EVENT_PATH = "__files/kafka-events/delete-library-event.json";
+  private static final String UPDATE_LIBRARY_EVENT_PATH = "__files/kafka-events/update-library-event.json";
 
   private static final String OLD_CALL_NUMBER = "OLD-CALL-123";
   private static final String NEW_CALL_NUMBER = "NEW-CALL-456";
   private static final String OLD_LOCATION_ID = "1c54d084-4639-45dd-b9c9-4473df6bd28a";
   private static final String NEW_LOCATION_ID = "2d65e095-5750-56ee-ca60-5584eg7ce39b";
+  private static final String LIBRARY_ID = "79f1cd00-09cc-4c9c-99c1-d8ad1b77d128";
   private static final String NEW_HOLDINGS_COPY_NUMBER = "Test";
   private static final String OLD_HOLDINGS_COPY_NUMBER = "Old copy number";
   private static final String NEW_NOTE_VALUE = "Test";
@@ -96,6 +102,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private RtacHoldingRepository holdingRepository;
   @Autowired
   private FolioModuleMetadata folioModuleMetadata;
+  @Autowired
+  private CacheManager cacheManager;
 
 
   @BeforeEach
@@ -409,6 +417,112 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     }
   }
 
+  @Test
+  @Order(16)
+  void shouldClearLocationsCache_whenLocationCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      var cache = cacheManager.getCache("locationsMap");
+      cache.put("locationsMap", Map.of("locationId", new Location()));
+      var event = loadInventoryResourceEvent(CREATE_LOCATION_EVENT_PATH);
+      // When
+      sendLocationKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        assertThat(cache.get("locationsMap")).isNull();
+      });
+    }
+  }
+
+  @Test
+  @Order(17)
+  void shouldUpdateRtacHolding_whenLocationUpdateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(UPDATE_LOCATION_EVENT_PATH);
+      // When
+      sendLocationKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getLocation().getName()).isEqualTo("New location name");
+        assertThat(holding.get().getRtacHolding().getLocation().getCode()).isEqualTo("New location code");
+      });
+    }
+  }
+
+  @Test
+  @Order(18)
+  void shouldClearLocationsCache_whenLocationDeleteEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      var cache = cacheManager.getCache("locationsMap");
+      cache.put("locationsMap", Map.of("locationId", new Location()));
+      var event = loadInventoryResourceEvent(DELETE_LOCATION_EVENT_PATH);
+      // When
+      sendLocationKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        assertThat(cache.get("locationsMap")).isNull();
+      });
+    }
+  }
+
+  @Test
+  @Order(19)
+  void shouldClearLibraryCache_whenLibraryCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      var cache = cacheManager.getCache("libraryMap");
+      cache.put("libraryMap", Map.of("libraryId", new Loclib()));
+      var event = loadInventoryResourceEvent(CREATE_LIBRARY_EVENT_PATH);
+      // When
+      sendLibraryKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        assertThat(cache.get("libraryMap")).isNull();
+      });
+    }
+  }
+
+  @Test
+  @Order(20)
+  void shouldUpdateRtacHolding_whenLibraryUpdateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var event = loadInventoryResourceEvent(UPDATE_LIBRARY_EVENT_PATH);
+      // When
+      sendLibraryKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getLibrary().getName()).isEqualTo("New library name");
+        assertThat(holding.get().getRtacHolding().getLibrary().getCode()).isEqualTo("New library code");
+      });
+    }
+  }
+
+  @Test
+  @Order(21)
+  void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      var cache = cacheManager.getCache("libraryMap");
+      cache.put("libraryMap", Map.of("libraryId", new Location()));
+      var event = loadInventoryResourceEvent(DELETE_LIBRARY_EVENT_PATH);
+      // When
+      sendLibraryKafkaMessage(event);
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        assertThat(cache.get("libraryMap")).isNull();
+      });
+    }
+  }
+
   private void createExistingRtacHoldingEntity(String id, TypeEnum type) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
 
@@ -437,8 +551,13 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHolding.setTotalHoldRequests(1);
 
     var location = new RtacHoldingLocation();
-    location.setId(KafkaMessageListenerIT.OLD_LOCATION_ID);
+    location.setId(OLD_LOCATION_ID);
     rtacHolding.setLocation(location);
+
+    var library = new RtacHoldingLibrary();
+    library.setId(LIBRARY_ID);
+    rtacHolding.setLibrary(library);
+
     return rtacHolding;
   }
 
@@ -458,28 +577,38 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   private void sendHoldingsKafkaMessage(InventoryResourceEvent event, String id) {
-    ProducerRecord<String, InventoryResourceEvent> holdingsRecord = new ProducerRecord<>(HOLDINGS_TOPIC, id, event);
+    ProducerRecord<String, InventoryResourceEvent> holdingsRecord = new ProducerRecord<>(TestConstant.HOLDINGS_TOPIC, id, event);
     inventoryKafkaTemplate.send(holdingsRecord);
   }
 
   private void sendItemKafkaMessage(InventoryResourceEvent event, String id) {
-    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(ITEM_TOPIC, id, event);
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.ITEM_TOPIC, id, event);
+    inventoryKafkaTemplate.send(itemRecord);
+  }
+
+  private void sendLocationKafkaMessage(InventoryResourceEvent event) {
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.LOCATION_TOPIC, OLD_LOCATION_ID, event);
+    inventoryKafkaTemplate.send(itemRecord);
+  }
+
+  private void sendLibraryKafkaMessage(InventoryResourceEvent event) {
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.LIBRARY_TOPIC, LIBRARY_ID, event);
     inventoryKafkaTemplate.send(itemRecord);
   }
 
   private void sendLoanKafkaMessage(CirculationResourceEvent event, String id) {
-    var loanRecord = new ProducerRecord<>(LOAN_TOPIC, id, event);
+    var loanRecord = new ProducerRecord<>(TestConstant.LOAN_TOPIC, id, event);
     circualationKafkaTemplate.send(loanRecord);
   }
 
   private void sendRequestKafkaMessage(CirculationResourceEvent event, String id) {
-    var requestRecord = new ProducerRecord<>(REQUEST_TOPIC, id, event);
+    var requestRecord = new ProducerRecord<>(TestConstant.REQUEST_TOPIC, id, event);
     circualationKafkaTemplate.send(requestRecord);
   }
 
   private void sendPieceKafkaMessage(PieceResourceEvent event, String id) {
     var header = new RecordHeader("folio.tenantId", TEST_TENANT.getBytes());
-    var pieceRecord = new ProducerRecord<>(PIECE_TOPIC, 0, id, event, List.of(header));
+    var pieceRecord = new ProducerRecord<>(TestConstant.PIECE_TOPIC, 0, id, event, List.of(header));
     pieceKafkaTemplate.send(pieceRecord);
   }
 

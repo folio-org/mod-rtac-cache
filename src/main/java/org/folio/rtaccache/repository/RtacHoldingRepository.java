@@ -28,6 +28,12 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->>'holdingsId' = :holdingsId", nativeQuery = true)
   List<RtacHoldingEntity> findAllByHoldingsId(@Param("holdingsId") String holdingsId);
 
+  @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->'location'->>'id' = :locationId", nativeQuery = true)
+  List<RtacHoldingEntity> findAllByLocationId(@Param("locationId") String LocationId);
+
+  @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->'library'->>'id' = :libraryId", nativeQuery = true)
+  List<RtacHoldingEntity> findAllByLibraryId(@Param("libraryId") String libraryId);
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(value = "DELETE FROM rtac_holding WHERE rtac_holding_json->>'holdingsId' = :holdingsId", nativeQuery = true)
   void deleteAllByHoldingsId(@Param("holdingsId") String holdingsId);

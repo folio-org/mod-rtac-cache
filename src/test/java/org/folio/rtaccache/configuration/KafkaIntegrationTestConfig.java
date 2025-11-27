@@ -1,5 +1,13 @@
 package org.folio.rtaccache.configuration;
 
+import static org.folio.rtaccache.TestConstant.HOLDINGS_TOPIC;
+import static org.folio.rtaccache.TestConstant.ITEM_TOPIC;
+import static org.folio.rtaccache.TestConstant.LIBRARY_TOPIC;
+import static org.folio.rtaccache.TestConstant.LOAN_TOPIC;
+import static org.folio.rtaccache.TestConstant.LOCATION_TOPIC;
+import static org.folio.rtaccache.TestConstant.PIECE_TOPIC;
+import static org.folio.rtaccache.TestConstant.REQUEST_TOPIC;
+
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,39 +15,46 @@ import org.springframework.kafka.config.TopicBuilder;
 
 @Configuration
 public class KafkaIntegrationTestConfig {
-  public static final String TEST_HOLDING_RECORD_TOPIC = "test.ALL.inventory.holdings-record";
-  public static final String TEST_ITEM_TOPIC = "test.ALL.inventory.item";
-  private static final String TEST_LOAN_TOPIC = "test.ALL.circulation.loan";
-  private static final String TEST_REQUEST_TOPIC = "test.ALL.circulation.request";
-  private static final String TEST_PIECE_TOPIC = "test.Default.ALL.ACQ_PIECE_CHANGED";
 
   @Bean
   public NewTopic holdingsTopic() {
-    return TopicBuilder.name(TEST_HOLDING_RECORD_TOPIC)
+    return TopicBuilder.name(HOLDINGS_TOPIC)
         .build();
   }
 
   @Bean
   public NewTopic itemTopic() {
-    return TopicBuilder.name(TEST_ITEM_TOPIC)
+    return TopicBuilder.name(ITEM_TOPIC)
       .build();
   }
 
   @Bean
   public NewTopic loanTopic() {
-    return TopicBuilder.name(TEST_LOAN_TOPIC)
+    return TopicBuilder.name(LOAN_TOPIC)
       .build();
   }
 
   @Bean
   public NewTopic requestTopic() {
-    return TopicBuilder.name(TEST_REQUEST_TOPIC)
+    return TopicBuilder.name(REQUEST_TOPIC)
       .build();
   }
 
   @Bean
   public NewTopic pieceTopic() {
-    return TopicBuilder.name(TEST_PIECE_TOPIC)
+    return TopicBuilder.name(PIECE_TOPIC)
+      .build();
+  }
+
+  @Bean
+  public NewTopic locationTopic() {
+    return TopicBuilder.name(LOCATION_TOPIC)
+      .build();
+  }
+
+  @Bean
+  public NewTopic libraryTopic() {
+    return TopicBuilder.name(LIBRARY_TOPIC)
       .build();
   }
 
