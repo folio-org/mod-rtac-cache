@@ -2,7 +2,6 @@ package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,7 +47,7 @@ class LocationUpdateEventHandlerTest {
   @Test
   void locationUpdate_updatesLibraryFields_whenLibraryPresent() {
     var location = new Location().id("locId").name("New Name").code("NCode");
-    when(resourceEventUtil.getNewFromInventoryEvent(eq(resourceEvent), eq(Location.class))).thenReturn(location);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Location.class)).thenReturn(location);
     when(holdingEntity.getRtacHolding()).thenReturn(rtacHolding);
     when(rtacHolding.getLocation()).thenReturn(rtacLocation);
     when(holdingRepository.findAllByLocationId("locId")).thenReturn(List.of(holdingEntity));
@@ -62,9 +61,9 @@ class LocationUpdateEventHandlerTest {
   }
 
   @Test
-  void locationUpdate_skipsUpdate_whenLibraryMissing() {
+  void locationUpdate_skipsUpdate_whenRtacHoldingsWithLocationIdMissing() {
     var location = new Location().id("locId").name("New Name").code("NCode");
-    when(resourceEventUtil.getNewFromInventoryEvent(eq(resourceEvent), eq(Location.class))).thenReturn(location);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Location.class)).thenReturn(location);
     when(holdingRepository.findAllByLocationId("locId")).thenReturn(List.of());
 
     handler.handle(resourceEvent);

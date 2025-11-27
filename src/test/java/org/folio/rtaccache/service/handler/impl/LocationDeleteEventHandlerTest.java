@@ -24,7 +24,7 @@ class LocationDeleteEventHandlerTest {
   InventoryResourceEvent resourceEvent;
 
   @Test
-  void createLocation_shouldClearCache_whenLocationIsCreated() {
+  void locationDelete_shouldClearCache_whenLocationIsCreated() {
     handler.handle(resourceEvent);
 
     verify(cacheUtil).clearCache(LOCATIONS_CACHE_NAME);

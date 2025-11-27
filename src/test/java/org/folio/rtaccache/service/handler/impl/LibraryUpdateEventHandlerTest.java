@@ -2,7 +2,6 @@ package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,9 +45,9 @@ class LibraryUpdateEventHandlerTest {
   RtacHoldingLibrary rtacLibrary;
 
   @Test
-  void handle_updatesLibraryFields_whenLibraryPresent() {
+  void libraryUpdate_updatesLibraryFields_whenLibraryPresent() {
     var loclib = new Loclib().id("libId").name("New Name").code("NCode");
-    when(resourceEventUtil.getNewFromInventoryEvent(eq(resourceEvent), eq(Loclib.class))).thenReturn(loclib);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Loclib.class)).thenReturn(loclib);
     when(holdingEntity.getRtacHolding()).thenReturn(rtacHolding);
     when(rtacHolding.getLibrary()).thenReturn(rtacLibrary);
     when(holdingRepository.findAllByLibraryId("libId")).thenReturn(List.of(holdingEntity));
@@ -62,9 +61,9 @@ class LibraryUpdateEventHandlerTest {
   }
 
   @Test
-  void handle_skipsUpdate_whenLibraryMissing() {
+  void libraryUpdate_skipsUpdate_whenRtacHoldingsWithLibraryIdMissing() {
     var loclib = new Loclib().id("libId2").name("Another").code("ACode");
-    when(resourceEventUtil.getNewFromInventoryEvent(eq(resourceEvent), eq(Loclib.class))).thenReturn(loclib);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Loclib.class)).thenReturn(loclib);
     when(holdingRepository.findAllByLibraryId("libId2")).thenReturn(List.of());
 
     handler.handle(resourceEvent);

@@ -3,6 +3,7 @@ package org.folio.rtaccache.service.handler.impl;
 import static org.folio.rtaccache.constant.RtacCacheConstant.LIBRARY_CACHE_NAME;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
@@ -38,11 +39,9 @@ public class LibraryUpdateEventHandler implements InventoryEventHandler {
       })
       .toList();
 
-    if (updatedRtacHoldingEntities.isEmpty()) {
-      return;
+    if (CollectionUtils.isNotEmpty(updatedRtacHoldingEntities)) {
+      holdingRepository.saveAll(updatedRtacHoldingEntities);
     }
-
-    holdingRepository.saveAll(updatedRtacHoldingEntities);
   }
 
   @Override

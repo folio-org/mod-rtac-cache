@@ -7,4 +7,9 @@ public class RtacCacheConstant {
   public static final String LOAN_TYPES_CACHE_NAME = "loanTypesMap";
   public static final String MATERIAL_TYPES_CACHE_NAME = "materialTypesMap";
   public static final String HOLDINGS_NOTE_CACHE_NAME = "holdingsNoteTypesMap";
+
+  private RtacCacheConstant() {
+    throw new IllegalStateException("Utility class");
+  }
+
 }
