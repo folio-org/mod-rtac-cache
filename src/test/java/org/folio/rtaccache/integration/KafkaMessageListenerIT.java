@@ -41,11 +41,16 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 
 @TestMethodOrder(OrderAnnotation.class)
+@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 @Log4j2
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
@@ -419,17 +424,19 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(16)
+  @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLocationsCache_whenLocationCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
       var cache = cacheManager.getCache("locationsMap");
-      cache.put("locationsMap", Map.of("locationId", new Location()));
+      cache.put("locationsMap", Map.of(OLD_LOCATION_ID, new Location()));
       var event = loadInventoryResourceEvent(CREATE_LOCATION_EVENT_PATH);
       // When
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        assertThat(cache.get("locationsMap")).isNull();
+        var updatedCache =  cacheManager.getCache("locationsMap");
+        assertThat(updatedCache.get("locationsMap")).isNull();
       });
     }
   }
@@ -455,6 +462,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(18)
+  @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLocationsCache_whenLocationDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -465,13 +473,15 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        assertThat(cache.get("locationsMap")).isNull();
+        var updatedCache =  cacheManager.getCache("locationsMap");
+        assertThat(updatedCache.get("locationsMap")).isNull();
       });
     }
   }
 
   @Test
   @Order(19)
+  @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLibraryCache_whenLibraryCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -482,7 +492,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        assertThat(cache.get("libraryMap")).isNull();
+        var updatedCache =  cacheManager.getCache("libraryMap");
+        assertThat(updatedCache.get("libraryMap")).isNull();
       });
     }
   }
@@ -508,6 +519,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(21)
+  @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
@@ -518,7 +530,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        assertThat(cache.get("libraryMap")).isNull();
+        var updatedCache =  cacheManager.getCache("libraryMap");
+        assertThat(updatedCache.get("libraryMap")).isNull();
       });
     }
   }
