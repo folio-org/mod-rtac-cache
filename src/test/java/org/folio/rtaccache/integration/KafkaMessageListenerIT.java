@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -23,14 +24,13 @@ import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
-import org.folio.rtaccache.domain.dto.Location;
-import org.folio.rtaccache.domain.dto.Loclib;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.service.InventoryReferenceDataService;
 import org.folio.spring.DefaultFolioExecutionContext;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
@@ -46,11 +46,8 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
 
 @TestMethodOrder(OrderAnnotation.class)
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 @Log4j2
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
@@ -107,6 +104,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private RtacHoldingRepository holdingRepository;
   @Autowired
   private FolioModuleMetadata folioModuleMetadata;
+  @Autowired
+  private InventoryReferenceDataService inventoryReferenceDataService;
   @Autowired
   private CacheManager cacheManager;
 
@@ -424,19 +423,18 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(16)
-  @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLocationsCache_whenLocationCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      var cache = cacheManager.getCache("locationsMap");
-      cache.put("locationsMap", Map.of(OLD_LOCATION_ID, new Location()));
+      //preload cache
+      inventoryReferenceDataService.getLocationsMap();
       var event = loadInventoryResourceEvent(CREATE_LOCATION_EVENT_PATH);
       // When
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache =  cacheManager.getCache("locationsMap");
-        assertThat(updatedCache.get("locationsMap")).isNull();
+        var updatedCache =  ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
+        assertThat(updatedCache.size()).isZero();
       });
     }
   }
@@ -466,15 +464,15 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldClearLocationsCache_whenLocationDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      var cache = cacheManager.getCache("locationsMap");
-      cache.put("locationsMap", Map.of("locationId", new Location()));
+      //preload cache
+      inventoryReferenceDataService.getLocationsMap();
       var event = loadInventoryResourceEvent(DELETE_LOCATION_EVENT_PATH);
       // When
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache =  cacheManager.getCache("locationsMap");
-        assertThat(updatedCache.get("locationsMap")).isNull();
+        var updatedCache =  ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
+        assertThat(updatedCache.size()).isZero();
       });
     }
   }
@@ -485,15 +483,15 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldClearLibraryCache_whenLibraryCreateEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      var cache = cacheManager.getCache("libraryMap");
-      cache.put("libraryMap", Map.of("libraryId", new Loclib()));
+      //preload cache
+      inventoryReferenceDataService.getLibraryMap();
       var event = loadInventoryResourceEvent(CREATE_LIBRARY_EVENT_PATH);
       // When
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache =  cacheManager.getCache("libraryMap");
-        assertThat(updatedCache.get("libraryMap")).isNull();
+        var updatedCache =  ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
+        assertThat(updatedCache.size()).isZero();
       });
     }
   }
@@ -523,15 +521,15 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() throws JsonProcessingException {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
       // Given
-      var cache = cacheManager.getCache("libraryMap");
-      cache.put("libraryMap", Map.of("libraryId", new Location()));
+      //preload cache
+      inventoryReferenceDataService.getLibraryMap();
       var event = loadInventoryResourceEvent(DELETE_LIBRARY_EVENT_PATH);
       // When
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache =  cacheManager.getCache("libraryMap");
-        assertThat(updatedCache.get("libraryMap")).isNull();
+        var updatedCache =  ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
+        assertThat(updatedCache.size()).isZero();
       });
     }
   }

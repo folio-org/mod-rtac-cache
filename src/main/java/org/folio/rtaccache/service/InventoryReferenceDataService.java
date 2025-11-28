@@ -24,8 +24,10 @@ public class InventoryReferenceDataService {
 
   private final InventoryClient inventoryClient;
 
-  @Cacheable(value = LOCATIONS_CACHE_NAME, unless = "#result == null || #result.isEmpty()")
-  Map<String, Location> getLocationsMap() {
+  @Cacheable(value = LOCATIONS_CACHE_NAME,
+    key = "'locations'.concat('_').concat(@folioExecutionContext.getTenantId())",
+    unless = "#result == null || #result.isEmpty()")
+  public Map<String, Location> getLocationsMap() {
     return inventoryClient.getLocations(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLocations()
       .stream()
@@ -37,8 +39,10 @@ public class InventoryReferenceDataService {
       );
   }
 
-  @Cacheable(value = LIBRARY_CACHE_NAME, unless = "#result == null || #result.isEmpty()")
-  Map<String, Loclib> getLibraryMap() {
+  @Cacheable(value = LIBRARY_CACHE_NAME,
+    key = "'library'.concat('_').concat(@folioExecutionContext.getTenantId())",
+    unless = "#result == null || #result.isEmpty()")
+  public Map<String, Loclib> getLibraryMap() {
     return inventoryClient.getLibraries(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLoclibs()
       .stream()
@@ -50,8 +54,10 @@ public class InventoryReferenceDataService {
       );
   }
 
-  @Cacheable(value = MATERIAL_TYPES_CACHE_NAME, unless = "#result == null || #result.isEmpty()")
-  Map<String, MaterialType> getMaterialTypesMap() {
+  @Cacheable(value = MATERIAL_TYPES_CACHE_NAME,
+    key = "'materialTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
+    unless = "#result == null || #result.isEmpty()")
+  public Map<String, MaterialType> getMaterialTypesMap() {
     return inventoryClient.getMaterialTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getMtypes()
       .stream()
@@ -63,8 +69,10 @@ public class InventoryReferenceDataService {
       );
   }
 
-  @Cacheable(value = LOAN_TYPES_CACHE_NAME, unless = "#result == null || #result.isEmpty()")
-  Map<String, LoanType> getLoanTypesMap() {
+  @Cacheable(value = LOAN_TYPES_CACHE_NAME,
+    key = "'loanTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
+    unless = "#result == null || #result.isEmpty()")
+  public Map<String, LoanType> getLoanTypesMap() {
     return inventoryClient.getLoanTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getLoantypes()
       .stream()
@@ -76,8 +84,10 @@ public class InventoryReferenceDataService {
       );
   }
 
-  @Cacheable(value = HOLDINGS_NOTE_CACHE_NAME, unless = "#result == null || #result.isEmpty()")
-  Map<String, HoldingsNoteType> getHoldingsNoteTypesMap() {
+  @Cacheable(value = HOLDINGS_NOTE_CACHE_NAME,
+    key = "'holdingsNotesTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
+    unless = "#result == null || #result.isEmpty()")
+  public Map<String, HoldingsNoteType> getHoldingsNoteTypesMap() {
     return inventoryClient.getHoldingsNoteTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
       .getHoldingsNoteTypes()
       .stream()
