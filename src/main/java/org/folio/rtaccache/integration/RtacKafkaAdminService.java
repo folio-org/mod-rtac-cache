@@ -5,12 +5,14 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.stereotype.Service;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
+@Profile("!test|test-kafka")
 public class RtacKafkaAdminService implements ApplicationRunner {
 
   private final KafkaListenerEndpointRegistry kafkaListenerEndpointRegistry;
