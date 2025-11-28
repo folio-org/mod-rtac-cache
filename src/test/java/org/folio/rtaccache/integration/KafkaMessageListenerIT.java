@@ -46,9 +46,15 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
+import org.testcontainers.utility.DockerImageName;
 
-@TestMethodOrder(OrderAnnotation.class)
 @Log4j2
+@TestMethodOrder(OrderAnnotation.class)
+@ActiveProfiles({"test-kafka"})
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   private static final String HOLDINGS_ID_1 = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
@@ -94,6 +100,14 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+  private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.6.1";
+  private static final ConfluentKafkaContainer kafkaContainer =
+    new ConfluentKafkaContainer(DockerImageName.parse(KAFKA_IMAGE_VERSION));
+
+  static {
+    kafkaContainer.start();
+  }
+
   @Autowired
   private KafkaTemplate<String, InventoryResourceEvent> inventoryKafkaTemplate;
   @Autowired
@@ -109,6 +123,10 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Autowired
   private CacheManager cacheManager;
 
+  @DynamicPropertySource
+  static void dynamicProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+  }
 
   @BeforeEach
   void setUp() {
