@@ -22,15 +22,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
       WHERE
       h.instance_id = :instanceId AND
       (:query is null OR
-        (SELECT bool_and(exists) FROM (
-          SELECT (
-            cast(h.rtac_holding_json ->> 'volume' as text) ILIKE '%' || term || '%' OR
-            cast(h.rtac_holding_json ->> 'callNumber' as text) ILIKE '%' || term || '%' OR
-            cast(h.rtac_holding_json -> 'location' ->> 'name' as text) ILIKE '%' || term || '%' OR
-            cast(h.rtac_holding_json -> 'library' ->> 'name' as text) ILIKE '%' || term || '%'
-          ) as exists
-          FROM unnest(string_to_array(:query, ' ')) as term
-        ) as terms)
+        rtac_holding_search_text(h.rtac_holding_json) ILIKE ALL (SELECT '%' || term || '%' FROM unnest(string_to_array(:query, ' ')) as t(term))
       )
       AND (:available is null OR cast(h.rtac_holding_json ->> 'status' as text) = 'Available')
       """, nativeQuery = true)

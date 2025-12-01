@@ -138,4 +138,34 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     assertThat(emptyPage.getTotalElements()).isZero();
     assertThat(emptyPage.getContent()).isEmpty();
   }
+
+  //@Test
+  void testSearchPerformanceWithLargeDataSet() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var instanceId = UUID.fromString("8c2d213f-a633-46ec-b261-9a38d033299f");
+
+    // Create a batch of holdings
+    var holdings = new java.util.ArrayList<RtacHoldingEntity>();
+    for (int i = 0; i < 10000; i++) {
+        String volume = "vol" + i;
+        String callNumber = "call" + i;
+        String location = "loc" + (i % 100);
+        String library = "lib" + (i % 10);
+        String status = (i % 2 == 0) ? "Available" : "Checked out";
+        holdings.add(createRtacHoldingEntity(instanceId, volume, callNumber, location, library, status));
+    }
+    rtacHoldingRepository.saveAll(holdings);
+
+    // The test will pause here.
+    System.out.println("Database is ready with 10,000 records. Press Enter in the console to continue...");
+    try {
+        System.in.read();
+    } catch (java.io.IOException e) {
+        e.printStackTrace();
+    }
+
+    // Run a search to ensure it works, but the main point is the pause.
+    Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol999 call999", null, OffsetRequest.of(0, 10));
+    assertThat(page.getTotalElements()).isEqualTo(1);
+  }
 }
