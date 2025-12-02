@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
+
+  private static final Pattern SPLIT_PATTERN = Pattern.compile("\\s+");
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -28,7 +31,7 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
     var whereClause = new ArrayList<String>();
     whereClause.add("h.instance_id = :instanceId");
 
-    var terms = Arrays.stream(query.split("\\s+"))
+    var terms = Arrays.stream(SPLIT_PATTERN.split(query))
       .filter(s -> !s.isEmpty())
       .toList();
 
