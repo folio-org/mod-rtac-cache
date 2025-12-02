@@ -18,7 +18,10 @@ import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.data.OffsetRequest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -139,33 +142,30 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     assertThat(emptyPage.getContent()).isEmpty();
   }
 
-  //@Test
-  void testSearchPerformanceWithLargeDataSet() {
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "lib1 vol1",
+    "vol1 lib1",
+    " lib1   vol1 ",
+    "vol1   lib1"
+  })
+  void searchRtacHoldings_shouldFindRecord_whenQueryHasVaryingSpaces(String query) {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
-    var instanceId = UUID.fromString("8c2d213f-a633-46ec-b261-9a38d033299f");
 
-    // Create a batch of holdings
-    var holdings = new java.util.ArrayList<RtacHoldingEntity>();
-    for (int i = 0; i < 10000; i++) {
-        String volume = "vol" + i;
-        String callNumber = "call" + i;
-        String location = "loc" + (i % 100);
-        String library = "lib" + (i % 10);
-        String status = (i % 2 == 0) ? "Available" : "Checked out";
-        holdings.add(createRtacHoldingEntity(instanceId, volume, callNumber, location, library, status));
-    }
-    rtacHoldingRepository.saveAll(holdings);
+    var instanceId = UUID.randomUUID();
 
-    // The test will pause here.
-    System.out.println("Database is ready with 10,000 records. Press Enter in the console to continue...");
-    try {
-        System.in.read();
-    } catch (java.io.IOException e) {
-        e.printStackTrace();
-    }
+    // Create a specific record to find
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available"));
+    // Create other records that shouldn't match
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol2", "call2", "loc2", "lib2", "Checked out"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), "vol1", "call1", "loc1", "lib1", "Available"));
 
-    // Run a search to ensure it works, but the main point is the pause.
-    Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol999 call999", null, OffsetRequest.of(0, 10));
+    Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId, query, null, OffsetRequest.of(0, 10));
+
     assertThat(page.getTotalElements()).isEqualTo(1);
+    RtacHolding found = page.getContent().getFirst();
+    assertThat(found.getVolume()).isEqualTo("vol1");
+    Assertions.assertNotNull(found.getLibrary());
+    assertThat(found.getLibrary().getName()).isEqualTo("lib1");
   }
 }

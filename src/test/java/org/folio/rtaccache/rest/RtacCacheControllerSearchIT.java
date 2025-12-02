@@ -22,6 +22,8 @@ import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -77,15 +79,22 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
     assertThat(rtacHoldings.getTotalRecords()).isZero();
   }
 
-  @Test
-  void testSearchRtacHoldings_withEmptyQuery() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"", "  ", "\t", "\n"})
+  void searchRtacCacheHoldings_shouldReturn200_whenQueryIsBlankOrEmpty(String query) throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TEST_TENANT);
+    var instanceId = UUID.randomUUID();
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available"));
 
-    var instanceId1 = UUID.randomUUID();
-
-    mockMvc.perform(get("/rtac-cache/search/{instanceId}", instanceId1)
+    var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", instanceId)
+        .param("query", query)
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
-      .andExpect(status().isBadRequest());
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings()).hasSize(1);
+    assertThat(rtacHoldings.getTotalRecords()).isEqualTo(1);
   }
 
   @Test

@@ -15,18 +15,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId> {
-
-  @Query(value = """
-      SELECT * FROM rtac_holding h
-      WHERE
-      h.instance_id = :instanceId AND
-      (:query is null OR
-        rtac_holding_search_text(h.rtac_holding_json) ILIKE ALL (SELECT '%' || term || '%' FROM unnest(string_to_array(:query, ' ')) as t(term))
-      )
-      AND (:available is null OR cast(h.rtac_holding_json ->> 'status' as text) = 'Available')
-      """, nativeQuery = true)
-  Page<RtacHoldingEntity> search(@Param("instanceId") UUID instanceId, @Param("query") String query, @Param("available") Boolean available, Pageable pageable);
+public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId>, RtacHoldingRepositoryCustom {
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
