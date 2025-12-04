@@ -37,6 +37,11 @@ public class RtacHoldingStorageService {
   private final RtacCacheGenerationService rtacCacheGenerationService;
   private final ObjectMapper objectMapper;
 
+  public Page<RtacHolding> searchRtacHoldings(UUID instanceId, String query, Boolean available, Pageable pageable) {
+    return rtacHoldingRepository.search(instanceId, query, available, pageable)
+      .map(RtacHoldingEntity::getRtacHolding);
+  }
+
   public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
     if (rtacHoldingRepository.countByIdInstanceId(UUID.fromString(instanceId)) == 0) {
       var future = rtacCacheGenerationService.generateRtacCache(instanceId);

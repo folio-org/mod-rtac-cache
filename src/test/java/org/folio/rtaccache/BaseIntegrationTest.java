@@ -67,7 +67,6 @@ public abstract class BaseIntegrationTest {
     setUpTenant(mockMvc);
   }
 
-
   protected static HttpHeaders defaultHeaders(String tenant, MediaType mediaType) {
     final HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.setContentType(mediaType);

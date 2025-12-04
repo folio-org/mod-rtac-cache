@@ -3,6 +3,48 @@ info:
   title: RTAC Cache API
   version: 1.0.0
 paths:
+  /rtac-cache/search/{instanceId}:
+    get:
+      tags:
+        - rtac
+      summary: Search RTAC holdings
+      operationId: searchRtacCacheHoldings
+      parameters:
+        - name: instanceId
+          in: path
+          description: The UUID of a FOLIO instance
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: 'parameters/query-param.yaml'
+        - $ref: 'parameters/available-param.yaml'
+        - $ref: 'parameters/offset-param.yaml'
+        - $ref: 'parameters/limit-param.yaml'
+      responses:
+        '200':
+          description: RTAC holdings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/rtacHoldings.json'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
   /rtac-cache/{id}:
     get:
       tags:

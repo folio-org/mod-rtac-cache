@@ -26,8 +26,29 @@
         {
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/batch",
-          "permissionsRequired": [ "rtac-cache.collection.post" ],
+          "permissionsRequired": [ "rtac-cache.batch.collection.post" ],
           "modulePermissions":[
+            "inventory-storage.items.retrieve.collection.post",
+            "inventory-storage.holdings.retrieve.collection.post",
+            "inventory-storage.location-units.libraries.collection.get",
+            "inventory-storage.locations.collection.get",
+            "inventory-storage.material-types.collection.get",
+            "inventory-storage.loan-types.collection.get",
+            "inventory-storage.holdings-note-types.collection.get",
+            "circulation-storage.loans.collection.get",
+            "circulation.requests.collection.get",
+            "orders.pieces.collection.get"
+          ]
+        },
+        {
+          "methods": [
+            "GET"
+          ],
+          "pathPattern": "/search/{instanceId}",
+          "permissionsRequired": [
+            "rtac-cache.search.collection.get"
+          ],
+          "modulePermissions": [
             "inventory-storage.items.retrieve.collection.post",
             "inventory-storage.holdings.retrieve.collection.post",
             "inventory-storage.location-units.libraries.collection.get",
@@ -69,45 +90,6 @@
           "methods": ["DELETE"],
           "pathPattern": "/_/tenant"
         }
-      ]
-    }
-  ],
-  "permissionSets": [
-    {
-      "permissionName": "rtac-cache.collection.get",
-      "displayName": "RTAC Cache - Get collection",
-      "description": "Get RTAC cache collection"
-    },
-    {
-      "permissionName": "rtac-cache.collection.post",
-      "displayName": "RTAC Cache - Post collection",
-      "description": "Post RTAC cache collection"
-    },
-    {
-      "permissionName": "rtac-cache.prewarm.collection.get",
-      "displayName": "RTAC Cache - Get collection of pre-warming jobs",
-      "description": "Get RTAC cache pre-warming jobs collection"
-    },
-    {
-      "permissionName": "rtac-cache.prewarm.get",
-      "displayName": "RTAC Cache - Get pre-warming job status",
-      "description": "Get RTAC cache pre-warming job status by ID"
-    },
-    {
-      "permissionName": "rtac-cache.prewarm.post",
-      "displayName": "RTAC Cache - Submit pre-warming job",
-      "description": "Submit RTAC cache pre-warming job"
-    },
-    {
-      "permissionName": "rtac-cache.all",
-      "displayName": "RTAC Cache - All permissions",
-      "description": "All RTAC cache permissions",
-      "subPermissions": [
-        "rtac-cache.collection.get",
-        "rtac-cache.collection.post",
-        "rtac-cache.prewarm.collection.get",
-        "rtac-cache.prewarm.get",
-        "rtac-cache.prewarm.post"
       ]
     }
   ],
@@ -163,6 +145,56 @@
     {
       "id": "settings",
       "version": "1.1 1.2"
+    }
+  ],
+  "permissionSets": [
+    {
+      "permissionName": "rtac-cache.collection.get",
+      "displayName": "RTAC Cache - Get collection",
+      "description": "Get RTAC cache collection"
+    },
+    {
+      "permissionName": "rtac-cache.batch.collection.post",
+      "displayName": "RTAC Cache - Post batch collection",
+      "description": "Post RTAC cache batch collection"
+    },
+    {
+      "permissionName": "rtac-cache.search.collection.get",
+      "displayName": "RTAC Cache - Collection search",
+      "description": "RTAC cache search collection"
+    },
+    {
+      "permissionName": "rtac-cache.all",
+      "displayName": "RTAC Cache - All permissions",
+      "description": "All RTAC cache permissions"
+    },
+    {
+      "permissionName": "rtac-cache.prewarm.collection.get",
+      "displayName": "RTAC Cache - Get collection of pre-warming jobs",
+      "description": "Get RTAC cache pre-warming jobs collection"
+    },
+    {
+      "permissionName": "rtac-cache.prewarm.get",
+      "displayName": "RTAC Cache - Get pre-warming job status",
+      "description": "Get RTAC cache pre-warming job status by ID"
+    },
+    {
+      "permissionName": "rtac-cache.prewarm.post",
+      "displayName": "RTAC Cache - Submit pre-warming job",
+      "description": "Submit RTAC cache pre-warming job"
+    },
+    {
+      "permissionName": "rtac-cache.all",
+      "displayName": "RTAC Cache - All permissions",
+      "description": "All RTAC cache permissions",
+      "subPermissions": [
+        "rtac-cache.collection.get",
+        "rtac-cache.batch.collection.post",
+        "rtac-cache.search.collection.get",
+        "rtac-cache.prewarm.collection.get",
+        "rtac-cache.prewarm.get",
+        "rtac-cache.prewarm.post"
+          ]
     }
   ],
   "metadata": {

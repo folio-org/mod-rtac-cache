@@ -15,7 +15,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId> {
+public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId>, RtacHoldingRepositoryCustom {
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 

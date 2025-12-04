@@ -36,14 +36,51 @@
       <dropTable tableName="rtac_holding"/>
     </rollback>
   </changeSet>
+
+  <changeSet id="enable-pg_trgm-extension-001" author="Steve Ellis">
+    <preConditions onFail="MARK_RAN">
+      <sqlCheck expectedResult="0">
+        SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm';
+      </sqlCheck>
+    </preConditions>
+    <sql>
+      CREATE EXTENSION "pg_trgm";
+    </sql>
+    <rollback>
+      <sql>
+        DROP EXTENSION "pg_trgm";
+      </sql>
+    </rollback>
+  </changeSet>
+
+  <changeSet id="create-rtac-holding-search-text-function-001" author="Steve Ellis">
+    <sqlFile path="db/changelog/changes/create-rtac-search-function.sql"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holding_search_text(jsonb);
+      </sql>
+    </rollback>
+  </changeSet>
+
+  <changeSet id="create-rtac-holding-gin-index-001" author="Steve Ellis">
+    <preConditions onFail="MARK_RAN">
+      <not>
+        <indexExists indexName="idx_rtac_holding_search_text_gin" tableName="rtac_holding"/>
+      </not>
+    </preConditions>
+    <sql>
+      CREATE INDEX idx_rtac_holding_search_text_gin ON rtac_holding USING gin (rtac_holding_search_text(rtac_holding_json) gin_trgm_ops);
+    </sql>
+    <rollback>
+      <dropIndex indexName="idx_rtac_holding_search_text_gin" tableName="rtac_holding"/>
+    </rollback>
+  </changeSet>
   <changeSet id="create-rtac-pre-warming-job-table-002" author="Ivan_Zhunkivskyi">
     <preConditions>
       <not>
         <tableExists tableName="rtac_pre_warming_job"/>
       </not>
     </preConditions>
-
-
     <createTable tableName="rtac_pre_warming_job">
       <column name="id" type="uuid">
         <constraints primaryKey="true" nullable="false"/>

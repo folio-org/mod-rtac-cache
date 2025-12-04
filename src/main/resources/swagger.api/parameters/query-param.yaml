@@ -1,0 +1,6 @@
+name: query
+in: query
+description: A search query to find holdings by volume, location name, or call number
+required: true
+schema:
+  type: string
