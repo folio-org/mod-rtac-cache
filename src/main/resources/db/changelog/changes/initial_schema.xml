@@ -62,4 +62,26 @@
       <dropTable tableName="rtac_pre_warming_job"/>
     </rollback>
   </changeSet>
+
+  <changeSet id="add-rtac-holding-location-id-index" author="Illia-Borysenko_epam">
+    <comment>Create index on rtac_holding_json location.id for bulk updates</comment>
+    <sql>
+      CREATE INDEX IF NOT EXISTS idx_rtac_holding_location_id
+      ON rtac_holding ((rtac_holding_json->'location'->>'id'));
+    </sql>
+    <rollback>
+      <sql>DROP INDEX IF EXISTS idx_rtac_holding_location_id;</sql>
+    </rollback>
+  </changeSet>
+
+  <changeSet id="add-rtac-holding-library-id-index" author="Illia-Borysenko_epam">
+    <comment>Create index on rtac_holding_json library.id for bulk updates</comment>
+    <sql>
+      CREATE INDEX IF NOT EXISTS idx_rtac_holding_location_id
+      ON rtac_holding ((rtac_holding_json->'library'->>'id'));
+    </sql>
+    <rollback>
+      <sql>DROP INDEX IF EXISTS idx_rtac_holding_library_id;</sql>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>

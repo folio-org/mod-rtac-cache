@@ -55,7 +55,7 @@ import org.testcontainers.utility.DockerImageName;
 @Log4j2
 @TestMethodOrder(OrderAnnotation.class)
 @ActiveProfiles({"test-kafka"})
-class KafkaMessaugistenerIT extends BaseIntegrationTest {
+class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   private static final String HOLDINGS_ID_1 = "55fa3746-8176-49c5-9809-b29dd7bb9b47";
   private static final String HOLDINGS_ID_2 = "48525495-05b0-488e-a0c5-0f3ec5c7a0f2";
