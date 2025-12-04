@@ -1,0 +1,28 @@
+{
+  "old": {
+    "id": "1c54d084-4639-45dd-b9c9-4473df6bd28a",
+    "name": "New location name",
+    "code": "New location code",
+    "discoveryDisplayName": "New location name",
+    "isActive": true,
+    "institutionId": "6ecd8132-caef-4f87-bbb0-9fc07d71357d",
+    "campusId": "3cb95a54-1aac-47f2-9f97-c2b54a01bbfe",
+    "libraryId": "79f1cd00-09cc-4c9c-99c1-d8ad1b77d128",
+    "details": {},
+    "primaryServicePoint": "be6cdc85-1202-4c48-99fa-56af591f5a3a",
+    "servicePointIds": [
+      "be6cdc85-1202-4c48-99fa-56af591f5a3a"
+    ],
+    "servicePoints": [],
+    "metadata": {
+      "createdDate": "2025-11-26T22:47:07.060+00:00",
+      "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+      "updatedDate": "2025-11-26T22:53:26.844+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "type": "DELETE",
+  "tenant": "testTenant",
+  "eventId": "471b914b-a44b-4f75-994b-0933eb9cfac9",
+  "eventTs": 1764199412111
+}
