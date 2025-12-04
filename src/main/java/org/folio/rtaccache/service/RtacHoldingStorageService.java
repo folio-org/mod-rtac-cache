@@ -31,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class RtacHoldingStorageService {
 
+  private static final String INSTANCE_NOT_FOUND_MESSAGE = "Instance %s can not be retrieved";
   private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class);
 
   private final RtacHoldingRepository rtacHoldingRepository;
@@ -57,8 +58,6 @@ public class RtacHoldingStorageService {
     return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
-
-  private static final String INSTANCE_NOT_FOUND_MESSAGE = "Instance %s can not be retrieved";
 
   public RtacHoldingsBatch getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
     List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(instanceIds);
