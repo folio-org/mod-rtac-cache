@@ -108,6 +108,67 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   }
 
   @Test
+  void testGetRtacHoldingsByInstanceIdWithPaging() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var instanceId = UUID.randomUUID();
+
+    // Create 7 entities (2 items, 5 pieces) that should be returned, and 1 holding that should be filtered out.
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.HOLDING, "Available"));
+
+    // Request first page with size 5
+    Page<RtacHolding> firstPage = rtacHoldingStorageService
+      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(0, 5));
+    assertThat(firstPage.getContent()).hasSize(5);
+    assertThat(firstPage.getTotalElements()).isEqualTo(7);
+    assertThat(firstPage.getTotalPages()).isEqualTo(2);
+
+    // Request second page with size 5
+    Page<RtacHolding> secondPage = rtacHoldingStorageService
+      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(5, 5));
+    assertThat(secondPage.getContent()).hasSize(2);
+    assertThat(secondPage.getTotalElements()).isEqualTo(7);
+    assertThat(secondPage.getTotalPages()).isEqualTo(2);
+
+    // Request a page that is out of bounds
+    Page<RtacHolding> emptyPage = rtacHoldingStorageService
+      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(10, 5));
+    assertThat(emptyPage.getContent()).isEmpty();
+    assertThat(emptyPage.getTotalElements()).isEqualTo(7);
+  }
+
+  @Test
+  void testCountByIdInstanceId_withCteFiltering() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    // Scenario 1: Instance has items, so HOLDING records should be excluded from count.
+    var instanceWithItems = UUID.randomUUID();
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithItems, TypeEnum.ITEM, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithItems, TypeEnum.ITEM, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithItems, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithItems, TypeEnum.HOLDING, "Available")); // Should be filtered out
+    // This data for another instance should not be returned
+    rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), TypeEnum.ITEM, "Available"));
+
+    int count1 = rtacHoldingRepository.countByIdInstanceId(instanceWithItems);
+    assertThat(count1).isEqualTo(3); // 2 items + 1 piece
+
+    // Scenario 2: Instance has NO items, so HOLDING records should be included in count.
+    var instanceWithoutItems = UUID.randomUUID();
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.PIECE, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.HOLDING, "Available")); // Should be included
+
+    int count2 = rtacHoldingRepository.countByIdInstanceId(instanceWithoutItems);
+    assertThat(count2).isEqualTo(2); // 1 piece + 1 holding
+  }
+
+  @Test
   void testGetRtacHoldingsSummaryForInstanceIds() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
 
