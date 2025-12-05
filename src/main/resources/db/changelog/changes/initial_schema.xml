@@ -44,7 +44,7 @@
       </sqlCheck>
     </preConditions>
     <sql>
-      CREATE EXTENSION "pg_trgm";
+      CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA pg_catalog;
     </sql>
     <rollback>
       <sql>
