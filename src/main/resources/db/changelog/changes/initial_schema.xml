@@ -38,13 +38,8 @@
   </changeSet>
 
   <changeSet id="enable-pg_trgm-extension-001" author="Steve Ellis">
-    <preConditions onFail="MARK_RAN">
-      <sqlCheck expectedResult="0">
-        SELECT count(*) FROM pg_extension WHERE extname = 'pg_trgm';
-      </sqlCheck>
-    </preConditions>
     <sql>
-      CREATE EXTENSION "pg_trgm";
+      CREATE EXTENSION IF NOT EXISTS "pg_trgm" WITH SCHEMA pg_catalog;
     </sql>
     <rollback>
       <sql>
