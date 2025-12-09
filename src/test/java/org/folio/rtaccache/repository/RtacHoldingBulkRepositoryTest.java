@@ -196,5 +196,61 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
       .name(name);
   }
 
-
+//  @Test
+//  void testBulkUpdateLocationData_performance() throws SQLException, JsonProcessingException {
+//    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+//
+//    // Prepare test data
+//    String locationId = UUID.randomUUID().toString();
+//    String locationCode = "TEST_CODE";
+//    String locationName = "Test Location";
+//
+//    var location = new RtacHoldingLocation();
+//    location.setId(locationId);
+//    location.setCode(locationCode);
+//    location.setName(locationName);
+//
+//    List<RtacHoldingEntity> holdings = IntStream.range(0, 10000000)
+//      .parallel()
+//      .mapToObj(i -> {
+//        var rtacHolding = new RtacHolding();
+//        rtacHolding.setId(UUID.randomUUID().toString());
+//        rtacHolding.setType(TypeEnum.ITEM);
+//        rtacHolding.setInstanceId(UUID.randomUUID().toString());
+//        rtacHolding.setStatus("Available");
+//        rtacHolding.setLocation(location);
+//
+//        return new RtacHoldingEntity(
+//          RtacHoldingId.from(rtacHolding),
+//          rtacHolding,
+//          Instant.now()
+//        );
+//      })
+//      .collect(Collectors.toList());
+//
+//    System.out.println("Holdings list prepared.");
+//
+//    // Insert test data
+//    rtacHoldingBulkRepository.bulkUpsert(holdings);
+//
+//    System.out.println("Records created");
+//
+////    // Verify data was inserted
+////    assertEquals(1, rtacHoldingRepository.count());
+//
+//    // Create updated location
+//    var updatedLocation = new Location();
+//    updatedLocation.setId(locationId);
+//    updatedLocation.setCode("UPDATED_CODE");
+//    updatedLocation.setName("Updated Location Name");
+//
+//    // Measure performance
+//    long startTime = System.currentTimeMillis();
+//    rtacHoldingBulkRepository.bulkUpdateLocationData(updatedLocation);
+//    long endTime = System.currentTimeMillis();
+//    long duration = endTime - startTime;
+//
+//    // Log performance metrics
+//    System.out.println("Bulk update of records took: " + duration + " ms");
+//  }
 }
