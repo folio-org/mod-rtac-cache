@@ -44,7 +44,7 @@
           "methods": [
             "GET"
           ],
-          "pathPattern": "/search/{instanceId}",
+          "pathPattern": "/rtac-cache/search/{instanceId}",
           "permissionsRequired": [
             "rtac-cache.search.collection.get"
           ],
