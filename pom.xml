@@ -39,7 +39,7 @@
 
     <!-- runtime dependencies -->
     <folio-spring-support.version>9.0.1</folio-spring-support.version>
-    <folio-service-tools.version>5.1.0-SNAPSHOT</folio-service-tools.version>
+    <folio-service-tools.version>5.0.1</folio-service-tools.version>
     <openapi-generator.version>7.12.0</openapi-generator.version>
     <mapstruct.version>1.6.3</mapstruct.version>
     <feign-httpclient.version>13.5</feign-httpclient.version>
