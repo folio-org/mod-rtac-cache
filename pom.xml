@@ -10,7 +10,7 @@
   <groupId>org.folio</groupId>
   <artifactId>mod-rtac-cache</artifactId>
   <name>mod-rtac-cache</name>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <description>Provides real-time availability information for FOLIO inventory instances, items and holdings.
   </description>
   <packaging>jar</packaging>
