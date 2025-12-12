@@ -7,12 +7,14 @@ import org.folio.spring.liquibase.FolioSpringLiquibase;
 import org.folio.spring.service.TenantService;
 import org.folio.tenant.domain.dto.TenantAttributes;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @Primary
 @Log4j2
+@Profile("!test|test-kafka")
 public class RtacTenantService extends TenantService {
 
   private final RtacKafkaAdminService rtacKafkaAdminService;
