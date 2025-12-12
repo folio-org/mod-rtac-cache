@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.folio.rtaccache.sql.RtacHoldingSql;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +30,6 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
     params.put("instanceId", instanceId);
 
     var whereClause = new ArrayList<String>();
-    whereClause.add("h.instance_id = :instanceId");
 
     var terms = Arrays.stream(SPLIT_PATTERN.split(query))
       .filter(s -> !s.isEmpty())
@@ -45,16 +45,17 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
       whereClause.add("cast(h.rtac_holding_json ->> 'status' as text) = 'Available'");
     }
 
-    String whereSql = String.join(" AND ", whereClause);
+    String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
+    String fromClause = "FROM Filtered h ";
 
     // Create and execute count query
-    String countSql = "SELECT count(h.id) FROM rtac_holding h WHERE " + whereSql;
+    String countSql = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT count(h.id) " + fromClause + whereSql;
     Query countQuery = entityManager.createNativeQuery(countSql);
     params.forEach(countQuery::setParameter);
     long total = ((Number) countQuery.getSingleResult()).longValue();
 
     // Create and execute data query
-    String dataSql = "SELECT * FROM rtac_holding h WHERE " + whereSql + " ORDER BY h.id"; // Order by to ensure consistent pagination
+    String dataSql = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT * " + fromClause + whereSql + " ORDER BY h.id";
     Query dataQuery = entityManager.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
