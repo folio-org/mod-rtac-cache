@@ -16,6 +16,7 @@
       "description": "The FOLIO id of the holdings record"
     },
     "type": {
+      "type": "string",
       "enum": ["item", "piece", "holding"],
       "description": "Type of source for RTAC record"
     },
