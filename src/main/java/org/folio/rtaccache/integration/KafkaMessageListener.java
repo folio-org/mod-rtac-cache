@@ -42,6 +42,7 @@ public class KafkaMessageListener {
       concurrency = "#{folioKafkaProperties.listener['holdings-record'].concurrency}",
       topicPattern = "#{folioKafkaProperties.listener['holdings-record'].topicPattern}")
   public void handleHoldingsRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    log.info("Received holdings record event: {}", consumerRecord);
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -57,6 +58,7 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['item'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['item'].topicPattern}")
   public void handleItemRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    log.info("Received item record event: {}", consumerRecord);
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -72,6 +74,7 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['loan'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['loan'].topicPattern}")
   public void handleLoanRecord(ConsumerRecord<String, CirculationResourceEvent> consumerRecord) {
+    log.info("Received loan record event: {}", consumerRecord);
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -87,6 +90,7 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['request'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['request'].topicPattern}")
   public void handleRequestRecord(ConsumerRecord<String, CirculationResourceEvent> consumerRecord) {
+    log.info("Received request record event: {}", consumerRecord);
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -102,6 +106,7 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['piece'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['piece'].topicPattern}")
   public void handlePieceRecord(ConsumerRecord<String, PieceResourceEvent> consumerRecord) {
+    log.info("Received piece record event: {}", consumerRecord);
     var tenantId = getFolioTenantFromHeader(consumerRecord);
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();

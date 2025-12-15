@@ -57,6 +57,7 @@ spring:
       trust-store-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
 folio:
   environment: ${ENV:folio}
+  okapiUrl: ${OKAPI_URL:http://localhost:8081}
   tenant:
     validation:
       enabled: true
@@ -116,4 +117,10 @@ management:
       enabled: false
     readinessstate:
       enabled: true
-debug: false
+debug: true
+logging:
+  level:
+    org:
+      folio:
+        spring:
+          client: DEBUG
