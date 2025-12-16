@@ -156,7 +156,8 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     // This data for another instance should not be returned
     rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), TypeEnum.ITEM, "Available"));
 
-    int count1 = rtacHoldingRepository.countByIdInstanceId(instanceWithItems);
+    final var schema = String.format("%s_mod_rtac_cache", TestConstant.TEST_TENANT.toLowerCase());
+    int count1 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithItems);
     assertThat(count1).isEqualTo(3); // 2 items + 1 piece
 
     // Scenario 2: Instance has NO items, so HOLDING records should be included in count.
@@ -164,7 +165,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.PIECE, "Available"));
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.HOLDING, "Available")); // Should be included
 
-    int count2 = rtacHoldingRepository.countByIdInstanceId(instanceWithoutItems);
+    int count2 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithoutItems);
     assertThat(count2).isEqualTo(2); // 1 piece + 1 holding
   }
 

@@ -11,7 +11,6 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
-import org.folio.rtaccache.sql.RtacHoldingSql;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,9 +24,10 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   @Override
   @SuppressWarnings("unchecked") // Ok to suppress because RtacHoldingEntity is passed to createNativeQuery
-  public Page<RtacHoldingEntity> search(UUID instanceId, String query, Boolean available, Pageable pageable) {
+  public Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, Pageable pageable) {
     var params = new HashMap<String, Object>();
-    params.put("instanceId", instanceId);
+    params.put("schemas", schemas);
+    params.put("instanceIds", new UUID[]{instanceId});
 
     var whereClause = new ArrayList<String>();
 
@@ -47,15 +47,16 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
     String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
     String fromClause = "FROM Filtered h ";
+    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)) ";
 
     // Create and execute count query
-    String countSql = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT count(h.id) " + fromClause + whereSql;
+    String countSql = filterCte + " SELECT count(h.id) " + fromClause + whereSql;
     Query countQuery = entityManager.createNativeQuery(countSql);
     params.forEach(countQuery::setParameter);
     long total = ((Number) countQuery.getSingleResult()).longValue();
 
     // Create and execute data query
-    String dataSql = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT * " + fromClause + whereSql + " ORDER BY h.id";
+    String dataSql = filterCte + " SELECT * " + fromClause + whereSql + " ORDER BY h.id";
     Query dataQuery = entityManager.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());

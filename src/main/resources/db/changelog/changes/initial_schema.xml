@@ -70,6 +70,16 @@
       <dropIndex indexName="idx_rtac_holding_search_text_gin" tableName="rtac_holding"/>
     </rollback>
   </changeSet>
+
+  <changeSet id="create-rtac-holdings-multi-tenant-function-001" author="Gemini">
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holdings_multi_tenant(text, uuid[]);
+      </sql>
+    </rollback>
+  </changeSet>
+
   <changeSet id="create-rtac-pre-warming-job-table-002" author="Ivan_Zhunkivskyi">
     <preConditions>
       <not>
