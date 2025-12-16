@@ -2,9 +2,14 @@ package org.folio.rtaccache.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.folio.rtaccache.TestUtil.asString;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
@@ -27,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.annotation.Transactional;
 
 class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
@@ -282,5 +288,51 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertRtacHoldingsSummary(summaryNoLocation, instanceIdNoLocation, false, List.of(
       new ExpectedLocationStatus(null, null, "Available", 1)
     ));
+  }
+
+  @Test
+  void testCountAcrossTenants() throws Exception {
+    final var tenant1 = TestConstant.TEST_TENANT;
+    final var tenant2 = "tenant2";
+    final var instanceId = UUID.randomUUID();
+
+    // Tenant1 is already set up by BaseIntegrationTest. Set up tenant2.
+    setUpTenant(tenant2);
+
+    // --- Insert data for tenant 1 ---
+    when(folioExecutionContext.getTenantId()).thenReturn(tenant1);
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+
+    // --- Insert data for tenant 2 ---
+    var tenant2Headers = defaultHeaders(tenant2, org.springframework.http.MediaType.APPLICATION_JSON);
+    var tenant2Context = new org.folio.spring.DefaultFolioExecutionContext(folioModuleMetadata, (Map) tenant2Headers);
+    try (var ignored = new org.folio.spring.scope.FolioExecutionContextSetter(tenant2Context)) {
+      rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+      rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+      rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, TypeEnum.ITEM, "Available"));
+    }
+
+    // --- Query across both tenants ---
+    final var schemas = String.join(",",
+      String.format("%s_mod_rtac_cache", tenant1.toLowerCase()),
+      String.format("%s_mod_rtac_cache", tenant2.toLowerCase())
+    );
+
+    int count = rtacHoldingRepository.countByIdInstanceId(schemas, instanceId);
+
+    assertThat(count).isEqualTo(5);
+  }
+
+  private void setUpTenant(String tenantId) throws Exception {
+    var tenantAttributes = new org.folio.tenant.domain.dto.TenantAttributes()
+      .moduleTo("mod-rtac-cache-1.0.0")
+      .parameters(List.of(new org.folio.tenant.domain.dto.Parameter().key("loadReference").value("true")));
+
+    mockMvc.perform(post("/_/tenant")
+        .content(asString(tenantAttributes))
+        .headers(defaultHeaders(tenantId, org.springframework.http.MediaType.APPLICATION_JSON))
+        .contentType(org.springframework.http.MediaType.APPLICATION_JSON))
+      .andExpect(status().isNoContent());
   }
 }
