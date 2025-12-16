@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
-import org.folio.rtaccache.sql.RtacHoldingSql;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,13 +17,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId>, RtacHoldingRepositoryCustom {
 
-  @Query(value = RtacHoldingSql.FILTER_CTE_SINGLE_ID + RtacHoldingSql.SELECT_FROM_FILTER,
-         countQuery = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT count(*) FROM Filtered",
-         nativeQuery = true)
-  Page<RtacHoldingEntity> findAllByIdInstanceId(@Param("instanceId") UUID instanceId, Pageable pageable);
+  @Query(value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
+      countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
+      nativeQuery = true)
+  Page<RtacHoldingEntity> findAllByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId, Pageable pageable);
 
-  @Query(value = RtacHoldingSql.FILTER_CTE_SINGLE_ID + " SELECT count(*) FROM Filtered", nativeQuery = true)
-  int countByIdInstanceId(@Param("instanceId") UUID instanceId);
+  @Query(value = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])", nativeQuery = true)
+  int countByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId);
 
   Optional<RtacHoldingEntity> findByIdId(UUID id);
 
@@ -41,41 +40,55 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   void deleteAllByIdInstanceId(UUID instanceId);
 
-  @Query(value = RtacHoldingSql.FILTER_CTE + """
-                 , LocationStatusCounts AS (
-                 SELECT
-                 h_inner.instance_id,
-                 (h_inner.rtac_holding_json->'library'->>'id') AS libraryId,
-                 (h_inner.rtac_holding_json->'location'->>'id') AS locationId,
-                 (h_inner.rtac_holding_json->>'status') AS status,
-                 COUNT(*) AS statusCount
-                 FROM
-                 Filtered h_inner
-                 GROUP BY
-                 h_inner.instance_id, libraryId, locationId, status
-                 )
-                 SELECT
-                 h.instance_id AS instanceId,
-                 bool_or(h.rtac_holding_json->>'volume' IS NOT NULL AND h.rtac_holding_json->>'volume' != '') AS hasVolumes,
-                 (
-                 SELECT
-                 json_agg(
-                 json_build_object(
-                 'libraryId', lsc.libraryId,
-                 'locationId', lsc.locationId,
-                 'status', lsc.status,
-                 'statusCount', lsc.statusCount
-                 )
-                 )
-                 FROM
-                 LocationStatusCounts lsc
-                 WHERE
-                 lsc.instance_id = h.instance_id
-                 ) AS locationStatusJson
-                 FROM
-                 Filtered h
-                 GROUP BY
-                 h.instance_id""",
-         nativeQuery = true)
-  List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("instanceIds") List<UUID> instanceIds);
+  @Query(value = """
+        WITH Filtered AS (
+          SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)
+        ),
+        LocationStatusCounts AS (
+          SELECT
+            h_inner.instance_id,
+            (h_inner.rtac_holding_json->'library'->>'id') AS libraryId,
+            (h_inner.rtac_holding_json->'location'->>'id') AS locationId,
+            (h_inner.rtac_holding_json->>'status') AS status,
+            COUNT(*) AS statusCount
+          FROM
+            Filtered h_inner
+          GROUP BY
+            h_inner.instance_id, libraryId, locationId, status
+        )
+        SELECT
+          h.instance_id AS instanceId,
+          bool_or(h.rtac_holding_json->>'volume' IS NOT NULL AND h.rtac_holding_json->>'volume' != '') AS hasVolumes,
+          (
+            SELECT
+              json_agg(
+                json_build_object(
+                  'libraryId', lsc.libraryId,
+                  'locationId', lsc.locationId,
+                  'status', lsc.status,
+                  'statusCount', lsc.statusCount
+                )
+              )
+            FROM
+              LocationStatusCounts lsc
+            WHERE
+              lsc.instance_id = h.instance_id
+          ) AS locationStatusJson
+        FROM
+          Filtered h
+        GROUP BY
+          h.instance_id""",
+      nativeQuery = true)
+  List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("schemas") String schemas, @Param("instanceIds") UUID[] instanceIds);
+
+  @Query(
+      value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)",
+      countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)",
+      nativeQuery = true
+  )
+  Page<RtacHoldingEntity> findAcrossTenants(
+      @Param("schemas") String schemas,
+      @Param("instanceIds") UUID[] instanceIds,
+      Pageable pageable
+  );
 }

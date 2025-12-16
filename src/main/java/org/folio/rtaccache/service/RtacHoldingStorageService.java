@@ -19,6 +19,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.exception.RtacDataProcessingException;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
+import org.folio.spring.FolioExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,15 +37,17 @@ public class RtacHoldingStorageService {
 
   private final RtacHoldingRepository rtacHoldingRepository;
   private final RtacCacheGenerationService rtacCacheGenerationService;
+  private final FolioExecutionContext folioExecutionContext;
   private final ObjectMapper objectMapper;
 
   public Page<RtacHolding> searchRtacHoldings(UUID instanceId, String query, Boolean available, Pageable pageable) {
-    return rtacHoldingRepository.search(instanceId, query, available, pageable)
+    return rtacHoldingRepository.search(getSchemaName(), instanceId, query, available, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
   public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
-    if (rtacHoldingRepository.countByIdInstanceId(UUID.fromString(instanceId)) == 0) {
+    final var schema = getSchemaName();
+    if (rtacHoldingRepository.countByIdInstanceId(schema, UUID.fromString(instanceId)) == 0) {
       var future = rtacCacheGenerationService.generateRtacCache(instanceId);
       try {
         future.join();
@@ -55,12 +58,13 @@ public class RtacHoldingStorageService {
           String.format("RTAC cache generation failed for instanceId: %s", instanceId));
       }
     }
-    return rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(instanceId), pageable)
+    return rtacHoldingRepository.findAllByIdInstanceId(schema, UUID.fromString(instanceId), pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
   public RtacHoldingsBatch getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
-    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(instanceIds);
+    final var schema = getSchemaName();
+    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(schema, instanceIds.toArray(new UUID[0]));
 
     Map<UUID, RtacSummaryProjection> summaryMap = projections.stream()
       .collect(Collectors.toMap(RtacSummaryProjection::instanceId, p -> p));
@@ -98,5 +102,9 @@ public class RtacHoldingStorageService {
     result.setHoldings(holdings);
     result.setErrors(errors);
     return result;
+  }
+
+  private String getSchemaName() {
+    return String.format("%s_mod_rtac_cache", folioExecutionContext.getTenantId().toLowerCase());
   }
 }
