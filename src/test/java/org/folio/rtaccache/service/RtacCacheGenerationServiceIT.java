@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
@@ -42,8 +41,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID);
     future.join();
 
-    final var schema = String.format("%s_mod_rtac_cache", TestConstant.TEST_TENANT.toLowerCase());
-    var holdings = rtacHoldingRepository.findAllByIdInstanceId(schema, UUID.fromString(INSTANCE_ID), PageRequest.of(0, 50));
+    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID), PageRequest.of(0, 50));
     var itemWithLoans = holdings.get()
       .filter(entity -> entity.getRtacHolding().getDueDate() != null).findFirst();
     var piece = holdings.get()

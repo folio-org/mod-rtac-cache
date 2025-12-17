@@ -17,10 +17,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, RtacHoldingId>, RtacHoldingRepositoryCustom {
 
+  Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
+
   @Query(value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
       countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
       nativeQuery = true)
   Page<RtacHoldingEntity> findAllByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId, Pageable pageable);
+
+  int countByIdInstanceId(UUID instanceId);
 
   @Query(value = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])", nativeQuery = true)
   int countByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId);

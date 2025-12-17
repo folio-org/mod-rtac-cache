@@ -15,7 +15,6 @@ import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.util.ResourceEventUtil;
-import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,7 +26,6 @@ class HoldingsCreateEventHandlerTest {
 
   private static final String INSTANCE_ID = UUID.randomUUID().toString();
   private static final String HOLDINGS_ID = UUID.randomUUID().toString();
-  private static final String TENANT_ID = "test";
 
   @InjectMocks
   HoldingsCreateEventHandler handler;
@@ -38,15 +36,12 @@ class HoldingsCreateEventHandlerTest {
   RtacHoldingMappingService mappingService;
   @Mock
   ResourceEventUtil resourceEventUtil;
-  @Mock
-  FolioExecutionContext folioExecutionContext;
 
   @Test
   void holdingsCreate_shouldSaveNewEntity_whenRecordWithTheSameInstanceIdExists() {
     var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(folioExecutionContext.getTenantId()).thenReturn(TENANT_ID);
-    when(holdingRepository.countByIdInstanceId(any(String.class), any(UUID.class))).thenReturn(1);
+    when(holdingRepository.countByIdInstanceId(any(UUID.class))).thenReturn(1);
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID));
 
 
@@ -59,8 +54,7 @@ class HoldingsCreateEventHandlerTest {
   void holdingsCreate_shouldNotSaveNewEntity_whenNoRecordWithTheSameInstanceIdExists() {
     var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(folioExecutionContext.getTenantId()).thenReturn(TENANT_ID);
-    when(holdingRepository.countByIdInstanceId(any(String.class), any(UUID.class))).thenReturn(0);
+    when(holdingRepository.countByIdInstanceId(any(UUID.class))).thenReturn(0);
 
     handler.handle(event);
 

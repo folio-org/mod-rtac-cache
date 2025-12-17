@@ -105,6 +105,6 @@ public class RtacHoldingStorageService {
   }
 
   private String getSchemaName() {
-    return String.format("%s_mod_rtac_cache", folioExecutionContext.getTenantId().toLowerCase());
+    return folioExecutionContext.getFolioModuleMetadata().getDBSchemaName(folioExecutionContext.getTenantId());
   }
 }

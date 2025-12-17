@@ -1,7 +1,6 @@
 package org.folio.rtaccache.service.handler.impl;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -15,7 +14,6 @@ import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
-import org.folio.spring.FolioExecutionContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +24,6 @@ public class HoldingsCreateEventHandler implements InventoryEventHandler {
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final RtacHoldingRepository holdingRepository;
   private final ResourceEventUtil resourceEventUtil;
-  private final FolioExecutionContext folioExecutionContext;
 
 
   @Override
@@ -34,8 +31,7 @@ public class HoldingsCreateEventHandler implements InventoryEventHandler {
   public void handle(InventoryResourceEvent resourceEvent) {
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     var instanceId = UUID.fromString(holdingsData.getInstanceId());
-    final var schema = String.format("%s_mod_rtac_cache", folioExecutionContext.getTenantId().toLowerCase());
-    if (holdingRepository.countByIdInstanceId(schema, instanceId) > 0) {
+    if (holdingRepository.countByIdInstanceId(instanceId) > 0) {
       var rtacHoldingId = createRtacHoldingIdFromHoldings(holdingsData);
       var rtacHolding = rtacHoldingMappingService.mapFrom(holdingsData);
       var rtacHoldingEntity = new RtacHoldingEntity();
