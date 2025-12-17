@@ -1,0 +1,18 @@
+{
+  "old": {
+    "id": "79f1cd00-09cc-4c9c-99c1-d8ad1b77d128",
+    "name": "New library name",
+    "code": "New library code",
+    "campusId": "3cb95a54-1aac-47f2-9f97-c2b54a01bbfe",
+    "metadata": {
+      "createdDate": "2025-11-26T22:51:38.334+00:00",
+      "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+      "updatedDate": "2025-11-26T23:21:52.250+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "type": "DELETE",
+  "tenant": "testTenant",
+  "eventId": "bf32a249-6dce-44cb-98a0-80709516b062",
+  "eventTs": 1764199418754
+}

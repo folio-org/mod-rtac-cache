@@ -6,9 +6,9 @@ import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 
 public interface InventoryEventHandler extends EventHandler<InventoryEventType, InventoryResourceEvent> {
 
-  InventoryEventType getEventType();
-
   void handle(InventoryResourceEvent resourceEvent);
+
+  InventoryEventType getEventType();
 
   InventoryEntityType getEntityType();
 

@@ -44,7 +44,7 @@
           "methods": [
             "GET"
           ],
-          "pathPattern": "/search/{instanceId}",
+          "pathPattern": "/rtac-cache/search/{instanceId}",
           "permissionsRequired": [
             "rtac-cache.search.collection.get"
           ],
@@ -139,8 +139,8 @@
       "version": "1.0"
     },
     {
-      "id": "search-facets",
-      "version": "1.0"
+      "id": "search",
+      "version": "1.3"
     },
     {
       "id": "settings",
