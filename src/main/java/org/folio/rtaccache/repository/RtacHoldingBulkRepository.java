@@ -19,8 +19,8 @@ import org.springframework.stereotype.Service;
 public class RtacHoldingBulkRepository {
 
   private static final String BULK_UPSERT_SQL = """
-    INSERT INTO rtac_holding (instance_id, type, id, rtac_holding_json, created_at)
-    VALUES (?, ?, ?, ?::jsonb, ?)
+    INSERT INTO rtac_holding (instance_id, type, id, shared,rtac_holding_json, created_at)
+    VALUES (?, ?, ?, ?, ?::jsonb, ?)
     ON CONFLICT (instance_id, type, id)
     DO UPDATE SET
       rtac_holding_json = EXCLUDED.rtac_holding_json,
@@ -68,8 +68,9 @@ public class RtacHoldingBulkRepository {
         ps.setObject(1, holding.getId().getInstanceId());
         ps.setString(2, holding.getId().getType().name());
         ps.setObject(3, holding.getId().getId());
-        ps.setString(4, objectMapper.writeValueAsString(holding.getRtacHolding()));
-        ps.setTimestamp(5, Timestamp.from(holding.getCreatedAt()));
+        ps.setBoolean(4, holding.isShared());
+        ps.setString(5, objectMapper.writeValueAsString(holding.getRtacHolding()));
+        ps.setTimestamp(6, Timestamp.from(holding.getCreatedAt()));
         ps.addBatch();
 
         if (++count % BATCH_SIZE == 0) {

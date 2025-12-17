@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Consortia Tenants",
+  "type": "object",
+  "properties": {
+    "tenants": {
+      "type": "array",
+      "description": "Tenants",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "code": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 5,
+            "pattern": "^[a-zA-Z0-9]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 150
+          },
+          "isCentral": { "type": "boolean" },
+          "isDeleted": { "type": "boolean" }
+        },
+        "required": ["id", "code", "name", "isCentral"]
+      }
+    },
+    "totalRecords": { "type": "integer" }
+  },
+  "required": ["tenants", "totalRecords"]
+}

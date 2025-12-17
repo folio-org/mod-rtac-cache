@@ -23,15 +23,15 @@ public class RtacKafkaAdminService implements ApplicationRunner {
    */
   public void restartEventListeners() {
     log.info("Restarting kafka consumer to update topic pattern");
-    kafkaListenerEndpointRegistry.getAllListenerContainers().forEach(existingContainer -> {
-      if (existingContainer != null) {
-        log.info("Restarting kafka consumer to update topic pattern [ids: {}]", existingContainer.getListenerId());
-        existingContainer.stop();
-        existingContainer.destroy();
-        kafkaListenerEndpointRegistry.unregisterListenerContainer(existingContainer.getListenerId());
-      }
-    });
-    applicationContext.getBean(KafkaMessageListener.class);
+//    kafkaListenerEndpointRegistry.getAllListenerContainers().forEach(existingContainer -> {
+//      if (existingContainer != null) {
+//        log.info("Restarting kafka consumer to update topic pattern [ids: {}]", existingContainer.getListenerId());
+//        existingContainer.stop();
+//        existingContainer.destroy();
+//        kafkaListenerEndpointRegistry.unregisterListenerContainer(existingContainer.getListenerId());
+//      }
+//    });
+//    applicationContext.getBean(KafkaMessageListener.class);
   }
 
   @Override

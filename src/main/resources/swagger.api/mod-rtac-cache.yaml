@@ -279,3 +279,11 @@ components:
       $ref: schemas/inventory/materialTypes.json
     LoanTypes:
       $ref: schemas/inventory/loanTypes.json
+    Instances:
+      $ref: schemas/inventory/instances.json
+    ConsortiaTenants:
+      $ref: schemas/consortia/consortiaTenants.json
+    BatchIdsDto:
+      $ref: schemas/search/batchIdsDto.json
+    ConsortiumHoldings:
+      $ref: schemas/search/consortiumHoldings.json
