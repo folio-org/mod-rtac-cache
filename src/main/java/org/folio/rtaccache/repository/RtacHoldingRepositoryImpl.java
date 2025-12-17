@@ -24,12 +24,12 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   @Override
   @SuppressWarnings("unchecked") // Ok to suppress because RtacHoldingEntity is passed to createNativeQuery
-  public Page<RtacHoldingEntity> search(UUID instanceId, String query, Boolean available, Pageable pageable) {
+  public Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, Pageable pageable) {
     var params = new HashMap<String, Object>();
-    params.put("instanceId", instanceId);
+    params.put("schemas", schemas);
+    params.put("instanceIds", new UUID[]{instanceId});
 
     var whereClause = new ArrayList<String>();
-    whereClause.add("h.instance_id = :instanceId");
 
     var terms = Arrays.stream(SPLIT_PATTERN.split(query))
       .filter(s -> !s.isEmpty())
@@ -45,16 +45,18 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
       whereClause.add("cast(h.rtac_holding_json ->> 'status' as text) = 'Available'");
     }
 
-    String whereSql = String.join(" AND ", whereClause);
+    String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
+    String fromClause = "FROM Filtered h ";
+    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)) ";
 
     // Create and execute count query
-    String countSql = "SELECT count(h.id) FROM rtac_holding h WHERE " + whereSql;
+    String countSql = filterCte + " SELECT count(h.id) " + fromClause + whereSql;
     Query countQuery = entityManager.createNativeQuery(countSql);
     params.forEach(countQuery::setParameter);
     long total = ((Number) countQuery.getSingleResult()).longValue();
 
     // Create and execute data query
-    String dataSql = "SELECT * FROM rtac_holding h WHERE " + whereSql + " ORDER BY h.id"; // Order by to ensure consistent pagination
+    String dataSql = filterCte + " SELECT * " + fromClause + whereSql + " ORDER BY h.id";
     Query dataQuery = entityManager.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
