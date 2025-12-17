@@ -91,17 +91,6 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
       nativeQuery = true)
   List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("schemas") String schemas, @Param("instanceIds") UUID[] instanceIds);
 
-  @Query(
-      value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)",
-      countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)",
-      nativeQuery = true
-  )
-  Page<RtacHoldingEntity> findAcrossTenants(
-      @Param("schemas") String schemas,
-      @Param("instanceIds") UUID[] instanceIds,
-      Pageable pageable
-  );
-
   @Modifying
   @Query(value = """
   UPDATE rtac_holding_entity
