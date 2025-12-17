@@ -40,7 +40,7 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     rtacHoldingRepository.deleteAll();
   }
 
-  private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {
+  private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status, TypeEnum type) {
     final var rtacHolding = new RtacHolding()
       .instanceId(instanceId.toString())
       .status(status)
@@ -48,7 +48,7 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
       .callNumber(callNumber)
       .location(new RtacHoldingLocation().name(locationName))
       .library(new RtacHoldingLibrary().name(libraryName));
-    return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
   }
 
   @Test
@@ -57,10 +57,21 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
 
     var instanceId1 = UUID.randomUUID();
     var instanceId2 = UUID.randomUUID();
+    var instanceId3 = UUID.randomUUID(); // Instance with no items or pieces.
+    var instanceId4 = UUID.randomUUID(); // Instance with holding and pieces.
 
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol1", "call1", "loc1", "lib1", "Available"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol2", "call2", "loc2", "lib2", "Checked out"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId2,"vol3", "call3", "loc3", "lib3", "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol1", "call1", "loc1", "lib1", "Available", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"vol2", "call2", "loc2", "lib2", "Checked out", TypeEnum.PIECE));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId1,"", "call2", "loc2", "lib2", "Available", TypeEnum.HOLDING)); // Should be excluded by CTE logic
+
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId2,"vol3", "call3", "loc3", "lib3", "Available", TypeEnum.ITEM));
+
+    // Holding with no items or pieces. Should be findable by search.
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId3,"", "call4", "loc4", "lib4", "Available", TypeEnum.HOLDING));
+
+    // Instance with holding and piece. Both should be returned by search.
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId4,"", "call5", "loc5", "lib5", "Available", TypeEnum.HOLDING));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId4,"", "call5", "loc5", "lib5", "Available", TypeEnum.PIECE));
 
     Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId1, "vol1 call1", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isEqualTo(1);
@@ -96,6 +107,17 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
 
     page = rtacHoldingStorageService.searchRtacHoldings(instanceId1,"vol1 call2", null, OffsetRequest.of(0, 10));
     assertThat(page.getTotalElements()).isZero();
+
+    // Find a holding that has no items or pieces
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId3,"call4 loc4", null, OffsetRequest.of(0, 10));
+    assertThat(page.getTotalElements()).isEqualTo(1);
+    assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId3.toString());
+
+    // Verify that an instance with both holding and pieces returns holding and pieces.
+    page = rtacHoldingStorageService.searchRtacHoldings(instanceId4,"call5 loc5", null, OffsetRequest.of(0, 10));
+    assertThat(page.getTotalElements()).isEqualTo(2);
+    assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId4.toString());
+    assertThat(page.getContent().get(1).getInstanceId()).isEqualTo(instanceId4.toString());
   }
 
   @Test
@@ -104,15 +126,18 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     var instanceId = UUID.randomUUID();
 
     // Create 5 holdings that match the search query "loc1"
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol2", "call2", "loc1", "lib1", "Checked out"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol3", "call3", "loc1", "lib1", "On order"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol4", "call4", "loc1", "lib1", "Available"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol5", "call5", "loc1", "lib1", "In process"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol2", "call2", "loc1", "lib1", "Checked out", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol3", "call3", "loc1", "lib1", "On order", TypeEnum.PIECE));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol4", "call4", "loc1", "lib1", "Available", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol5", "call5", "loc1", "lib1", "In process", TypeEnum.PIECE));
+
+    // Create one holding record for this instance that should be filtered out by the CTE logic
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "", "", "loc1", "lib1", "Available", TypeEnum.HOLDING));
 
     // Create 2 holdings that do not match the search query
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol6", "call6", "loc2", "lib2", "Available"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol7", "call7", "loc2", "lib2", "Checked out"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol6", "call6", "loc2", "lib2", "Available", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol7", "call7", "loc2", "lib2", "Checked out", TypeEnum.ITEM));
 
     // Search for holdings with "loc1" and test paging
     String query = "loc1";
@@ -155,10 +180,11 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
     var instanceId = UUID.randomUUID();
 
     // Create a specific record to find
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol1", "call1", "loc1", "lib1", "Available", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "lib1", "", "loc2", "lib1", "Available", TypeEnum.HOLDING)); // This should not be included due to CTE logic
     // Create other records that shouldn't match
-    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol2", "call2", "loc2", "lib2", "Checked out"));
-    rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), "vol1", "call1", "loc1", "lib1", "Available"));
+    rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol2", "call2", "loc2", "lib2", "Checked out", TypeEnum.ITEM));
+    rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), "vol1", "call1", "loc1", "lib1", "Available", TypeEnum.ITEM));
 
     Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId, query, null, OffsetRequest.of(0, 10));
 

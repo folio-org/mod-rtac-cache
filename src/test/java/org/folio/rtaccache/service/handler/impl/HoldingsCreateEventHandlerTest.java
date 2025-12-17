@@ -41,7 +41,7 @@ class HoldingsCreateEventHandlerTest {
   void holdingsCreate_shouldSaveNewEntity_whenRecordWithTheSameInstanceIdExists() {
     var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(holdingRepository.countByIdInstanceId(UUID.fromString(INSTANCE_ID))).thenReturn(1);
+    when(holdingRepository.countByIdInstanceId(any(UUID.class))).thenReturn(1);
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID));
 
 
@@ -54,7 +54,7 @@ class HoldingsCreateEventHandlerTest {
   void holdingsCreate_shouldNotSaveNewEntity_whenNoRecordWithTheSameInstanceIdExists() {
     var event = new InventoryResourceEvent().type(InventoryEventType.CREATE)._new(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(holdingRepository.countByIdInstanceId(UUID.fromString(INSTANCE_ID))).thenReturn(0);
+    when(holdingRepository.countByIdInstanceId(any(UUID.class))).thenReturn(0);
 
     handler.handle(event);
 
