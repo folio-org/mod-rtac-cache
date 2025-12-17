@@ -71,7 +71,7 @@
     </rollback>
   </changeSet>
 
-  <changeSet id="create-rtac-holdings-multi-tenant-function-001" author="Gemini">
+  <changeSet id="create-rtac-holdings-multi-tenant-function-001" author="Steve Ellis">
     <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
     <rollback>
       <sql>
