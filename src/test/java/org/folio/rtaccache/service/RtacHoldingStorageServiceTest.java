@@ -3,7 +3,6 @@ package org.folio.rtaccache.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.folio.rtaccache.TestUtil.asString;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -213,13 +212,11 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     // Instance 5: Statuses should be summed correctly across multiple holdings, items, pieces and locations. Holding should be excluded because instance has at least one item or piece.
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.ITEM, "Available", library1Id, location1Id, location1Code, null));
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.ITEM, "Available", library1Id, location1Id, location1Code, null));
-
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.PIECE, "Available", library1Id, location1Id, location1Code, null));
 
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.HOLDING, "Available", library1Id, location1Id, location1Code, null)); // Should not be counted or included
 
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.ITEM, "Unavailable", library1Id, location1Id, location1Code, null));
-
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.PIECE, "Unavailable", library1Id, location1Id, location1Code, null));
 
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceId5, TypeEnum.PIECE, "Available", library1Id, location2Id, location2Code, null));
@@ -262,7 +259,6 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId5.toString()))
       .findFirst().orElseThrow();
 
-    // TODO The problem with all of this is that the summary goes across libraries and locations. What are we supposed to do with type? Are we summing on that too? We'll have to.
     assertRtacHoldingsSummary(summary5, instanceId5, false, List.of(
       new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
       new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
