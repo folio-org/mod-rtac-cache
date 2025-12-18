@@ -11,7 +11,7 @@
       "type": "boolean",
       "description": "Indicates if the holding has volume information"
     },
-    "instanceTypeIds": {
+    "instanceFormatIds": {
       "type": "array",
       "items": {
         "type": "string"
