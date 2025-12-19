@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
+import org.folio.rtaccache.sql.RtacQueryFragments;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,7 +20,15 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
-  @Query(value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
+  @Query(value = """
+      WITH FilteredHoldings AS (
+          SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])
+      )
+      SELECT
+          *
+      """ + RtacQueryFragments.SORT_COLUMN_PROJECTIONS + """
+      FROM FilteredHoldings
+      """,
       countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId])",
       nativeQuery = true)
   Page<RtacHoldingEntity> findAllByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId, Pageable pageable);

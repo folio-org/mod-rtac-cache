@@ -18,6 +18,9 @@ import org.folio.spring.data.OffsetRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,11 +39,11 @@ public class RtacCacheController implements RtacApi {
 
 
   @Override
-  public ResponseEntity<RtacHoldings> searchRtacCacheHoldings(UUID instanceId, String query, Boolean available, Integer offset, Integer limit) {
+  public ResponseEntity<RtacHoldings> searchRtacCacheHoldings(UUID instanceId, String query, Boolean available, List<String> sort, Integer offset, Integer limit) {
     log.info("Received request to search RTAC holdings by query: {}, available: {}, offset: {}, limit: {}", query, available, offset, limit);
 
     Page<RtacHolding> pagedRtacHoldings =
-      rtacHoldingStorageService.searchRtacHoldings(instanceId, query, available, OffsetRequest.of(offset, limit));
+      rtacHoldingStorageService.searchRtacHoldings(instanceId, query, available, buildPageable(offset, limit, sort));
 
     var rtacHoldings = new RtacHoldings();
     rtacHoldings.setHoldings(new ArrayList<>(pagedRtacHoldings.getContent()));
@@ -51,12 +54,12 @@ public class RtacCacheController implements RtacApi {
   }
 
   @Override
-  public ResponseEntity<RtacHoldings> getRtacCacheHoldingsById(UUID instanceId, Integer offset, Integer limit) {
+  public ResponseEntity<RtacHoldings> getRtacCacheHoldingsById(UUID instanceId, List<String> sort, Integer offset, Integer limit) {
 
     log.info("Received request to get RTAC holdings by instanceId: {}, offset: {}, limit: {}", instanceId, offset, limit);
 
     Page<RtacHolding> pagedRtacHoldings =
-      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(offset, limit));
+      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), buildPageable(offset, limit, sort));
 
     var rtacHoldings = new RtacHoldings();
     rtacHoldings.setInstanceId(instanceId.toString());
@@ -101,5 +104,21 @@ public class RtacCacheController implements RtacApi {
     response.setJobs(jobs.getContent());
     response.setTotalRecords((int) jobs.getTotalElements());
     return ResponseEntity.ok(response);
+  }
+
+  private Pageable buildPageable(Integer offset, Integer limit, List<String> sort) {
+    Sort sortOrder;
+    if (sort == null || sort.isEmpty()) {
+      sortOrder = Sort.by(Sort.Direction.ASC, "effectiveShelvingOrder", "libraryName", "locationName", "status");
+    } else {
+      List<Sort.Order> orders = new ArrayList<>();
+      for (String sortParam : sort) {
+        String[] parts = sortParam.split(",");
+        Sort.Direction direction = parts.length > 1 ? Sort.Direction.fromString(parts[1]) : Sort.Direction.ASC;
+        orders.add(new Sort.Order(direction, parts[0]));
+      }
+      sortOrder = Sort.by(orders);
+    }
+    return PageRequest.of(offset / limit, limit, sortOrder);
   }
 }
