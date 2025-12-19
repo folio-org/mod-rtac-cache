@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
@@ -24,6 +25,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
@@ -41,14 +44,60 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
   }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status, TypeEnum type) {
+    return createRtacHoldingEntity(instanceId, volume, callNumber, locationName, libraryName, status, type, null);
+  }
+
+  private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status, TypeEnum type, String effectiveShelvingOrder) {
     final var rtacHolding = new RtacHolding()
       .instanceId(instanceId.toString())
       .status(status)
       .volume(volume)
       .callNumber(callNumber)
       .location(new RtacHoldingLocation().name(locationName))
-      .library(new RtacHoldingLibrary().name(libraryName));
+      .library(new RtacHoldingLibrary().name(libraryName))
+      .effectiveShelvingOrder(effectiveShelvingOrder);
     return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
+  }
+
+  @Test
+  void testSearchRtacHoldings_withSorting() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var instanceId = UUID.randomUUID();
+
+    // Create entities in a non-alphabetical order
+    var holdingB = createRtacHoldingEntity(instanceId, "vol", "call", "loc M", "lib Z", "B Status", TypeEnum.ITEM, "B");
+    var holdingC = createRtacHoldingEntity(instanceId, "vol", "call", "loc L", "lib Y", "C Status", TypeEnum.ITEM, "C");
+    var holdingA = createRtacHoldingEntity(instanceId, "vol", "call", "loc K", "lib X", "A Status", TypeEnum.ITEM, "A");
+
+    rtacHoldingRepository.saveAll(List.of(holdingB, holdingC, holdingA));
+
+    // Test sort by effectiveShelvingOrder ascending
+    var pageableShelvingAsc = PageRequest.of(0, 10, Sort.by("effectiveShelvingOrder"));
+    Page<RtacHolding> resultShelvingAsc = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol call", null, pageableShelvingAsc);
+    assertThat(resultShelvingAsc.getContent())
+      .extracting(RtacHolding::getEffectiveShelvingOrder)
+      .containsExactly("A", "B", "C");
+
+    // Test sort by status ascending
+    var pageableStatusAsc = PageRequest.of(0, 10, Sort.by("status"));
+    Page<RtacHolding> resultStatusAsc = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol call", null, pageableStatusAsc);
+    assertThat(resultStatusAsc.getContent())
+      .extracting(RtacHolding::getStatus)
+      .containsExactly("A Status", "B Status", "C Status");
+
+    // Test sort by libraryName descending
+    var pageableLibraryDesc = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "libraryName"));
+    Page<RtacHolding> resultLibraryDesc = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol call", null, pageableLibraryDesc);
+    assertThat(resultLibraryDesc.getContent())
+      .extracting(h -> h.getLibrary().getName())
+      .containsExactly("lib Z", "lib Y", "lib X");
+
+    // Test sort by locationName ascending
+    var pageableLocationAsc = PageRequest.of(0, 10, Sort.by("locationName"));
+    Page<RtacHolding> resultLocationAsc = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol call", null, pageableLocationAsc);
+    assertThat(resultLocationAsc.getContent())
+      .extracting(h -> h.getLocation().getName())
+      .containsExactly("loc K", "loc L", "loc M");
   }
 
   @Test

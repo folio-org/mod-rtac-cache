@@ -11,10 +11,10 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
-import org.folio.rtaccache.sql.RtacQueryFragments;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
@@ -48,7 +48,7 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
     String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
     String fromClause = "FROM Filtered h ";
-    String filterCte = "WITH Filtered AS (SELECT * " + RtacQueryFragments.SORT_COLUMN_PROJECTIONS + " FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)) ";
+    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)) ";
 
     // Create and execute count query
     String countSql = filterCte + " SELECT count(h.id) " + fromClause + whereSql;
@@ -57,7 +57,8 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
     long total = ((Number) countQuery.getSingleResult()).longValue();
 
     // Create and execute data query
-    String dataSql = filterCte + " SELECT * " + fromClause + whereSql;
+    String orderByClause = toOrderByClause(pageable.getSort());
+    String dataSql = filterCte + " SELECT * " + fromClause + whereSql + orderByClause;
     Query dataQuery = entityManager.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
@@ -66,5 +67,27 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
     List<RtacHoldingEntity> content = total > pageable.getOffset() ? dataQuery.getResultList() : List.of();
 
     return new PageImpl<>(content, pageable, total);
+  }
+
+  private String toOrderByClause(Sort sort) {
+    if (sort.isUnsorted()) {
+      return "";
+    }
+    var orders = new ArrayList<String>();
+    for (var order : sort) {
+      orders.add(toSqlOrder(order));
+    }
+    return " ORDER BY " + String.join(", ", orders);
+  }
+
+  private String toSqlOrder(Sort.Order order) {
+    String property = switch (order.getProperty()) {
+      case "libraryName" -> "h.rtac_holding_json->'library'->>'name'";
+      case "locationName" -> "h.rtac_holding_json->'location'->>'name'";
+      case "effectiveShelvingOrder" -> "h.rtac_holding_json->>'effectiveShelvingOrder'";
+      case "status" -> "h.rtac_holding_json->>'status'";
+      default -> order.getProperty(); // Fallback for safety, though should not be used for JSON properties
+    };
+    return property + " " + order.getDirection();
   }
 }

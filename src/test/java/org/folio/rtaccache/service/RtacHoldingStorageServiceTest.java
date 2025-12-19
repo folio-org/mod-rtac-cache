@@ -22,6 +22,8 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.junit.jupiter.api.AfterEach;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
@@ -70,6 +72,22 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, RtacHolding.TypeEnum type, String status) {
     return createRtacHoldingEntity(instanceId, type, status, null, null, null, null);
+  }
+
+  private RtacHoldingEntity createRtacHoldingEntityForSort(UUID instanceId,
+                                                           RtacHolding.TypeEnum type,
+                                                           String status,
+                                                           String libraryName,
+                                                           String locationName,
+                                                           String effectiveShelvingOrder) {
+    RtacHolding rtacHolding = new RtacHolding().status(status).effectiveShelvingOrder(effectiveShelvingOrder);
+    if (libraryName != null) {
+      rtacHolding.library(new RtacHoldingLibrary().name(libraryName));
+    }
+    if (locationName != null) {
+      rtacHolding.location(new RtacHoldingLocation().name(locationName));
+    }
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
   }
 
   private void assertRtacHoldingsSummary(RtacHoldingsSummary summary,
@@ -258,7 +276,6 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     RtacHoldingsSummary summary5 = rtacHoldingsBatch.getHoldings().stream()
       .filter(s -> s.getInstanceId().equals(instanceId5.toString()))
       .findFirst().orElseThrow();
-
     assertRtacHoldingsSummary(summary5, instanceId5, false, List.of(
       new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
       new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
@@ -299,6 +316,47 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     assertRtacHoldingsSummary(summaryNoLocation, instanceIdNoLocation, false, List.of(
       new ExpectedLocationStatus(null, null, null, TypeEnum.HOLDING, "Available", 1)
     ));
+  }
+
+  @Test
+  void testGetRtacHoldingsByInstanceId_withSorting() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var instanceId = UUID.randomUUID();
+
+    // Create entities in a non-alphabetical order
+    var holdingB = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "B Status", "Library Z", "Location M", "B");
+    var holdingC = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "C Status", "Library Y", "Location L", "C");
+    var holdingA = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "A Status", "Library X", "Location K", "A");
+
+    rtacHoldingRepository.saveAll(List.of(holdingB, holdingC, holdingA));
+
+    // Test sort by effectiveShelvingOrder ascending
+    var pageableShelvingAsc = PageRequest.of(0, 10, Sort.by("effectiveShelvingOrder"));
+    Page<RtacHolding> resultShelvingAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableShelvingAsc);
+    assertThat(resultShelvingAsc.getContent())
+      .extracting(RtacHolding::getEffectiveShelvingOrder)
+      .containsExactly("A", "B", "C");
+
+    // Test sort by status ascending
+    var pageableStatusAsc = PageRequest.of(0, 10, Sort.by("status"));
+    Page<RtacHolding> resultStatusAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableStatusAsc);
+    assertThat(resultStatusAsc.getContent())
+      .extracting(RtacHolding::getStatus)
+      .containsExactly("A Status", "B Status", "C Status");
+
+    // Test sort by libraryName descending
+    var pageableLibraryDesc = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "libraryName"));
+    Page<RtacHolding> resultLibraryDesc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableLibraryDesc);
+    assertThat(resultLibraryDesc.getContent())
+      .extracting(h -> h.getLibrary().getName())
+      .containsExactly("Library Z", "Library Y", "Library X");
+
+    // Test sort by locationName ascending
+    var pageableLocationAsc = PageRequest.of(0, 10, Sort.by("locationName"));
+    Page<RtacHolding> resultLocationAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableLocationAsc);
+    assertThat(resultLocationAsc.getContent())
+      .extracting(h -> h.getLocation().getName())
+      .containsExactly("Location K", "Location L", "Location M");
   }
 
   @Test
