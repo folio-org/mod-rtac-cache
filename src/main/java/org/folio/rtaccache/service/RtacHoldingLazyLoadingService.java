@@ -55,9 +55,7 @@ public class RtacHoldingLazyLoadingService {
       .toList();
     var futures = new ArrayList<CompletableFuture<Void>>();
     for (var instanceId : missingInstanceIds) {
-      futures.add(taskExecutor.submitCompletable(() -> {
-        lazyLoadRtacHoldings(instanceId);
-      }));
+      futures.add(taskExecutor.submitCompletable(() -> lazyLoadRtacHoldings(instanceId)));
     }
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
   }

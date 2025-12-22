@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 
-public class BaseEcsIntegrationTest extends BaseIntegrationTest{
+public abstract class BaseEcsIntegrationTest extends BaseIntegrationTest {
 
   @BeforeAll
   static void beforeAll(@Autowired MockMvc mockMvc) throws Exception {

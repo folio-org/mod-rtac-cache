@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-public class RtacCacheControllerEcsIT extends BaseEcsIntegrationTest {
+class RtacCacheControllerEcsIT extends BaseEcsIntegrationTest {
 
   @Autowired
   private MockMvc mockMvc;
