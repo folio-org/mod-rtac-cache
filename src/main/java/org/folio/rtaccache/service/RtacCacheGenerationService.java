@@ -17,6 +17,7 @@ import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.folio.spring.FolioExecutionContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,13 @@ public class RtacCacheGenerationService {
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
+  private final FolioExecutionContext folioExecutionContext;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
   private static final String CONSORTIUM_SOURCE = "CONSORTIUM";
 
   public CompletableFuture<Void> generateRtacCache(String instanceId) {
-    log.info("Started RTAC cache generation for instance id: {}", instanceId);
+    log.info("Started RTAC cache generation for instance id: {} in tenant: {}", instanceId, folioExecutionContext.getTenantId());
     var holdingsOffset = 0;
     var instance = getInstanceById(instanceId);
     if (instance == null) {

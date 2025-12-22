@@ -137,4 +137,13 @@
       <sql>DROP INDEX IF EXISTS idx_rtac_holding_library_id;</sql>
     </rollback>
   </changeSet>
+
+  <changeSet id="update-rtac-holdings-multi-tenant-function-002" author="Ivan_Zhunkivskyi">
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holdings_multi_tenant(text, uuid[]);
+      </sql>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>

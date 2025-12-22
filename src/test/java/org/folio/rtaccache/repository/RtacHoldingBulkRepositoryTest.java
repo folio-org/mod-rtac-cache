@@ -51,8 +51,8 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
     var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
-    var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now());
-    var rtacHoldingEntity2 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), rtacHolding2, Instant.now());
+    var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now());
+    var rtacHoldingEntity2 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now());
     var holdings = List.of(rtacHoldingEntity1, rtacHoldingEntity2);
 
     rtacHoldingBulkRepository.bulkUpsert(holdings);
@@ -70,8 +70,8 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
     rtacHolding1.setBarcode("test");
     rtacHolding2.setBarcode("test");
-    var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now());
-    var rtacHoldingEntity2 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), rtacHolding2, Instant.now());
+    var rtacHoldingEntity1 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now());
+    var rtacHoldingEntity2 = new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now());
     var holdings = List.of(rtacHoldingEntity1, rtacHoldingEntity2);
 
     rtacHoldingBulkRepository.bulkUpsert(holdings);
@@ -94,8 +94,8 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     rtacHolding1.setLocation(loc1);
     rtacHolding2.setLocation(loc2);
     var holdings = List.of(
-      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now()),
-      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), rtacHolding2, Instant.now())
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now()),
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now())
     );
     rtacHoldingRepository.saveAll(holdings);
     var updatedLocation = getLocation();
@@ -122,8 +122,8 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     rtacHolding1.setLibrary(lib1);
     rtacHolding2.setLibrary(lib2);
     var holdings = List.of(
-      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), rtacHolding1, Instant.now()),
-      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), rtacHolding2, Instant.now())
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now()),
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now())
     );
     rtacHoldingRepository.saveAll(holdings);
     var updatedLib = getLibrary();

@@ -48,7 +48,7 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
       .callNumber(callNumber)
       .location(new RtacHoldingLocation().name(locationName))
       .library(new RtacHoldingLibrary().name(libraryName));
-    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), false, rtacHolding, Instant.now());
   }
 
   @Test

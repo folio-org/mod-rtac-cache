@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
+import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
@@ -50,13 +51,14 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
       .filter(entity -> entity.getRtacHolding().getTotalHoldRequests() != null &&
         entity.getRtacHolding().getTotalHoldRequests() > 0).findFirst();
 
-    assertEquals(5, holdings.getTotalElements());
+    assertEquals(7, holdings.getTotalElements());
     assertTrue(itemWithLoans.isPresent());
     assertEquals(ITEM_WITH_LOANS_AND_REQUESTS_ID, itemWithLoans.get().getRtacHolding().getId());
     assertTrue(piece.isPresent());
     assertEquals(PIECE_ID, piece.get().getRtacHolding().getId());
     assertTrue(itemWithHoldCount.isPresent());
     assertEquals(ITEM_WITH_LOANS_AND_REQUESTS_ID, itemWithHoldCount.get().getRtacHolding().getId());
+    assertTrue(holdings.get().allMatch(RtacHoldingEntity::isShared));
   }
 
 }

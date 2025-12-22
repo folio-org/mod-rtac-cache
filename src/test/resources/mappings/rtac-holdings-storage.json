@@ -1,0 +1,36 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/instance-storage/instances",
+        "queryParameters": {
+          "query": { "contains": "546dfd11-5c9f-4532-adbe-95b8e98683c9" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "rtac-holdings-storage/empty-instance-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/instance-storage/instances",
+        "queryParameters": {
+          "query": { "contains": "d1c1d890-1e0d-4bf0-8b02-9fb392461386" }
+        }
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "rtac-holdings-storage/empty-instance-response.json"
+      }
+    }
+  ]
+}

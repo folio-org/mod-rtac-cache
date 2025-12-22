@@ -15,7 +15,8 @@
     },
     "instanceId": {
       "description": "Related Instance Id",
-      "type": "string"
+      "type": "string",
+      "format": "uuid"
     },
     "discoverySuppress": {
       "description": "Discovery suppress flag",

@@ -19,14 +19,13 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.exception.RtacDataProcessingException;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
-import org.folio.spring.FolioExecutionContext;
+import org.folio.rtaccache.util.EcsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -36,35 +35,50 @@ public class RtacHoldingStorageService {
   private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class);
 
   private final RtacHoldingRepository rtacHoldingRepository;
-  private final RtacCacheGenerationService rtacCacheGenerationService;
-  private final FolioExecutionContext folioExecutionContext;
+  private final ConsortiaService consortiaService;
+  private final RtacHoldingLazyLoadingService rtacHoldingLazyLoadingService;
   private final ObjectMapper objectMapper;
+  private final EcsUtil ecsUtil;
 
   public Page<RtacHolding> searchRtacHoldings(UUID instanceId, String query, Boolean available, Pageable pageable) {
-    return rtacHoldingRepository.search(getSchemaName(), instanceId, query, available, pageable)
+    var schema = ecsUtil.getSchemaName();
+    var onlyShared = false;
+    if (consortiaService.isCentralTenant()) {
+      schema = ecsUtil.getAllTenantsSchemaName();
+      onlyShared = true;
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldingsEcs(List.of(instanceId));
+    } else {
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldings(instanceId);
+    }
+    return rtacHoldingRepository.search(schema, instanceId, query, available, onlyShared, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
-  public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
-    final var schema = getSchemaName();
-    if (rtacHoldingRepository.countByIdInstanceId(schema, UUID.fromString(instanceId)) == 0) {
-      var future = rtacCacheGenerationService.generateRtacCache(instanceId);
-      try {
-        future.join();
-      } catch (Exception ex) {
-        log.error("RTAC cache generation failed for instanceId: {}", instanceId, ex);
-        rtacHoldingRepository.deleteAllByIdInstanceId(UUID.fromString(instanceId));
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-          String.format("RTAC cache generation failed for instanceId: %s", instanceId));
-      }
+  public Page<RtacHolding> getRtacHoldingsByInstanceId(UUID instanceId, Pageable pageable) {
+    var schema = ecsUtil.getSchemaName();
+    var onlyShared = false;
+    if (consortiaService.isCentralTenant()) {
+      schema = ecsUtil.getAllTenantsSchemaName();
+      onlyShared = true;
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldingsEcs(List.of(instanceId));
+    } else {
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldings(instanceId);
     }
-    return rtacHoldingRepository.findAllByIdInstanceId(schema, UUID.fromString(instanceId), pageable)
+    return rtacHoldingRepository.findAllByIdInstanceId(schema, instanceId, onlyShared, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
   public RtacHoldingsBatch getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
-    final var schema = getSchemaName();
-    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(schema, instanceIds.toArray(new UUID[0]));
+    var schema = ecsUtil.getSchemaName();
+    var onlyShared = false;
+    if (consortiaService.isCentralTenant()) {
+      schema = ecsUtil.getAllTenantsSchemaName();
+      onlyShared = true;
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldingsEcs(instanceIds);
+    } else {
+      rtacHoldingLazyLoadingService.lazyLoadRtacHoldings(instanceIds);
+    }
+    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(schema, instanceIds.toArray(new UUID[0]), onlyShared);
 
     Map<UUID, RtacSummaryProjection> summaryMap = projections.stream()
       .collect(Collectors.toMap(RtacSummaryProjection::instanceId, p -> p));
@@ -102,9 +116,5 @@ public class RtacHoldingStorageService {
     result.setHoldings(holdings);
     result.setErrors(errors);
     return result;
-  }
-
-  private String getSchemaName() {
-    return folioExecutionContext.getFolioModuleMetadata().getDBSchemaName(folioExecutionContext.getTenantId());
   }
 }

@@ -44,6 +44,7 @@ class ItemCreateEventHandlerTest {
   void itemCreate_shouldSaveEntity() {
     var holdingsEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.HOLDING, UUID.fromString(HOLDINGS_ID)),
+      false,
       holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID),
       Instant.now()
     );
