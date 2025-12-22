@@ -75,13 +75,13 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   private void assertRtacHoldingsSummary(RtacHoldingsSummary summary,
                                          UUID expectedInstanceId,
                                          boolean expectedHasVolumes,
-                                         List<ExpectedLocationStatus> expectedLocationStatuses) {
+                                         List<ExpectedStatusSummary> expectedStatusSummaries) {
     assertThat(summary.getInstanceId()).isEqualTo(expectedInstanceId.toString());
     assertThat(summary.getHasVolumes()).isEqualTo(expectedHasVolumes);
-    assertThat(summary.getLocationStatus()).hasSize(expectedLocationStatuses.size());
+    assertThat(summary.getStatusSummaries()).hasSize(expectedStatusSummaries.size());
 
-    for (ExpectedLocationStatus expected : expectedLocationStatuses) {
-      var actual = summary.getLocationStatus().stream()
+    for (ExpectedStatusSummary expected : expectedStatusSummaries) {
+      var actual = summary.getStatusSummaries().stream()
         .filter(la -> java.util.Objects.equals(expected.libraryId, la.getLibraryId()) &&
                        java.util.Objects.equals(expected.locationId, la.getLocationId()) &&
                        java.util.Objects.equals(expected.locationCode, la.getLocationCode()) &&
@@ -92,7 +92,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     }
   }
 
-  private record ExpectedLocationStatus(String libraryId, String locationId, String locationCode, RtacHolding.TypeEnum type, String status, int statusCount) {}
+  private record ExpectedStatusSummary(String libraryId, String locationId, String locationCode, RtacHolding.TypeEnum type, String status, int statusCount) {}
 
   @Test
   void testGetRtacHoldingsByInstanceId() {
@@ -234,8 +234,8 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId1.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary1, instanceId1, false, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1)
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1)
     ));
 
     // Assertions for Instance 2
@@ -243,7 +243,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId2.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary2, instanceId2, false, List.of(
-      new ExpectedLocationStatus(library2Id, location2Id, location2Code, TypeEnum.ITEM, "Unavailable", 1)
+      new ExpectedStatusSummary(library2Id, location2Id, location2Code, TypeEnum.ITEM, "Unavailable", 1)
     ));
 
     // Assertions for Instance 4
@@ -251,7 +251,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId4.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary4, instanceId4, true, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.HOLDING, "Available", 1)
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.HOLDING, "Available", 1)
     ));
 
     // Assertions for Instance 5
@@ -260,12 +260,12 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .findFirst().orElseThrow();
 
     assertRtacHoldingsSummary(summary5, instanceId5, false, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Unavailable", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Unavailable", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1),
 
-      new ExpectedLocationStatus(library1Id, location2Id, location2Code, TypeEnum.PIECE, "Available", 2)
+      new ExpectedStatusSummary(library1Id, location2Id, location2Code, TypeEnum.PIECE, "Available", 2)
     ));
 
     // Assertions for Instance 3 (error)
@@ -297,7 +297,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .findFirst().orElseThrow();
 
     assertRtacHoldingsSummary(summaryNoLocation, instanceIdNoLocation, false, List.of(
-      new ExpectedLocationStatus(null, null, null, TypeEnum.HOLDING, "Available", 1)
+      new ExpectedStatusSummary(null, null, null, TypeEnum.HOLDING, "Available", 1)
     ));
   }
 

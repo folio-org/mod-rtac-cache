@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.Error;
-import org.folio.rtaccache.domain.dto.LocationStatus;
+import org.folio.rtaccache.domain.dto.StatusSummary;
 import org.folio.rtaccache.domain.dto.Parameter;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
@@ -80,8 +80,8 @@ public class RtacHoldingStorageService {
         summary.setInstanceId(id.toString());
         summary.setHasVolumes(projection.hasVolumes());
         try {
-          List<LocationStatus> locationStatuses = objectMapper.readValue(projection.locationStatusJson(), new TypeReference<>() {});
-          summary.setLocationStatus(locationStatuses);
+          List<StatusSummary> statusSummaries = objectMapper.readValue(projection.statusSummariesJson(), new TypeReference<>() {});
+          summary.setStatusSummaries(statusSummaries);
         } catch (JsonProcessingException e) {
           throw new RtacDataProcessingException(String.format("Failed to parse locationStatusJson for instanceId %s", id), e);
         }
