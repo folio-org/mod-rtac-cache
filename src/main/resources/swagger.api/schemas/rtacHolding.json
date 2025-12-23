@@ -11,11 +11,19 @@
       "type": "string",
       "description": "The id of the record, can be itemId, pieceId or holdingsId depending on the type"
     },
+    "instanceFormatIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The FOLIO ids of the instance's nature of content"
+    },
     "holdingsId": {
       "type": "string",
       "description": "The FOLIO id of the holdings record"
     },
     "type": {
+      "type": "string",
       "enum": ["item", "piece", "holding"],
       "description": "Type of source for RTAC record"
     },
