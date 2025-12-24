@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -72,10 +73,14 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     future.join();
 
     var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_2), PageRequest.of(0, 50));
-    assertEquals(1, holdings.getTotalElements());
-    var rtacHoldingEntity = holdings.get().findFirst().get();
+    assertEquals(2, holdings.getTotalElements());
+    var rtacHoldingEntity = holdings.get()
+      .filter(entity -> entity.getRtacHolding().getType() == TypeEnum.ITEM)
+      .findFirst()
+      .get();
     assertEquals(BOUND_WITH_ITEM_ID, rtacHoldingEntity.getRtacHolding().getId());
     assertTrue(rtacHoldingEntity.getRtacHolding().getIsBoundWith());
+    assertFalse(rtacHoldingEntity.isShared());
   }
 
 }

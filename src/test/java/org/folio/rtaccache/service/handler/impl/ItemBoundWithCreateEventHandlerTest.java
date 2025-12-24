@@ -2,6 +2,7 @@ package org.folio.rtaccache.service.handler.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -69,12 +70,10 @@ class ItemBoundWithCreateEventHandlerTest {
       ._new(boundWithPart(INSTANCE_ID, NEW_HOLDINGS_ID, ITEM_ID));
     when(resourceEventUtil.getNewFromInventoryEvent(event, BoundWithPart.class))
       .thenReturn(boundWithPart(INSTANCE_ID, NEW_HOLDINGS_ID, ITEM_ID));
-    when(holdingRepository.findByIdId(UUID.fromString(ITEM_ID)))
-      .thenReturn(Optional.empty());
 
     handler.handle(event);
 
-    verify(holdingRepository, never()).findByIdIdAndIdType(any(UUID.class), any(TypeEnum.class));
+    verify(holdingRepository, never()).findByIdIdAndIdType(any(UUID.class), eq(TypeEnum.HOLDING));
     verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
   }
 
@@ -89,7 +88,7 @@ class ItemBoundWithCreateEventHandlerTest {
 
     handler.handle(event);
 
-    verify(holdingRepository, never()).findByIdIdAndIdType(any(UUID.class), any(TypeEnum.class));
+    verify(holdingRepository, never()).findByIdIdAndIdType(any(UUID.class), eq(TypeEnum.HOLDING));
     verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
   }
 
@@ -102,16 +101,18 @@ class ItemBoundWithCreateEventHandlerTest {
   private RtacHoldingEntity setUpExistingItemEntity(String instanceId, String itemId, String holdingsId) {
     var entity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(instanceId), TypeEnum.ITEM, UUID.fromString(itemId)),
+      false,
       holdingMapped(TypeEnum.ITEM, itemId, instanceId, holdingsId),
       Instant.now()
     );
-    when(holdingRepository.findByIdId(UUID.fromString(itemId))).thenReturn(Optional.of(entity));
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(itemId), TypeEnum.ITEM)).thenReturn(Optional.of(entity));
     return entity;
   }
 
   private void setUpExistingHoldingsEntity(String instanceId, String holdingsId) {
     var entity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(instanceId), TypeEnum.HOLDING, UUID.fromString(holdingsId)),
+      false,
       holdingMapped(TypeEnum.HOLDING, holdingsId, instanceId, holdingsId),
       Instant.now()
     );

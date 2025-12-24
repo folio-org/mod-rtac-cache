@@ -13,7 +13,23 @@
         "headers": {
           "Content-Type": "application/json"
         },
-        "bodyFileName": "cache-generation/instance-response.json"
+        "bodyFileName": "cache-generation/instance1-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/instance-storage/instances",
+        "queryParameters": {
+          "query": { "contains": "5dbab2d4-42f6-47e0-b0c6-023040bd19ff" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/instance2-response.json"
       }
     },
     {
