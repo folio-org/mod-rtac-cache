@@ -14,6 +14,14 @@ public class EcsUtil {
   private final ConsortiaService consortiaService;
 
   public String getSchemaName() {
+    if (consortiaService.isCentralTenant()) {
+      return getAllTenantsSchemaName();
+    } else {
+      return getCurrentTenantSchemaName();
+    }
+  }
+
+  public String getCurrentTenantSchemaName() {
     return folioExecutionContext.getFolioModuleMetadata().getDBSchemaName(folioExecutionContext.getTenantId());
   }
 

@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +49,7 @@ public class RtacHoldingLazyLoadingService {
     }
   }
 
-  public void lazyLoadRtacHoldings(List<UUID> instanceIds) {
+  public List<Throwable> lazyLoadRtacHoldings(List<UUID> instanceIds) {
     var foundInstanceIds = rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds).stream()
       .map(RtacBatchCountProjection::instanceId).toList();
     var missingInstanceIds = instanceIds.stream().filter(id -> !foundInstanceIds.contains(id))
@@ -57,10 +58,16 @@ public class RtacHoldingLazyLoadingService {
     for (var instanceId : missingInstanceIds) {
       futures.add(taskExecutor.submitCompletable(() -> lazyLoadRtacHoldings(instanceId)));
     }
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    } catch (Exception e) {
+      log.error("Error during lazy loading RTAC holdings for instanceIds: {}", missingInstanceIds, e);
+      return gatherExceptions(futures);
+    }
+    return Collections.emptyList();
   }
 
-  public void lazyLoadRtacHoldingsEcs(List<UUID> instanceIds) {
+  public List<Throwable> lazyLoadRtacHoldingsEcs(List<UUID> instanceIds) {
     var consortiumHoldings = searchClient.getConsortiumHoldings(getBatchIdsDto(instanceIds));
     var instanceTenantMap = instanceTenantMap(consortiumHoldings);
     var futures = new ArrayList<CompletableFuture<Void>>();
@@ -76,12 +83,17 @@ public class RtacHoldingLazyLoadingService {
             });
           } catch (Exception e) {
             log.error("Error during lazy loading RTAC holdings for instanceId: {} in tenant: {}", instanceId, tenantId, e);
-            throw e;
           }
         }));
       }
     }
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    } catch (Exception e) {
+      log.error("Error during lazy loading RTAC holdings for instanceIds: {}", instanceTenantMap.keySet(), e);
+      return gatherExceptions(futures);
+    }
+    return Collections.emptyList();
   }
 
   private BatchIdsDto getBatchIdsDto(List<UUID> instanceId) {
@@ -102,4 +114,18 @@ public class RtacHoldingLazyLoadingService {
     }
     return instanceTenantMap;
   }
-}
+
+  private List<Throwable> gatherExceptions(List<CompletableFuture<Void>> futures) {
+    return futures.stream()
+      .filter(CompletableFuture::isCompletedExceptionally)
+      .map(future -> {
+        try {
+          future.join();
+          return null; // Should not happen
+        } catch (Exception e) {
+          return future.exceptionNow();
+        }
+      })
+      .toList();
+  }
+ }
