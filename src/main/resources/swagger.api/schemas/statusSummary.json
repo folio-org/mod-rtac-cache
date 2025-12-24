@@ -10,6 +10,10 @@
       "type": "string",
       "description": "The location id of the holding"
     },
+    "locationCode": {
+      "type": "string",
+      "description": "The location code of the holding"
+    },
     "status": {
       "type": "string",
       "description": "The FOLIO status for the item, holding or piece"
@@ -17,6 +21,15 @@
     "statusCount": {
       "type": "integer",
       "description": "The count for the status for the library location"
+    },
+    "type": {
+      "type": "string",
+      "description": "The type of the resource (item, holding, piece)",
+      "enum": [
+        "item",
+        "piece",
+        "holding"
+      ]
     }
   }
 }

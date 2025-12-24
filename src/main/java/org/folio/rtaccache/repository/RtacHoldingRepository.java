@@ -64,12 +64,19 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
             h_inner.instance_id,
             (h_inner.rtac_holding_json->'library'->>'id') AS libraryId,
             (h_inner.rtac_holding_json->'location'->>'id') AS locationId,
+            (h_inner.rtac_holding_json->'location'->>'code') AS locationCode,
+            (h_inner.rtac_holding_json->>'type') AS type,
             (h_inner.rtac_holding_json->>'status') AS status,
             COUNT(*) AS statusCount
           FROM
             Filtered h_inner
           GROUP BY
-            h_inner.instance_id, libraryId, locationId, status
+            h_inner.instance_id,
+            (h_inner.rtac_holding_json->'library'->>'id'),
+            (h_inner.rtac_holding_json->'location'->>'id'),
+            (h_inner.rtac_holding_json->'location'->>'code'),
+            (h_inner.rtac_holding_json->>'type'),
+            (h_inner.rtac_holding_json->>'status')
         )
         SELECT
           h.instance_id AS instanceId,
@@ -80,8 +87,10 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
                 json_build_object(
                   'libraryId', lsc.libraryId,
                   'locationId', lsc.locationId,
+                  'locationCode', lsc.locationCode,
                   'status', lsc.status,
-                  'statusCount', lsc.statusCount
+                  'statusCount', lsc.statusCount,
+                  'type', lsc.type
                 )
               )
             FROM
