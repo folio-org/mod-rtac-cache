@@ -1,5 +1,6 @@
 package org.folio.rtaccache.configuration;
 
+import static org.folio.rtaccache.TestConstant.BOUND_WITH_TOPIC;
 import static org.folio.rtaccache.TestConstant.HOLDINGS_TOPIC;
 import static org.folio.rtaccache.TestConstant.ITEM_TOPIC;
 import static org.folio.rtaccache.TestConstant.LIBRARY_TOPIC;
@@ -57,6 +58,12 @@ public class KafkaIntegrationTestConfig {
   @Bean
   public NewTopic libraryTopic() {
     return TopicBuilder.name(LIBRARY_TOPIC)
+      .build();
+  }
+
+  @Bean
+  public NewTopic boundWithTopic() {
+    return TopicBuilder.name(BOUND_WITH_TOPIC)
       .build();
   }
 

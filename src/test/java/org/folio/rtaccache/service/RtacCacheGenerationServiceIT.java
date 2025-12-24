@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -25,8 +26,10 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
   private RtacHoldingRepository rtacHoldingRepository;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
-  private static final String INSTANCE_ID = "4de861ab-af9e-4247-bc16-c547d982eb5d";
+  private static final String INSTANCE_ID_1 = "4de861ab-af9e-4247-bc16-c547d982eb5d";
+  private static final String INSTANCE_ID_2 = "5dbab2d4-42f6-47e0-b0c6-023040bd19ff";
   private static final String ITEM_WITH_LOANS_AND_REQUESTS_ID = "9a772288-ead3-4033-b07b-87eff643710f";
+  private static final String BOUND_WITH_ITEM_ID = "02b9b326-903b-41d7-b947-fc809e9d38c1";
   private static final String PIECE_ID = "aaf7be29-a8cc-4b0a-9975-bf39e9a71696";
 
   @AfterEach
@@ -39,10 +42,10 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
 
-    var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID);
+    var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_1);
     future.join();
 
-    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID), PageRequest.of(0, 50));
+    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_1), PageRequest.of(0, 50));
     var itemWithLoans = holdings.get()
       .filter(entity -> entity.getRtacHolding().getDueDate() != null).findFirst();
     var piece = holdings.get()
@@ -59,6 +62,25 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     assertTrue(itemWithHoldCount.isPresent());
     assertEquals(ITEM_WITH_LOANS_AND_REQUESTS_ID, itemWithHoldCount.get().getRtacHolding().getId());
     assertTrue(holdings.get().allMatch(RtacHoldingEntity::isShared));
+  }
+
+  @Test
+  void generateRtacCache_shouldProcessBoundWithItem() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_2);
+    future.join();
+
+    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_2), PageRequest.of(0, 50));
+    assertEquals(2, holdings.getTotalElements());
+    var rtacHoldingEntity = holdings.get()
+      .filter(entity -> entity.getRtacHolding().getType() == TypeEnum.ITEM)
+      .findFirst()
+      .get();
+    assertEquals(BOUND_WITH_ITEM_ID, rtacHoldingEntity.getRtacHolding().getId());
+    assertTrue(rtacHoldingEntity.getRtacHolding().getIsBoundWith());
+    assertFalse(rtacHoldingEntity.isShared());
   }
 
 }

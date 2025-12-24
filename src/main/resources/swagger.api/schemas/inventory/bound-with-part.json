@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Records the relationship between a part of a bound-with (a holdings-record) and the bound-with as a whole (the circulatable item)",
+  "type": "object",
+  "properties": {
+
+    "id": {
+      "$ref": "../uuid.json"
+    },
+    "instanceId" : {
+      "$ref": "../uuid.json"
+    },
+    "holdingsRecordId": {
+      "$ref": "../uuid.json"
+    },
+    "itemId" : {
+      "$ref": "../uuid.json"
+    },
+    "metadata": {
+      "$ref": "../metadata.json"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "holdingsRecordId",
+    "itemId"
+  ]
+}

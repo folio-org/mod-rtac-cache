@@ -4,6 +4,7 @@ import static org.folio.rtaccache.domain.dto.CirculationEntityType.LOAN;
 import static org.folio.rtaccache.domain.dto.CirculationEntityType.REQUEST;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.HOLDINGS;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM;
+import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM_BOUND_WITH;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LIBRARY;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOCATION;
 
@@ -29,6 +30,7 @@ public class KafkaMessageListener {
   private static final String PIECE_LISTENER_ID = "mod-rtac-cache-piece-listener";
   private static final String LOCATIONS_LISTENER_ID = "mod-rtac-cache-location-listener";
   private static final String LIBRARIES_LISTENER_ID = "mod-rtac-cache-library-listener";
+  private static final String BOUND_WITH_LISTENER_ID = "mod-rtac-cache-bound-with-listener";
   private static final String FOLIO_TENANT_ID_HEADER = "folio.tenantId";
 
   private final SystemUserScopedExecutionService executionService;
@@ -117,7 +119,7 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['location'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['location'].topicPattern}",
     autoStartup = "false")
-  public void handleLocation(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+  public void handleLocationRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -133,11 +135,26 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['library'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['library'].topicPattern}",
     autoStartup = "false")
-  public void handleLibrary(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+  public void handleLibraryRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LIBRARY)
+        .handle(resourceEvent);
+    } );
+  }
+
+  @KafkaListener(
+    id = BOUND_WITH_LISTENER_ID,
+    containerFactory = "inventoryKafkaListenerContainerFactory",
+    groupId = "#{folioKafkaProperties.listener['bound-with'].groupId}",
+    concurrency = "#{folioKafkaProperties.listener['bound-with'].concurrency}",
+    topicPattern = "#{folioKafkaProperties.listener['bound-with'].topicPattern}")
+  public void handleBoundWithRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    var tenantId = consumerRecord.value().getTenant();
+    executionService.executeAsyncSystemUserScoped(tenantId, () -> {
+      var resourceEvent = consumerRecord.value();
+      eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), ITEM_BOUND_WITH)
         .handle(resourceEvent);
     } );
   }

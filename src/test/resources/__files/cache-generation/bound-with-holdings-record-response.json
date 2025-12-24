@@ -1,0 +1,35 @@
+{
+  "holdingsRecords": [
+    {
+      "holdingsItems": [],
+      "bareHoldingsItems": [],
+      "id": "e42b81ff-629a-4b76-9b6b-7cb92c9ea59e",
+      "_version": 1,
+      "sourceId": "f32d531e-df79-46b3-8932-cdd35f7a2264",
+      "hrid": "colho00000683924",
+      "formerIds": [],
+      "instanceId": "5dbab2d4-42f6-47e0-b0c6-023040bd19ff",
+      "permanentLocationId": "773e5ce3-c226-4818-a78d-4de7ee0c9418",
+      "effectiveLocationId": "773e5ce3-c226-4818-a78d-4de7ee0c9418",
+      "electronicAccess": [],
+      "administrativeNotes": [],
+      "notes": [],
+      "holdingsStatements": [],
+      "holdingsStatementsForIndexes": [],
+      "holdingsStatementsForSupplements": [],
+      "statisticalCodeIds": [],
+      "metadata": {
+        "createdDate": "2025-11-02T11:17:50.138+00:00",
+        "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+        "updatedDate": "2025-11-02T11:17:50.138+00:00",
+        "updatedByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42"
+      }
+    }
+  ],
+  "totalRecords": 1,
+  "resultInfo": {
+    "totalRecords": 1,
+    "facets": [],
+    "diagnostics": []
+  }
+}

@@ -19,6 +19,7 @@
             "inventory-storage.material-types.collection.get",
             "inventory-storage.loan-types.collection.get",
             "inventory-storage.holdings-note-types.collection.get",
+            "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
             "orders.pieces.collection.get",
@@ -39,6 +40,7 @@
             "inventory-storage.material-types.collection.get",
             "inventory-storage.loan-types.collection.get",
             "inventory-storage.holdings-note-types.collection.get",
+            "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
             "orders.pieces.collection.get",
@@ -63,6 +65,7 @@
             "inventory-storage.material-types.collection.get",
             "inventory-storage.loan-types.collection.get",
             "inventory-storage.holdings-note-types.collection.get",
+            "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
             "orders.pieces.collection.get",
@@ -154,6 +157,10 @@
     {
       "id": "settings",
       "version": "1.1 1.2"
+    },
+    {
+      "id": "bound-with-parts-storage",
+      "version": "2.0"
     }
   ],
   "optional": [
@@ -225,6 +232,7 @@
         "inventory-storage.holdings.retrieve.collection.post",
         "inventory-storage.location-units.libraries.collection.get",
         "inventory-storage.locations.collection.get",
+        "inventory-storage.bound-with-parts.collection.get",
         "inventory-storage.material-types.collection.get",
         "inventory-storage.loan-types.collection.get",
         "inventory-storage.holdings-note-types.collection.get",

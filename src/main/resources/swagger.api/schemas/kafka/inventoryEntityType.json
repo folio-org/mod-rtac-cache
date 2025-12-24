@@ -5,6 +5,7 @@
   "enum": [
     "HOLDINGS",
     "ITEM",
+    "ITEM_BOUND_WITH",
     "LOCATION",
     "LIBRARY"
   ]

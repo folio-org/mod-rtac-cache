@@ -61,7 +61,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String HOLDINGS_ID_2 = "48525495-05b0-488e-a0c5-0f3ec5c7a0f2";
   private static final String ITEM_ID = "522d41d3-0e04-416d-9f52-90ac67685a78";
   private static final String PIECE_ID = "d892d70b-96be-4e5b-ab11-05839eb5df40";
-  private static final String INSTANCE_ID = "843b368d-411c-4dce-bd64-99afc53f508d";
+  private static final String INSTANCE_ID_1 = "843b368d-411c-4dce-bd64-99afc53f508d";
+  private static final String INSTANCE_ID_2 = "4b0559ef-6738-4d51-98fb-16db8cbf935e";
 
   private static final String CREATE_HOLDINGS_EVENT_PATH = "__files/kafka-events/create-holdings-event.json";
   private static final String DELETE_HOLDINGS_EVENT_PATH = "__files/kafka-events/delete-holdings-event.json";
@@ -82,6 +83,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_LIBRARY_EVENT_PATH = "__files/kafka-events/create-library-event.json";
   private static final String DELETE_LIBRARY_EVENT_PATH = "__files/kafka-events/delete-library-event.json";
   private static final String UPDATE_LIBRARY_EVENT_PATH = "__files/kafka-events/update-library-event.json";
+  private static final String CREATE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/create-bound-with-event.json";
+  private static final String DELETE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/delete-bound-with-event.json";
 
   private static final String OLD_CALL_NUMBER = "OLD-CALL-123";
   private static final String NEW_CALL_NUMBER = "NEW-CALL-456";
@@ -552,32 +555,75 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     }
   }
 
+  @Test
+  @Order(22)
+  void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING);
+      var event = loadInventoryResourceEvent(CREATE_BOUND_WITH_EVENT_PATH);
+      // When
+      sendBoundWithEvent(event);
+      // Then
+      await().atMost(Duration.ofSeconds(50)).untilAsserted(() -> {
+        var rtacHoldingId = new RtacHoldingId(UUID.fromString(INSTANCE_ID_2), TypeEnum.ITEM, UUID.fromString(ITEM_ID));
+        var holding = holdingRepository.findById(rtacHoldingId);
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getId()).isEqualTo(ITEM_ID);
+        assertThat(holding.get().getRtacHolding().getIsBoundWith()).isEqualTo(true);
+      });
+    }
+  }
+
+  @Test
+  @Order(23)
+  void shouldDeleteRtacHolding_withItemType_whenBoundWithDeleteEventIsSent() throws JsonProcessingException {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM, true);
+      var event = loadInventoryResourceEvent(DELETE_BOUND_WITH_EVENT_PATH);
+      // When
+      sendBoundWithEvent(event);
+      // Then
+      await().atMost(Duration.ofSeconds(50)).untilAsserted(() -> {
+        var count = holdingRepository.count();
+        assertThat(count).isZero();
+      });
+    }
+  }
+
   private void createExistingRtacHoldingEntity(String id, TypeEnum type) {
+    createExistingRtacHoldingEntity(id, type, false);
+  }
+
+  private void createExistingRtacHoldingEntity(String id, TypeEnum type, boolean isBoundWith) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
 
     RtacHoldingId rtacHoldingId = new RtacHoldingId();
     rtacHoldingId.setId(UUID.fromString(id));
-    rtacHoldingId.setInstanceId(UUID.fromString(INSTANCE_ID));
+    rtacHoldingId.setInstanceId(UUID.fromString(INSTANCE_ID_1));
     rtacHoldingId.setType(type);
     entity.setId(rtacHoldingId);
 
-    var rtacHolding = createRtacHolding(id, type);
+    var rtacHolding = createRtacHolding(id, type, isBoundWith);
 
     entity.setRtacHolding(rtacHolding);
     entity.setCreatedAt(Instant.now());
     holdingRepository.save(entity);
   }
 
-  private RtacHolding createRtacHolding(String id, TypeEnum type) {
+  private RtacHolding createRtacHolding(String id, TypeEnum type, boolean isBoundWith) {
     var rtacHolding = new RtacHolding();
     rtacHolding.setCallNumber(OLD_CALL_NUMBER);
     rtacHolding.setId(id);
-    rtacHolding.setInstanceId(INSTANCE_ID);
+    rtacHolding.setInstanceId(INSTANCE_ID_1);
     rtacHolding.setHoldingsId(HOLDINGS_ID_1);
     rtacHolding.setType(type);
     rtacHolding.setStatus(OLD_STATUS);
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
     rtacHolding.setTotalHoldRequests(1);
+    rtacHolding.setIsBoundWith(isBoundWith);
 
     var location = new RtacHoldingLocation();
     location.setId(OLD_LOCATION_ID);
@@ -639,6 +685,11 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     var header = new RecordHeader("folio.tenantId", TEST_TENANT.getBytes());
     var pieceRecord = new ProducerRecord<>(TestConstant.PIECE_TOPIC, 0, id, event, List.of(header));
     pieceKafkaTemplate.send(pieceRecord);
+  }
+
+  private void sendBoundWithEvent(InventoryResourceEvent event) {
+    var boundWithRecord = new ProducerRecord<>(TestConstant.BOUND_WITH_TOPIC, ITEM_ID, event);
+    inventoryKafkaTemplate.send(boundWithRecord);
   }
 
   private FolioExecutionContext folioExecutionContext() {
