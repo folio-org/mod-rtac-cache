@@ -1,5 +1,6 @@
 package org.folio.rtaccache.client;
 
+import org.folio.rtaccache.domain.dto.BoundWithParts;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingRecords;
 import org.folio.rtaccache.domain.dto.HoldingsNoteTypes;
@@ -26,6 +27,9 @@ public interface InventoryClient {
 
   @PostMapping("/item-storage/items/retrieve")
   Items getItems(@RequestBody FolioCqlRequest request);
+
+  @GetMapping("/inventory-storage/bound-with-parts")
+  BoundWithParts getBoundWithParts(@SpringQueryMap FolioCqlRequest request);
 
   @GetMapping("/locations")
   Locations getLocations(@SpringQueryMap FolioCqlRequest request);

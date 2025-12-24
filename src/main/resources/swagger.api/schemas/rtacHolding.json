@@ -167,6 +167,11 @@
       "type": "string",
       "description": "A system generated normalization of the call number that allows for call number sorting in reports and search results"
     },
+    "isBoundWith": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates whether the record is part of a bound-with"
+    },
     "createdAt": {
       "type": "string",
       "description": "Record creation date",

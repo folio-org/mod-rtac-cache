@@ -263,6 +263,10 @@ components:
       $ref: schemas/inventory/loclibs.json
     HoldingsNoteTypes:
       $ref: schemas/inventory/holdingsNoteTypes.json
+    BoundWithPart:
+      $ref: schemas/inventory/bound-with-part.json
+    BoundWithParts:
+      $ref: schemas/inventory/bound-with-parts.json
     Loans:
       $ref: schemas/circulation/loans.json
     Requests:

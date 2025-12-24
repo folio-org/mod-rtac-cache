@@ -41,12 +41,6 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->>'holdingsId' = :holdingsId", nativeQuery = true)
   List<RtacHoldingEntity> findAllByHoldingsId(@Param("holdingsId") String holdingsId);
 
-  @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->'location'->>'id' = :locationId", nativeQuery = true)
-  List<RtacHoldingEntity> findAllByLocationId(@Param("locationId") String locationId);
-
-  @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->'library'->>'id' = :libraryId", nativeQuery = true)
-  List<RtacHoldingEntity> findAllByLibraryId(@Param("libraryId") String libraryId);
-
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(value = "DELETE FROM rtac_holding WHERE rtac_holding_json->>'holdingsId' = :holdingsId", nativeQuery = true)
   void deleteAllByHoldingsId(@Param("holdingsId") String holdingsId);
@@ -105,24 +99,4 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
       nativeQuery = true)
   List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("schemas") String schemas, @Param("instanceIds") UUID[] instanceIds, @Param("onlyShared") boolean onlyShared);
 
-  @Modifying
-  @Query(value = """
-  UPDATE rtac_holding_entity
-  SET rtac_holding_json = jsonb_set(
-      jsonb_set(
-          rtac_holding_json,
-          '{location,name}',
-          to_jsonb(:name::text)
-      ),
-      '{location,code}',
-      to_jsonb(:code::text)
-  )
-  WHERE id IN (
-    SELECT id FROM rtac_holding_entity
-    WHERE rtac_holding_json->'location'->>'id' = :locationId
-  )
-  """, nativeQuery = true)
-  int updateLocationDataBatch(@Param("locationId") String locationId,
-    @Param("name") String name,
-    @Param("code") String code);
 }

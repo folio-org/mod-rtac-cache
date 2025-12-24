@@ -40,22 +40,6 @@ folio:
     validation:
       enabled: false
   kafka:
-    topics:
-      - name: inventory.holdings-record
-        numPartitions: 1
-        replicationFactor: 1
-      - name: inventory.item
-        numPartitions: 1
-        replicationFactor: 1
-      - name: circulation.loan
-        numPartitions: 1
-        replicationFactor: 1
-      - name: circulation.request
-        numPartitions: 1
-        replicationFactor: 1
-      - name: ACQ_PIECE_CHANGED
-        numPartitions: 1
-        replicationFactor: 1
     listener:
       holdings-record:
         concurrency: 1
@@ -73,6 +57,10 @@ folio:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.inventory\.library
         group-id: ${folio.environment}-mod-rtac-cache-library-group
+      bound-with:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.bound-with
+        group-id: ${folio.environment}-mod-rtac-cache-bound-with-group
       loan:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.circulation\.loan

@@ -1,0 +1,16 @@
+{
+  "new": {
+    "instanceId": "4b0559ef-6738-4d51-98fb-16db8cbf935e",
+    "id": "6fc15a10-aab1-4726-9d5a-ee51cdf80606",
+    "holdingsRecordId": "48525495-05b0-488e-a0c5-0f3ec5c7a0f2",
+    "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+    "metadata": {
+      "createdDate": "2025-12-22T12:48:24.652+00:00",
+      "updatedDate": "2025-12-22T12:48:24.652+00:00"
+    }
+  },
+  "type": "CREATE",
+  "tenant": "testTenant",
+  "eventId": "4b6d1751-e4b7-4b58-bca4-faab359035f4",
+  "eventTs": 1766407704686
+}

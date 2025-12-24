@@ -1,0 +1,42 @@
+{
+  "items": [
+    {
+      "id": "02b9b326-903b-41d7-b947-fc809e9d38c1",
+      "_version": 1,
+      "hrid": "colit00001478541",
+      "holdingsRecordId": "dfec0729-ded5-4c81-8daf-9ebd07d3d8ec",
+      "formerIds": [],
+      "barcode": "470789994194",
+      "effectiveShelvingOrder": "QA76.73.J38 G67 2023",
+      "itemLevelCallNumber": "QA76.73.J38 G67 2023",
+      "effectiveCallNumberComponents": {
+        "callNumber": "QA76.73.J38 G67 2023"
+      },
+      "yearCaption": [],
+      "administrativeNotes": [],
+      "notes": [],
+      "circulationNotes": [],
+      "status": {
+        "name": "Available",
+        "date": "2025-11-02T11:18:03.683+00:00"
+      },
+      "materialTypeId": "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+      "permanentLoanTypeId": "2b94c631-fca9-4892-a730-03ee529ffe27",
+      "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+      "electronicAccess": [],
+      "statisticalCodeIds": [],
+      "metadata": {
+        "createdDate": "2025-11-02T11:18:03.683+00:00",
+        "createdByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42",
+        "updatedDate": "2025-11-02T11:18:03.683+00:00",
+        "updatedByUserId": "9f9d1c46-52e1-4bb7-9c6c-56e6bb945c42"
+      }
+    }
+  ],
+  "totalRecords": 1,
+  "resultInfo": {
+    "totalRecords": 1,
+    "facets": [],
+    "diagnostics": []
+  }
+}
