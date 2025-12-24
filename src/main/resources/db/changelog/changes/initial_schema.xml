@@ -105,6 +105,17 @@
     </rollback>
   </changeSet>
 
+  <changeSet id="add-shared-field-to-rtac-holding-003" author="Ivan_Zhunkivskyi">
+    <preConditions>
+        <tableExists tableName="rtac_holding"/>
+    </preConditions>
+
+
+    <addColumn tableName="rtac_holding">
+      <column name="shared" type="boolean" defaultValue="false"/>
+    </addColumn>
+  </changeSet>
+
   <changeSet id="add-rtac-holding-location-id-index" author="Illia-Borysenko_epam">
     <comment>Create index on rtac_holding_json location.id for bulk updates</comment>
     <sql>
@@ -124,6 +135,15 @@
     </sql>
     <rollback>
       <sql>DROP INDEX IF EXISTS idx_rtac_holding_library_id;</sql>
+    </rollback>
+  </changeSet>
+
+  <changeSet id="update-rtac-holdings-multi-tenant-function-002" author="Ivan_Zhunkivskyi">
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holdings_multi_tenant(text, uuid[]);
+      </sql>
     </rollback>
   </changeSet>
 </databaseChangeLog>

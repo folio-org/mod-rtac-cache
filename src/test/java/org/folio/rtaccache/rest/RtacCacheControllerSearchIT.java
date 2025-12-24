@@ -1,6 +1,7 @@
 package org.folio.rtaccache.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.rtaccache.TestConstant.EMPTY_INSTANCE_ID;
 import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -68,7 +69,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
   void testSearchRtacHoldings_notFound() throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TEST_TENANT);
 
-    var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", UUID.randomUUID())
+    var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", EMPTY_INSTANCE_ID)
         .param("query", "test")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
       .andExpect(status().isOk())
@@ -115,6 +116,6 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .callNumber(callNumber)
       .location(new RtacHoldingLocation().name(locationName))
       .library(new RtacHoldingLibrary().name(libraryName));
-    return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding, Instant.now());
   }
 }

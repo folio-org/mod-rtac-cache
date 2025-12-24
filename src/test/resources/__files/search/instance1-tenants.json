@@ -1,0 +1,15 @@
+{
+  "holdings": [
+    {
+      "id": "1a2b3c4d-5e6f-7081-9201-234567890abc",
+      "instanceId": "1c3d3b16-89d5-44de-bdbe-d5a3b49a0087",
+      "tenantId": "testMemberTenant"
+    },
+    {
+      "id": "1a3b3c4d-5e6f-7081-9201-234567890abc",
+      "instanceId": "1c3d3b16-89d5-44de-bdbe-d5a3b49a0087",
+      "tenantId": "testMemberTenant"
+    }
+  ],
+  "totalRecords": 2
+}

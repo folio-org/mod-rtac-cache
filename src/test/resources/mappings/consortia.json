@@ -1,0 +1,30 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/user-tenants"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "consortia/user-tenants.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/consortia/1f06c60e-4431-432d-97a4-ca2bc6b152cb/tenants"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "consortia/consortia-tenants.json"
+      }
+    }
+  ]
+}

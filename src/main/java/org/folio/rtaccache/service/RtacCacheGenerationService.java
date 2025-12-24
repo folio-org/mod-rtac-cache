@@ -13,9 +13,11 @@ import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingsRecord;
+import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.folio.spring.FolioExecutionContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -32,12 +34,19 @@ public class RtacCacheGenerationService {
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
+  private final FolioExecutionContext folioExecutionContext;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
+  private static final String CONSORTIUM_SOURCE = "CONSORTIUM";
 
   public CompletableFuture<Void> generateRtacCache(String instanceId) {
-    log.info("Started RTAC cache generation for instance id: {}", instanceId);
+    log.info("Started RTAC cache generation for instance id: {} in tenant: {}", instanceId, folioExecutionContext.getTenantId());
     var holdingsOffset = 0;
+    var instance = getInstanceById(instanceId);
+    if (instance == null) {
+      log.warn("Instance with id: {} not found. RTAC cache generation aborted.", instanceId);
+      return CompletableFuture.completedFuture(null);
+    }
     var totalHoldings = getHoldingsTotalRecords(instanceId);
     var futures = new ArrayList<CompletableFuture<Void>>();
     while (totalHoldings != 0 && holdingsOffset < totalHoldings) {
@@ -45,37 +54,49 @@ public class RtacCacheGenerationService {
       var holdingsRequest = new FolioCqlRequest(holdingsCql, HOLDINGS_BATCH_SIZE, holdingsOffset);
       var holdingsResponse = inventoryClient.getHoldings(holdingsRequest);
       for (var holding : holdingsResponse.getHoldingsRecords()) {
-        futures.add(taskExecutor.submitCompletable(processIndividualHolding(holding)));
+        futures.add(taskExecutor.submitCompletable(processIndividualHolding(instance, holding)));
       }
       holdingsOffset += HOLDINGS_BATCH_SIZE;
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
-  private Runnable processIndividualHolding(HoldingsRecord holding) {
+  private Runnable processIndividualHolding(Instance instance, HoldingsRecord holding) {
     return () -> {
       log.info("Processing holding id : {}", holding.getId());
-      var itemsFuture = processItemsForHolding(holding);
-      var piecesFuture = processPiecesForHolding(holding);
+      saveHolding(instance, holding);
+      var itemsFuture = processItemsForHolding(instance, holding);
+      var piecesFuture = processPiecesForHolding(instance, holding);
       itemsFuture.join();
       piecesFuture.join();
     };
   }
 
-  private CompletableFuture<Void> processItemsForHolding(HoldingsRecord holding) {
+  private void saveHolding(Instance instance, HoldingsRecord holding) {
+    var rtacHolding = rtacHoldingMappingService.mapFrom(holding);
+    var entityId = RtacHoldingId.from(rtacHolding);
+    var rtacHoldingEntity = new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
+    try {
+      rtacHoldingRepository.bulkUpsert(List.of(rtacHoldingEntity));
+    } catch (Exception e) {
+      log.error("Error during bulk upsert of RTAC holdings for holding: {}", e.getMessage(), e);
+    }
+  }
+
+  private CompletableFuture<Void> processItemsForHolding(Instance instance, HoldingsRecord holding) {
     var itemsOffset = 0;
     var totalItems = getItemsTotalRecords(holding.getId());
     var futures = new ArrayList<CompletableFuture<Void>>();
     while (totalItems != 0 && itemsOffset < totalItems) {
       var itemsCql = getItemsByHoldingIdCql(holding.getId());
       var itemsRequest = new FolioCqlRequest(itemsCql, ITEMS_BATCH_SIZE, itemsOffset);
-      futures.add(processItemsBatch(holding, itemsRequest));
+      futures.add(processItemsBatch(instance, holding, itemsRequest));
       itemsOffset += ITEMS_BATCH_SIZE;
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
-  private CompletableFuture<Void> processPiecesForHolding(HoldingsRecord holding) {
+  private CompletableFuture<Void> processPiecesForHolding(Instance instance, HoldingsRecord holding) {
     return CompletableFuture.supplyAsync(() -> {
       log.info("Sending request for pieces for holding id: {}", holding.getId());
       return ordersService.getPiecesByHoldingId(holding.getId());
@@ -85,7 +106,8 @@ public class RtacCacheGenerationService {
         var pieces = response.getPieces();
         var rtacHoldings = pieces.stream()
           .map(piece -> rtacHoldingMappingService.mapFrom(holding, piece))
-          .map(rtacHolding -> new RtacHoldingEntity(RtacHoldingId.from(rtacHolding), rtacHolding, Instant.now()))
+          .map(rtacHolding -> new RtacHoldingEntity(
+            RtacHoldingId.from(rtacHolding), isInstanceShared(instance), rtacHolding, Instant.now()))
           .toList();
         try {
           rtacHoldingRepository.bulkUpsert(rtacHoldings);
@@ -97,7 +119,7 @@ public class RtacCacheGenerationService {
     }, taskExecutor);
   }
 
-  private CompletableFuture<Void> processItemsBatch(HoldingsRecord holding, FolioCqlRequest request) {
+  private CompletableFuture<Void> processItemsBatch(Instance instance, HoldingsRecord holding, FolioCqlRequest request) {
     return CompletableFuture.supplyAsync(() -> {
       log.info("Sending request for items batch for holding id: {}, offset {}", holding.getId(), request.getOffset());
       var itemsResponse = inventoryClient.getItems(request);
@@ -107,7 +129,7 @@ public class RtacCacheGenerationService {
       var itemsHoldCountMap = retrieveItemsHoldCountMap(items);
       var itemsLoanDueDateMap = retrieveItemsLoanDueDateMap(items);
       var rtacHoldings = items.stream()
-        .map(item -> processIndividualItem(holding, item, itemsLoanDueDateMap, itemsHoldCountMap))
+        .map(item -> processIndividualItem(instance, holding, item, itemsLoanDueDateMap, itemsHoldCountMap))
         .toList();
       try {
         rtacHoldingRepository.bulkUpsert(rtacHoldings);
@@ -118,12 +140,26 @@ public class RtacCacheGenerationService {
     }, taskExecutor);
   }
 
-  private RtacHoldingEntity processIndividualItem(HoldingsRecord holding, Item item, Map<String, Date> dueDateMap, Map<String, Long> holdCountMap) {
+  private Instance getInstanceById(String instanceId) {
+    var cql = "id==" + instanceId;
+    var request = new FolioCqlRequest(cql, 1, 0);
+    var response = inventoryClient.getInstances(request);
+    if (response.getTotalRecords() == 0) {
+      return null;
+    }
+    return response.getInstances().get(0);
+  }
+
+  private boolean isInstanceShared(Instance instance) {
+    return instance.getSource() != null && instance.getSource().contains(CONSORTIUM_SOURCE);
+  }
+
+  private RtacHoldingEntity processIndividualItem(Instance instance, HoldingsRecord holding, Item item, Map<String, Date> dueDateMap, Map<String, Long> holdCountMap) {
     var rtacHolding = rtacHoldingMappingService.mapFrom(holding, item);
     rtacHolding.setDueDate(dueDateMap.getOrDefault(rtacHolding.getId(), null));
     rtacHolding.setTotalHoldRequests(Math.toIntExact(holdCountMap.getOrDefault(rtacHolding.getId(), 0L)));
     var entityId = RtacHoldingId.from(rtacHolding);
-    return new RtacHoldingEntity(entityId, rtacHolding, Instant.now());
+    return new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
   }
 
   private Map<String, Date> retrieveItemsLoanDueDateMap(List<Item> items) {

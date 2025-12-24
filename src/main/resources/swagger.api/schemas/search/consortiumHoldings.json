@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "Response schema for consortium holdings search",
+  "type": "object",
+  "properties": {
+    "holdings": {
+      "type": "array",
+      "items": {
+        "$ref": "consortiumHolding.json"
+      }
+    },
+    "totalRecords": {
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false
+}

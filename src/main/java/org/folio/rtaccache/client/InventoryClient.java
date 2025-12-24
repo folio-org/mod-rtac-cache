@@ -3,6 +3,7 @@ package org.folio.rtaccache.client;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingRecords;
 import org.folio.rtaccache.domain.dto.HoldingsNoteTypes;
+import org.folio.rtaccache.domain.dto.Instances;
 import org.folio.rtaccache.domain.dto.Items;
 import org.folio.rtaccache.domain.dto.LoanTypes;
 import org.folio.rtaccache.domain.dto.Locations;
@@ -16,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(value = "inventory")
 public interface InventoryClient {
+
+  @GetMapping("/instance-storage/instances")
+  Instances getInstances(@SpringQueryMap FolioCqlRequest request);
 
   @PostMapping("/holdings-storage/holdings/retrieve")
   HoldingRecords getHoldings(@RequestBody FolioCqlRequest request);

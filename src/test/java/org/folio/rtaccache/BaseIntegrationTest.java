@@ -29,7 +29,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @AutoConfigureMockMvc
 @ActiveProfiles({"test"})
 public abstract class BaseIntegrationTest {
-  private static final String MOD_OPAC_RTAC_MODULE = "mod-rtac-cache-1.0.0";
+  protected static final String MOD_OPAC_RTAC_MODULE = "mod-rtac-cache-1.0.0";
   protected static final String TOKEN = "test-token";
 
   protected static final WireMockServer WIRE_MOCK = new WireMockServer(
@@ -82,5 +82,7 @@ public abstract class BaseIntegrationTest {
         .contentType(APPLICATION_JSON))
       .andExpect(status().isNoContent());
   }
+
+
 
 }

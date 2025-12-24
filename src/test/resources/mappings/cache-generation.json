@@ -2,6 +2,22 @@
   "mappings": [
     {
       "request": {
+        "method": "GET",
+        "urlPath": "/instance-storage/instances",
+        "queryParameters": {
+          "query": { "contains": "4de861ab-af9e-4247-bc16-c547d982eb5d" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/instance-response.json"
+      }
+    },
+    {
+      "request": {
         "method": "POST",
         "urlPath": "/holdings-storage/holdings/retrieve",
         "bodyPatterns": [

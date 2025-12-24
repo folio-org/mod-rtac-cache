@@ -56,7 +56,7 @@ public class RtacCacheController implements RtacApi {
     log.info("Received request to get RTAC holdings by instanceId: {}, offset: {}, limit: {}", instanceId, offset, limit);
 
     Page<RtacHolding> pagedRtacHoldings =
-      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(offset, limit));
+      rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId, OffsetRequest.of(offset, limit));
 
     var rtacHoldings = new RtacHoldings();
     rtacHoldings.setInstanceId(instanceId.toString());

@@ -1,0 +1,22 @@
+{
+  "mappings": [
+    {
+      "request": {
+        "method": "POST",
+        "urlPath": "/search/consortium/batch/holdings",
+        "bodyPatterns": [
+          {
+            "contains": "1c3d3b16-89d5-44de-bdbe-d5a3b49a0087"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "search/instance1-tenants.json"
+      }
+    }
+  ]
+}

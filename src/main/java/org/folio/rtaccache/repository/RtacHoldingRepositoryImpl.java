@@ -24,10 +24,11 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   @Override
   @SuppressWarnings("unchecked") // Ok to suppress because RtacHoldingEntity is passed to createNativeQuery
-  public Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, Pageable pageable) {
+  public Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, boolean onlyShared, Pageable pageable) {
     var params = new HashMap<String, Object>();
     params.put("schemas", schemas);
     params.put("instanceIds", new UUID[]{instanceId});
+    params.put("onlyShared", onlyShared);
 
     var whereClause = new ArrayList<String>();
 
@@ -47,7 +48,7 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
     String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
     String fromClause = "FROM Filtered h ";
-    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds)) ";
+    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)) ";
 
     // Create and execute count query
     String countSql = filterCte + " SELECT count(h.id) " + fromClause + whereSql;
