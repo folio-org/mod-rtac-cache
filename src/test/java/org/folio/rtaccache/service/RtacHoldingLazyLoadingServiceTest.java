@@ -1,8 +1,10 @@
 package org.folio.rtaccache.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -124,6 +126,41 @@ class RtacHoldingLazyLoadingServiceTest {
   }
 
   @Test
+  void lazyLoadRtacHoldingsForList_shouldReturnExceptions_whenGenerationFails() {
+    var instanceId1 = UUID.randomUUID();
+    var instanceId2 = UUID.randomUUID();
+    var instanceIds = List.of(instanceId1, instanceId2);
+
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    when(rtacHoldingRepository.countByIdInstanceId(any())).thenReturn(0);
+
+    var failedFuture = new CompletableFuture<Void>();
+    failedFuture.completeExceptionally(new RuntimeException("Generation failed"));
+
+    when(rtacCacheGenerationService.generateRtacCache(instanceId1.toString()))
+      .thenReturn(CompletableFuture.completedFuture(null));
+    when(rtacCacheGenerationService.generateRtacCache(instanceId2.toString()))
+      .thenReturn(failedFuture);
+
+    doAnswer(invocation -> {
+      Runnable task = invocation.getArgument(0);
+      var future = new CompletableFuture<Void>();
+      try {
+        task.run();
+        future.complete(null);
+      } catch (Exception e) {
+        future.completeExceptionally(e);
+      }
+      return future;
+    }).when(taskExecutor).submitCompletable(any(Runnable.class));
+
+    var exceptions = service.lazyLoadRtacHoldings(instanceIds);
+
+    assertThat(exceptions).hasSize(1);
+    assertThat(exceptions.get(0)).isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
   void lazyLoadRtacHoldingsEcs_shouldTriggerLoadingPerTenant() {
     var instanceId1 = UUID.randomUUID();
     var instanceId2 = UUID.randomUUID();
@@ -146,5 +183,28 @@ class RtacHoldingLazyLoadingServiceTest {
     verify(executionService, times(2)).executeSystemUserScoped(eq(tenant2), any());
     verify(rtacCacheGenerationService, times(2)).generateRtacCache(instanceId1.toString());
     verify(rtacCacheGenerationService, times(1)).generateRtacCache(instanceId2.toString());
+  }
+
+  @Test
+  void lazyLoadRtacHoldingsEcs_shouldReturnExceptions_whenExecutionFails() {
+    var instanceId1 = UUID.randomUUID();
+    var tenant1 = "tenant1";
+
+    var holding1 = new ConsortiumHolding().instanceId(instanceId1).tenantId(tenant1);
+    var consortiumHoldings = new ConsortiumHoldings().holdings(List.of(holding1));
+
+    when(searchClient.getConsortiumHoldings(any())).thenReturn(consortiumHoldings);
+
+    doAnswer(invocation -> {
+      var future = new CompletableFuture<Void>();
+      future.completeExceptionally(new RuntimeException("Execution failed"));
+      return future;
+    }).when(taskExecutor).submitCompletable(any(Runnable.class));
+
+    var exceptions = service.lazyLoadRtacHoldingsEcs(List.of(instanceId1));
+
+    assertThat(exceptions).hasSize(1);
+    assertThat(exceptions.get(0)).isInstanceOf(RuntimeException.class)
+      .hasMessage("Execution failed");
   }
 }
