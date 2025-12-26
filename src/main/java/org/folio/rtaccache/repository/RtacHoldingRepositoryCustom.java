@@ -20,5 +20,5 @@ public interface RtacHoldingRepositoryCustom {
    * @param pageable Pagination information.
    * @return A page of matching RtacHoldingEntity records.
    */
-  Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, Pageable pageable);
+  Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, boolean onlyShared, Pageable pageable);
 }

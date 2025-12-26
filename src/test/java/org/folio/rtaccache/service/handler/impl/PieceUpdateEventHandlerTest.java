@@ -42,6 +42,7 @@ class PieceUpdateEventHandlerTest {
   void pieceUpdate_shouldSaveEntity() {
     var pieceEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.PIECE, UUID.fromString(PIECE_ID)),
+      false,
       holdingMapped(TypeEnum.PIECE, PIECE_ID),
       Instant.now()
     );

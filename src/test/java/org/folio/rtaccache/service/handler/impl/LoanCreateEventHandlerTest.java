@@ -44,6 +44,7 @@ class LoanCreateEventHandlerTest {
   void loanCreate_shouldSetDueDateAndSave() {
     var existingItemEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)),
+      false,
       holdingMapped(TypeEnum.ITEM, ITEM_ID),
       Instant.now()
     );

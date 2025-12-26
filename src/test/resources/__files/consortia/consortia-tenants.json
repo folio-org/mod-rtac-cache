@@ -1,0 +1,17 @@
+{
+  "tenants": [
+    {
+      "id": "testCentralTenant",
+      "name": "Consortia Central Tenant",
+      "code": "CT1",
+      "description": "This is the first consortia tenant."
+    },
+    {
+      "id": "testMemberTenant",
+      "name": "Consortia Member Tenant",
+      "code": "CM1",
+      "description": "This is the member consortia tenant."
+    }
+  ],
+  "totalRecords": 2
+}

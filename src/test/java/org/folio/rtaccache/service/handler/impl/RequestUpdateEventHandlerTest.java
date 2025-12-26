@@ -45,6 +45,7 @@ class RequestUpdateEventHandlerTest {
     rh.setTotalHoldRequests(3);
     var existingItemEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)),
+      false,
       rh,
       Instant.now()
     );
@@ -117,6 +118,7 @@ class RequestUpdateEventHandlerTest {
     rh.setTotalHoldRequests(5);
     var existingItemEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)),
+      false,
       rh,
       Instant.now()
     );

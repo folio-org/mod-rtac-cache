@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION rtac_holdings_multi_tenant(
     schemas_str text, -- comma-separated
-    instance_ids uuid[]
+    instance_ids uuid[],
+    only_shared boolean -- when true, restrict to shared holdings
 )
 RETURNS SETOF rtac_holding
 LANGUAGE plpgsql
@@ -27,6 +28,7 @@ BEGIN
          SELECT *
          FROM all_tenants h
          WHERE h.instance_id = ANY($1)
+           AND ($2 IS NOT TRUE OR h.shared = TRUE)
            AND (
              h.type = ''PIECE''
              OR h.type = ''ITEM''
@@ -40,6 +42,6 @@ BEGIN
                )
              )
            )'
-    USING instance_ids;
+    USING instance_ids, only_shared;
 END;
 $$;

@@ -5,9 +5,9 @@ import java.util.UUID;
 public record RtacSummaryProjection(
     UUID instanceId,
     boolean hasVolumes,
-    String locationStatusJson
+    String statusSummariesJson
 ) {
-  public record LocationStatus(
+  public record StatusSummary(
       String libraryId,
       String locationId,
       String status,

@@ -18,11 +18,11 @@
       },
       "description": "The FOLIO ids of the instance's nature of content"
     },
-    "locationStatus": {
+    "statusSummaries": {
       "type": "array",
       "description": "A summary of all statuses organized by library and location ids",
       "items": {
-        "$ref": "locationStatus.json"
+        "$ref": "statusSummary.json"
       }
     }
   },

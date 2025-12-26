@@ -1,8 +1,9 @@
 package org.folio.rtaccache.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.folio.rtaccache.TestConstant.EMPTY_INSTANCE_ID;
 import static org.folio.rtaccache.TestUtil.asString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,9 +15,11 @@ import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
+import org.folio.rtaccache.domain.dto.Error;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
-import org.folio.rtaccache.domain.dto.Error;
+import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
+import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
@@ -29,9 +32,11 @@ import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
 import org.folio.spring.data.OffsetRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
@@ -67,7 +72,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     if (volume != null) {
       rtacHolding.volume(volume);
     }
-    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), false, rtacHolding, Instant.now());
   }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, RtacHolding.TypeEnum type, String status) {
@@ -93,13 +98,13 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   private void assertRtacHoldingsSummary(RtacHoldingsSummary summary,
                                          UUID expectedInstanceId,
                                          boolean expectedHasVolumes,
-                                         List<ExpectedLocationStatus> expectedLocationStatuses) {
+                                         List<ExpectedStatusSummary> expectedStatusSummaries) {
     assertThat(summary.getInstanceId()).isEqualTo(expectedInstanceId.toString());
     assertThat(summary.getHasVolumes()).isEqualTo(expectedHasVolumes);
-    assertThat(summary.getLocationStatus()).hasSize(expectedLocationStatuses.size());
+    assertThat(summary.getStatusSummaries()).hasSize(expectedStatusSummaries.size());
 
-    for (ExpectedLocationStatus expected : expectedLocationStatuses) {
-      var actual = summary.getLocationStatus().stream()
+    for (ExpectedStatusSummary expected : expectedStatusSummaries) {
+      var actual = summary.getStatusSummaries().stream()
         .filter(la -> java.util.Objects.equals(expected.libraryId, la.getLibraryId()) &&
                        java.util.Objects.equals(expected.locationId, la.getLocationId()) &&
                        java.util.Objects.equals(expected.locationCode, la.getLocationCode()) &&
@@ -110,7 +115,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     }
   }
 
-  private record ExpectedLocationStatus(String libraryId, String locationId, String locationCode, RtacHolding.TypeEnum type, String status, int statusCount) {}
+  private record ExpectedStatusSummary(String libraryId, String locationId, String locationCode, RtacHolding.TypeEnum type, String status, int statusCount) {}
 
   @Test
   void testGetRtacHoldingsByInstanceId() {
@@ -127,7 +132,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
     // Expect only the item and piece records to be returned (total of 2).
     Page<RtacHolding> page = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(0, 5));
+      .getRtacHoldingsByInstanceId(instanceId, OffsetRequest.of(0, 5));
     assertThat(page.getContent()).hasSize(2);
     assertThat(page.getTotalElements()).isEqualTo(2);
   }
@@ -149,21 +154,21 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
     // Request first page with size 5
     Page<RtacHolding> firstPage = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(0, 5));
+      .getRtacHoldingsByInstanceId(instanceId, OffsetRequest.of(0, 5));
     assertThat(firstPage.getContent()).hasSize(5);
     assertThat(firstPage.getTotalElements()).isEqualTo(7);
     assertThat(firstPage.getTotalPages()).isEqualTo(2);
 
     // Request second page with size 5
     Page<RtacHolding> secondPage = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(5, 5));
+      .getRtacHoldingsByInstanceId(instanceId, OffsetRequest.of(5, 5));
     assertThat(secondPage.getContent()).hasSize(2);
     assertThat(secondPage.getTotalElements()).isEqualTo(7);
     assertThat(secondPage.getTotalPages()).isEqualTo(2);
 
     // Request a page that is out of bounds
     Page<RtacHolding> emptyPage = rtacHoldingStorageService
-      .getRtacHoldingsByInstanceId(instanceId.toString(), OffsetRequest.of(10, 5));
+      .getRtacHoldingsByInstanceId(instanceId, OffsetRequest.of(10, 5));
     assertThat(emptyPage.getContent()).isEmpty();
     assertThat(emptyPage.getTotalElements()).isEqualTo(7);
   }
@@ -182,7 +187,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     rtacHoldingRepository.save(createRtacHoldingEntity(UUID.randomUUID(), TypeEnum.ITEM, "Available"));
 
     final var schema = String.format("%s_mod_rtac_cache", TestConstant.TEST_TENANT.toLowerCase());
-    int count1 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithItems);
+    int count1 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithItems, false);
     assertThat(count1).isEqualTo(3); // 2 items + 1 piece
 
     // Scenario 2: Instance has NO items, so HOLDING records should be included in count.
@@ -190,17 +195,18 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.PIECE, "Available"));
     rtacHoldingRepository.save(createRtacHoldingEntity(instanceWithoutItems, TypeEnum.HOLDING, "Available")); // Should be included
 
-    int count2 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithoutItems);
+    int count2 = rtacHoldingRepository.countByIdInstanceId(schema, instanceWithoutItems, false);
     assertThat(count2).isEqualTo(2); // 1 piece + 1 holding
   }
 
   @Test
   void testGetRtacHoldingsSummaryForInstanceIds() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
 
     UUID instanceId1 = UUID.randomUUID();
     UUID instanceId2 = UUID.randomUUID();
-    UUID instanceId3 = UUID.randomUUID();
+    UUID instanceId3 = UUID.fromString(EMPTY_INSTANCE_ID);
     UUID instanceId4 = UUID.randomUUID();
     UUID instanceId5 = UUID.randomUUID();
 
@@ -252,8 +258,8 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId1.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary1, instanceId1, false, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1)
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1)
     ));
 
     // Assertions for Instance 2
@@ -261,7 +267,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId2.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary2, instanceId2, false, List.of(
-      new ExpectedLocationStatus(library2Id, location2Id, location2Code, TypeEnum.ITEM, "Unavailable", 1)
+      new ExpectedStatusSummary(library2Id, location2Id, location2Code, TypeEnum.ITEM, "Unavailable", 1)
     ));
 
     // Assertions for Instance 4
@@ -269,20 +275,21 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .filter(s -> s.getInstanceId().equals(instanceId4.toString()))
       .findFirst().orElseThrow();
     assertRtacHoldingsSummary(summary4, instanceId4, true, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.HOLDING, "Available", 1)
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.HOLDING, "Available", 1)
     ));
 
     // Assertions for Instance 5
     RtacHoldingsSummary summary5 = rtacHoldingsBatch.getHoldings().stream()
       .filter(s -> s.getInstanceId().equals(instanceId5.toString()))
       .findFirst().orElseThrow();
-    assertRtacHoldingsSummary(summary5, instanceId5, false, List.of(
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Unavailable", 1),
-      new ExpectedLocationStatus(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1),
 
-      new ExpectedLocationStatus(library1Id, location2Id, location2Code, TypeEnum.PIECE, "Available", 2)
+    assertRtacHoldingsSummary(summary5, instanceId5, false, List.of(
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Available", 2),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Available", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.ITEM, "Unavailable", 1),
+      new ExpectedStatusSummary(library1Id, location1Id, location1Code, TypeEnum.PIECE, "Unavailable", 1),
+
+      new ExpectedStatusSummary(library1Id, location2Id, location2Code, TypeEnum.PIECE, "Available", 2)
     ));
 
     // Assertions for Instance 3 (error)
@@ -314,7 +321,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       .findFirst().orElseThrow();
 
     assertRtacHoldingsSummary(summaryNoLocation, instanceIdNoLocation, false, List.of(
-      new ExpectedLocationStatus(null, null, null, TypeEnum.HOLDING, "Available", 1)
+      new ExpectedStatusSummary(null, null, null, TypeEnum.HOLDING, "Available", 1)
     ));
   }
 
@@ -388,7 +395,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
       String.format("%s_mod_rtac_cache", tenant2.toLowerCase())
     );
 
-    int count = rtacHoldingRepository.countByIdInstanceId(schemas, instanceId);
+    int count = rtacHoldingRepository.countByIdInstanceId(schemas, instanceId, false);
 
     assertThat(count).isEqualTo(5);
   }

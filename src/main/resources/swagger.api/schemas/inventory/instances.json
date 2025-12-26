@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "An instances records",
+  "type": "object",
+  "properties": {
+    "instances": {
+      "type": "array",
+      "description": "Paged collection of instance records",
+      "items": {
+        "$ref": "instance.json"
+      }
+    },
+    "totalRecords": {
+      "type": "integer",
+      "description": "Total number of instance records"
+    }
+  },
+  "required": [
+    "instances",
+    "totalRecords"
+  ]
+}

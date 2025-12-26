@@ -11,15 +11,15 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.Error;
-import org.folio.rtaccache.domain.dto.LocationStatus;
 import org.folio.rtaccache.domain.dto.Parameter;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
+import org.folio.rtaccache.domain.dto.StatusSummary;
 import org.folio.rtaccache.domain.exception.RtacDataProcessingException;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
-import org.folio.spring.FolioExecutionContext;
+import org.folio.rtaccache.util.EcsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -36,35 +36,38 @@ public class RtacHoldingStorageService {
   private static final Logger log = LoggerFactory.getLogger(RtacHoldingStorageService.class);
 
   private final RtacHoldingRepository rtacHoldingRepository;
-  private final RtacCacheGenerationService rtacCacheGenerationService;
-  private final FolioExecutionContext folioExecutionContext;
+  private final ConsortiaService consortiaService;
+  private final RtacHoldingLazyLoadingService rtacHoldingLazyLoadingService;
   private final ObjectMapper objectMapper;
+  private final EcsUtil ecsUtil;
 
   public Page<RtacHolding> searchRtacHoldings(UUID instanceId, String query, Boolean available, Pageable pageable) {
-    return rtacHoldingRepository.search(getSchemaName(), instanceId, query, available, pageable)
+    var isCentral = consortiaService.isCentralTenant();
+    var schema = ecsUtil.getSchemaName();
+    var lazyLoadExceptions = lazyLoadInstances(List.of(instanceId), isCentral);
+    if (!lazyLoadExceptions.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to lazy load RTAC holdings for instanceId: " + instanceId, lazyLoadExceptions.get(0));
+    }
+    return rtacHoldingRepository.search(schema, instanceId, query, available, isCentral, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
-  public Page<RtacHolding> getRtacHoldingsByInstanceId(String instanceId, Pageable pageable) {
-    final var schema = getSchemaName();
-    if (rtacHoldingRepository.countByIdInstanceId(schema, UUID.fromString(instanceId)) == 0) {
-      var future = rtacCacheGenerationService.generateRtacCache(instanceId);
-      try {
-        future.join();
-      } catch (Exception ex) {
-        log.error("RTAC cache generation failed for instanceId: {}", instanceId, ex);
-        rtacHoldingRepository.deleteAllByIdInstanceId(UUID.fromString(instanceId));
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-          String.format("RTAC cache generation failed for instanceId: %s", instanceId));
-      }
+  public Page<RtacHolding> getRtacHoldingsByInstanceId(UUID instanceId, Pageable pageable) {
+    var isCentral = consortiaService.isCentralTenant();
+    var schema = ecsUtil.getSchemaName();
+    var lazyLoadExceptions = lazyLoadInstances(List.of(instanceId), isCentral);
+    if (!lazyLoadExceptions.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to lazy load RTAC holdings for instanceId: " + instanceId, lazyLoadExceptions.get(0));
     }
-    return rtacHoldingRepository.findAllByIdInstanceId(schema, UUID.fromString(instanceId), pageable)
+    return rtacHoldingRepository.findAllByIdInstanceId(schema, instanceId, isCentral, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
   public RtacHoldingsBatch getRtacHoldingsSummaryForInstanceIds(List<UUID> instanceIds) {
-    final var schema = getSchemaName();
-    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(schema, instanceIds.toArray(new UUID[0]));
+    var isCentral = consortiaService.isCentralTenant();
+    var schema = ecsUtil.getSchemaName();
+    var lazyLoadExceptions = lazyLoadInstances(instanceIds, isCentral);
+    List<RtacSummaryProjection> projections = rtacHoldingRepository.findRtacSummariesByInstanceIds(schema, instanceIds.toArray(new UUID[0]), isCentral);
 
     Map<UUID, RtacSummaryProjection> summaryMap = projections.stream()
       .collect(Collectors.toMap(RtacSummaryProjection::instanceId, p -> p));
@@ -80,8 +83,8 @@ public class RtacHoldingStorageService {
         summary.setInstanceId(id.toString());
         summary.setHasVolumes(projection.hasVolumes());
         try {
-          List<LocationStatus> locationStatuses = objectMapper.readValue(projection.locationStatusJson(), new TypeReference<>() {});
-          summary.setLocationStatus(locationStatuses);
+          List<StatusSummary> statusSummaries = objectMapper.readValue(projection.statusSummariesJson(), new TypeReference<>() {});
+          summary.setStatusSummaries(statusSummaries);
         } catch (JsonProcessingException e) {
           throw new RtacDataProcessingException(String.format("Failed to parse locationStatusJson for instanceId %s", id), e);
         }
@@ -99,12 +102,24 @@ public class RtacHoldingStorageService {
       }
     });
 
+    for (Throwable exception : lazyLoadExceptions) {
+      var error = new Error();
+      error.setCode(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()));
+      error.setMessage(exception.getMessage());
+      errors.add(error);
+    }
+
     result.setHoldings(holdings);
     result.setErrors(errors);
     return result;
   }
 
-  private String getSchemaName() {
-    return folioExecutionContext.getFolioModuleMetadata().getDBSchemaName(folioExecutionContext.getTenantId());
+  private List<Throwable> lazyLoadInstances(List<UUID> instanceIds, boolean isCentral) {
+    if (isCentral) {
+      return rtacHoldingLazyLoadingService.lazyLoadRtacHoldingsEcs(instanceIds);
+    } else {
+      return rtacHoldingLazyLoadingService.lazyLoadRtacHoldings(instanceIds);
+    }
   }
+
 }
