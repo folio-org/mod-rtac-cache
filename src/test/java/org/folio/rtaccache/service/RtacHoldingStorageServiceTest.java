@@ -120,6 +120,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   @Test
   void testGetRtacHoldingsByInstanceId() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
     var instanceId = UUID.randomUUID();
 
     // This instance has items, so the Holding record should be filtered out.
@@ -330,12 +331,14 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   @Test
   void testGetRtacHoldingsByInstanceId_withSorting() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
     var instanceId = UUID.randomUUID();
 
     // Create entities in a non-alphabetical order
     var holdingB = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "B Status", "Library Z", "Location M", "B");
-    var holdingC = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "C Status", "Library Y", "Location L", "C");
-    var holdingA = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "A Status", "Library X", "Location K", "A");
+    var holdingC = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "C Status", "Library X", "Location K", "C");
+    var holdingA = createRtacHoldingEntityForSort(instanceId, TypeEnum.ITEM, "A Status", "Library Y", "Location L", "A");
 
     rtacHoldingRepository.saveAll(List.of(holdingB, holdingC, holdingA));
 

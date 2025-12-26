@@ -62,12 +62,14 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
   @Test
   void testSearchRtacHoldings_withSorting() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
     var instanceId = UUID.randomUUID();
 
     // Create entities in a non-alphabetical order
     var holdingB = createRtacHoldingEntity(instanceId, "vol", "call", "loc M", "lib Z", "B Status", TypeEnum.ITEM, "B");
-    var holdingC = createRtacHoldingEntity(instanceId, "vol", "call", "loc L", "lib Y", "C Status", TypeEnum.ITEM, "C");
-    var holdingA = createRtacHoldingEntity(instanceId, "vol", "call", "loc K", "lib X", "A Status", TypeEnum.ITEM, "A");
+    var holdingC = createRtacHoldingEntity(instanceId, "vol", "call", "loc K", "lib X", "C Status", TypeEnum.ITEM, "C");
+    var holdingA = createRtacHoldingEntity(instanceId, "vol", "call", "loc L", "lib Y", "A Status", TypeEnum.ITEM, "A");
 
     rtacHoldingRepository.saveAll(List.of(holdingB, holdingC, holdingA));
 
