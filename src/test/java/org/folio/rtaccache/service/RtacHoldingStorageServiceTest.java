@@ -92,7 +92,7 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     if (locationName != null) {
       rtacHolding.location(new RtacHoldingLocation().name(locationName));
     }
-    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), rtacHolding, Instant.now());
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, type, UUID.randomUUID()), false, rtacHolding, Instant.now());
   }
 
   private void assertRtacHoldingsSummary(RtacHoldingsSummary summary,
@@ -140,6 +140,8 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
   @Test
   void testGetRtacHoldingsByInstanceIdWithPaging() {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
     var instanceId = UUID.randomUUID();
 
     // Create 7 entities (2 items, 5 pieces) that should be returned, and 1 holding that should be filtered out.
@@ -339,28 +341,28 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
 
     // Test sort by effectiveShelvingOrder ascending
     var pageableShelvingAsc = PageRequest.of(0, 10, Sort.by("effectiveShelvingOrder"));
-    Page<RtacHolding> resultShelvingAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableShelvingAsc);
+    Page<RtacHolding> resultShelvingAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId, pageableShelvingAsc);
     assertThat(resultShelvingAsc.getContent())
       .extracting(RtacHolding::getEffectiveShelvingOrder)
       .containsExactly("A", "B", "C");
 
     // Test sort by status ascending
     var pageableStatusAsc = PageRequest.of(0, 10, Sort.by("status"));
-    Page<RtacHolding> resultStatusAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableStatusAsc);
+    Page<RtacHolding> resultStatusAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId, pageableStatusAsc);
     assertThat(resultStatusAsc.getContent())
       .extracting(RtacHolding::getStatus)
       .containsExactly("A Status", "B Status", "C Status");
 
     // Test sort by libraryName descending
     var pageableLibraryDesc = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "libraryName"));
-    Page<RtacHolding> resultLibraryDesc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableLibraryDesc);
+    Page<RtacHolding> resultLibraryDesc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId, pageableLibraryDesc);
     assertThat(resultLibraryDesc.getContent())
       .extracting(h -> h.getLibrary().getName())
       .containsExactly("Library Z", "Library Y", "Library X");
 
     // Test sort by locationName ascending
     var pageableLocationAsc = PageRequest.of(0, 10, Sort.by("locationName"));
-    Page<RtacHolding> resultLocationAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId.toString(), pageableLocationAsc);
+    Page<RtacHolding> resultLocationAsc = rtacHoldingStorageService.getRtacHoldingsByInstanceId(instanceId, pageableLocationAsc);
     assertThat(resultLocationAsc.getContent())
       .extracting(h -> h.getLocation().getName())
       .containsExactly("Location K", "Location L", "Location M");

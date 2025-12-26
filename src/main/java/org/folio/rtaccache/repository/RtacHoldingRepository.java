@@ -36,6 +36,10 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   int countByIdInstanceId(UUID instanceId);
 
+  @Query(value = "SELECT instance_id AS instanceId, count(*) AS count FROM rtac_holding WHERE instance_id in (:instanceIds) GROUP BY instance_id",
+    nativeQuery = true)
+  List<RtacBatchCountProjection> countBatchByIdInstanceIdIn(@Param("instanceIds") List<UUID> instanceIds);
+
   @Query(value = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)", nativeQuery = true)
   int countByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId, @Param("onlyShared") boolean onlyShared);
 
