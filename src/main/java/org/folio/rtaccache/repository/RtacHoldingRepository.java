@@ -7,7 +7,6 @@ import org.folio.rtaccache.domain.RtacBatchCountProjection;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
-import org.folio.rtaccache.sql.RtacQueryFragments;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,8 +25,11 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
           SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)
       )
       SELECT
-          *
-      """ + RtacQueryFragments.SORT_COLUMN_PROJECTIONS + """
+          *,
+          rtac_holding_json->>'effectiveShelvingOrder' AS effectiveShelvingOrder,
+          rtac_holding_json->'library'->>'name' AS libraryName,
+          rtac_holding_json->'location'->>'name' AS locationName,
+          rtac_holding_json->>'status' AS status
       FROM FilteredHoldings
       """,
       countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)",
