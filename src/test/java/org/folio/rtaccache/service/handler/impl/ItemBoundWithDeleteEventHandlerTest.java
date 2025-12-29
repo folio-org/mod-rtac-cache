@@ -67,8 +67,8 @@ class ItemBoundWithDeleteEventHandlerTest {
   }
 
   private InventoryResourceEvent setUpEventWith(BoundWithPart part) {
-    var event = new InventoryResourceEvent().type(InventoryEventType.DELETE)._new(part);
-    when(resourceEventUtil.getNewFromInventoryEvent(event, BoundWithPart.class)).thenReturn(part);
+    var event = new InventoryResourceEvent().type(InventoryEventType.DELETE).old(part);
+    when(resourceEventUtil.getOldFromInventoryEvent(event, BoundWithPart.class)).thenReturn(part);
     return event;
   }
 

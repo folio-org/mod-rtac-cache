@@ -27,7 +27,7 @@ public class ItemBoundWithDeleteEventHandler implements InventoryEventHandler {
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
     log.info("Handling Item BoundWith delete event for resource: {}", resourceEvent);
-    var boundWithPart = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, BoundWithPart.class);
+    var boundWithPart = resourceEventUtil.getOldFromInventoryEvent(resourceEvent, BoundWithPart.class);
     var rtacHoldingId = new RtacHoldingId();
     rtacHoldingId.setId(UUID.fromString(boundWithPart.getItemId()));
     rtacHoldingId.setType(TypeEnum.ITEM);
