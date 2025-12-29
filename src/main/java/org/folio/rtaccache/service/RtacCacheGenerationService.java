@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.folio.rtaccache.client.InventoryClient;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
@@ -94,7 +95,7 @@ public class RtacCacheGenerationService {
     while (totalItems != 0 && itemsOffset < totalItems) {
       var itemsCql = getByHoldingsIdCql(holding.getId());
       var itemsRequest = new FolioCqlRequest(itemsCql, ITEMS_BATCH_SIZE, itemsOffset);
-      futures.add(processItemsBatch(instance, holding, itemsRequest, false));
+      futures.add(processItemsBatch(instance, holding, itemsRequest));
       itemsOffset += ITEMS_BATCH_SIZE;
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -131,7 +132,7 @@ public class RtacCacheGenerationService {
         }
         var queryParamValue = buildIdOrCql(boundWithItemIds);
         var folioCqlRequest = new FolioCqlRequest(queryParamValue, boundWithItemIds.size(), 0);
-        return processItemsBatch(instance, holdings, folioCqlRequest, true);
+        return processItemsBatch(instance, holdings, folioCqlRequest);
       }, taskExecutor);
   }
 
@@ -158,7 +159,7 @@ public class RtacCacheGenerationService {
     }, taskExecutor);
   }
 
-  private CompletableFuture<Void> processItemsBatch(Instance instance, HoldingsRecord holding, FolioCqlRequest request, boolean isBoundWith) {
+  private CompletableFuture<Void> processItemsBatch(Instance instance, HoldingsRecord holding, FolioCqlRequest request) {
     return CompletableFuture.supplyAsync(() -> {
       log.info("Sending request for items batch for holding id: {}, offset {}", holding.getId(), request.getOffset());
       var itemsResponse = inventoryClient.getItems(request);
@@ -168,7 +169,7 @@ public class RtacCacheGenerationService {
       var itemsHoldCountMap = retrieveItemsHoldCountMap(items);
       var itemsLoanDueDateMap = retrieveItemsLoanDueDateMap(items);
       var rtacHoldings = items.stream()
-        .map(item -> processIndividualItem(instance, holding, item, itemsLoanDueDateMap, itemsHoldCountMap, isBoundWith))
+        .map(item -> processIndividualItem(instance, holding, item, itemsLoanDueDateMap, itemsHoldCountMap))
         .toList();
       try {
         rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
@@ -193,11 +194,12 @@ public class RtacCacheGenerationService {
     return instance.getSource() != null && instance.getSource().contains(CONSORTIUM_SOURCE);
   }
 
-  private RtacHoldingEntity processIndividualItem(Instance instance, HoldingsRecord holding, Item item, Map<String, Date> dueDateMap, Map<String, Long> holdCountMap,  boolean isBoundWith) {
+  private RtacHoldingEntity processIndividualItem(Instance instance, HoldingsRecord holding, Item item,
+    Map<String, Date> dueDateMap, Map<String, Long> holdCountMap) {
     var rtacHolding = rtacHoldingMappingService.mapFrom(holding, item);
     rtacHolding.setDueDate(dueDateMap.getOrDefault(rtacHolding.getId(), null));
     rtacHolding.setTotalHoldRequests(Math.toIntExact(holdCountMap.getOrDefault(rtacHolding.getId(), 0L)));
-    rtacHolding.setIsBoundWith(isBoundWith);
+    rtacHolding.setIsBoundWith(isItemBoundWithHoldings(item, holding));
     var entityId = RtacHoldingId.from(rtacHolding);
     return new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
   }
@@ -253,5 +255,8 @@ public class RtacCacheGenerationService {
     return ids.stream().map(id -> "id==" + id).collect(java.util.stream.Collectors.joining(" or "));
   }
 
+  private boolean isItemBoundWithHoldings(Item item, HoldingsRecord holdings) {
+    return !StringUtils.equals(item.getHoldingsRecordId(), holdings.getId());
+  }
 
 }
