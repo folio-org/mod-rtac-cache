@@ -1,6 +1,7 @@
 package org.folio.rtaccache.rest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -111,11 +112,25 @@ public class RtacCacheController implements RtacApi {
     if (sort == null || sort.isEmpty()) {
       sortOrder = Sort.by(Sort.Direction.ASC, "effectiveShelvingOrder", "libraryName", "locationName", "status");
     } else {
+      String sortString = String.join(",", sort);
+      List<String> parts = new ArrayList<>(Arrays.asList(sortString.split(",")));
+
+      if (parts.stream().anyMatch(String::isBlank)) {
+        throw new IllegalArgumentException("Sort criteria cannot be blank");
+      }
+
       List<Sort.Order> orders = new ArrayList<>();
-      for (String sortParam : sort) {
-        String[] parts = sortParam.split(",");
-        Sort.Direction direction = parts.length > 1 ? Sort.Direction.fromString(parts[1]) : Sort.Direction.ASC;
-        orders.add(new Sort.Order(direction, parts[0]));
+      while (!parts.isEmpty()) {
+        String property = parts.removeFirst();
+        var direction = Sort.Direction.ASC;
+        if (!parts.isEmpty()) {
+          var optDirection = Sort.Direction.fromOptionalString(parts.getFirst());
+          if (optDirection.isPresent()) {
+            direction = optDirection.get();
+            parts.removeFirst();
+          }
+        }
+        orders.add(new Sort.Order(direction, property));
       }
       sortOrder = Sort.by(orders);
     }

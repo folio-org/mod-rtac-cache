@@ -26,6 +26,7 @@ import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -196,6 +197,45 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     var rtacHoldingsBatch = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldingsBatch.class);
     assertThat(rtacHoldingsBatch.getHoldings()).isEmpty();
     assertThat(rtacHoldingsBatch.getErrors()).isEmpty();
+  }
+
+  @Test
+  void holdingsByInstanceId_withSorting() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().effectiveShelvingOrder("B").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library Z"));
+    var rtacHolding2 = new RtacHolding().effectiveShelvingOrder("C").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library A"));
+    var rtacHolding3 = new RtacHolding().effectiveShelvingOrder("A").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library M"));
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding3, Instant.now());
+
+    rtacHoldingRepository.saveAll(List.of(entity1, entity2, entity3));
+
+    // Sort by effectiveShelvingOrder ascending
+    var resultAsc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder")
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldingsAsc = new ObjectMapper().readValue(resultAsc.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldingsAsc.getHoldings()).extracting(RtacHolding::getEffectiveShelvingOrder).containsExactly("A", "B", "C");
+
+    // Sort by libraryName descending
+    var resultDesc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=libraryName,desc")
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldingsDesc = new ObjectMapper().readValue(resultDesc.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldingsDesc.getHoldings()).extracting(h -> {
+      Assertions.assertNotNull(h.getLibrary());
+      return h.getLibrary().getName();
+    }).containsExactly("Library Z", "Library M", "Library A");
   }
 
   @Test
