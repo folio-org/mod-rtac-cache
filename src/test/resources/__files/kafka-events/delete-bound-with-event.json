@@ -1,0 +1,16 @@
+{
+  "old": {
+    "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "id": "6fc15a10-aab1-4726-9d5a-ee51cdf80606",
+    "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "itemId": "522d41d3-0e04-416d-9f52-90ac67685a78",
+    "metadata": {
+      "createdDate": "2025-12-22T12:48:24.652+00:00",
+      "updatedDate": "2025-12-22T12:48:24.652+00:00"
+    }
+  },
+  "type": "DELETE",
+  "tenant": "testTenant",
+  "eventId": "4b6d1751-e4b7-4b58-bca4-faab359035f4",
+  "eventTs": 1766407704686
+}

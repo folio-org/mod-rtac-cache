@@ -153,6 +153,33 @@ public class RtacHoldingMappingService {
     return newRtacHolding;
   }
 
+  public RtacHolding mapForBoundWithItemTypeFrom(RtacHolding holdingsRtacHolding, RtacHolding itemRtacHolding) {
+    var newRtacHolding = new RtacHolding();
+    newRtacHolding.setId(itemRtacHolding.getId());
+    newRtacHolding.setType(TypeEnum.ITEM);
+    newRtacHolding.setInstanceId(holdingsRtacHolding.getInstanceId());
+    newRtacHolding.setHoldingsId(holdingsRtacHolding.getHoldingsId());
+    newRtacHolding.setBarcode(itemRtacHolding.getBarcode());
+    newRtacHolding.setCallNumber(itemRtacHolding.getCallNumber());
+    newRtacHolding.setHoldingsCopyNumber(holdingsRtacHolding.getHoldingsCopyNumber());
+    newRtacHolding.setItemCopyNumber(itemRtacHolding.getItemCopyNumber());
+    newRtacHolding.setVolume(itemRtacHolding.getVolume());
+    newRtacHolding.setEffectiveShelvingOrder(itemRtacHolding.getEffectiveShelvingOrder());
+    newRtacHolding.setStatus(itemRtacHolding.getStatus());
+    newRtacHolding.setSuppressFromDiscovery(itemRtacHolding.getSuppressFromDiscovery());
+    newRtacHolding.setLocation(itemRtacHolding.getLocation());
+    newRtacHolding.setLibrary(itemRtacHolding.getLibrary());
+    newRtacHolding.setMaterialType(itemRtacHolding.getMaterialType());
+    newRtacHolding.setTemporaryLoanType(itemRtacHolding.getTemporaryLoanType());
+    newRtacHolding.setPermanentLoanType(itemRtacHolding.getPermanentLoanType());
+    newRtacHolding.setHoldingsStatements(holdingsRtacHolding.getHoldingsStatements());
+    newRtacHolding.setHoldingsStatementsForIndexes(holdingsRtacHolding.getHoldingsStatementsForIndexes());
+    newRtacHolding.setHoldingsStatementsForSupplements(holdingsRtacHolding.getHoldingsStatementsForSupplements());
+    newRtacHolding.setNotes(holdingsRtacHolding.getNotes());
+    newRtacHolding.setIsBoundWith(true);
+    return newRtacHolding;
+  }
+
   public RtacHolding mapForPieceTypeFrom(RtacHolding existingRtacHolding, HoldingsRecord holding) {
     var newRtacHolding = new RtacHolding();
     newRtacHolding.setId(existingRtacHolding.getId());
