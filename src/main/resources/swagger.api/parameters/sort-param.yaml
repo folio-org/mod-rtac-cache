@@ -1,0 +1,12 @@
+name: sort
+in: query
+description: |
+  A list of sort criteria in the format: `property,(asc|desc)`.
+  Supported properties are: effectiveShelvingOrder, libraryName, locationName, status.
+  The default sort order is effectiveShelvingOrder, libraryName, locationName, status (ascending).
+schema:
+  type: array
+  items:
+    type: string
+style: form
+explode: false
