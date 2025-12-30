@@ -110,7 +110,7 @@ public class RtacCacheController implements RtacApi {
   private Pageable buildPageable(Integer offset, Integer limit, List<String> sort) {
     Sort sortOrder;
     if (sort == null || sort.isEmpty()) {
-      sortOrder = Sort.by(Sort.Direction.ASC, "effectiveShelvingOrder", "libraryName", "locationName", "status");
+      sortOrder = Sort.by(Sort.Direction.ASC, "effectiveShelvingOrder", "status", "locationName");
     } else {
       String sortString = String.join(",", sort);
       List<String> parts = new ArrayList<>(Arrays.asList(sortString.split(",")));

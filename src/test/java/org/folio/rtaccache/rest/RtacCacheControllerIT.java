@@ -1,6 +1,7 @@
 package org.folio.rtaccache.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.folio.rtaccache.TestConstant.EMPTY_INSTANCE_ID;
 import static org.folio.rtaccache.TestConstant.FAILING_INSTANCE_ID;
 import static org.folio.rtaccache.TestConstant.TEST_TENANT;
@@ -20,6 +21,8 @@ import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
+import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacRequest;
@@ -206,9 +209,9 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
 
     var instanceId = UUID.randomUUID();
 
-    var rtacHolding1 = new RtacHolding().effectiveShelvingOrder("B").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library Z"));
-    var rtacHolding2 = new RtacHolding().effectiveShelvingOrder("C").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library A"));
-    var rtacHolding3 = new RtacHolding().effectiveShelvingOrder("A").library(new org.folio.rtaccache.domain.dto.RtacHoldingLibrary().name("Library M"));
+    var rtacHolding1 = new RtacHolding().effectiveShelvingOrder("B").library(new RtacHoldingLibrary().name("Library Z"));
+    var rtacHolding2 = new RtacHolding().effectiveShelvingOrder("C").library(new RtacHoldingLibrary().name("Library A"));
+    var rtacHolding3 = new RtacHolding().effectiveShelvingOrder("A").library(new RtacHoldingLibrary().name("Library M"));
 
     var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding1, Instant.now());
     var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding2, Instant.now());
@@ -236,6 +239,76 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
       Assertions.assertNotNull(h.getLibrary());
       return h.getLibrary().getName();
     }).containsExactly("Library Z", "Library M", "Library A");
+  }
+
+  @Test
+  void holdingsByInstanceId_withMultiFieldSorting() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().effectiveShelvingOrder("A").status("Z");
+    var rtacHolding2 = new RtacHolding().effectiveShelvingOrder("A").status("M");
+    var rtacHolding3 = new RtacHolding().effectiveShelvingOrder("B").status("A");
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding3, Instant.now());
+
+    rtacHoldingRepository.saveAll(List.of(entity3, entity1, entity2));
+
+    var resultMulti = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder,asc,status,desc")
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldingsMulti = new ObjectMapper().readValue(resultMulti.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldingsMulti.getHoldings())
+      .extracting(RtacHolding::getEffectiveShelvingOrder, RtacHolding::getStatus)
+      .containsExactly(
+        tuple("A", "Z"),
+        tuple("A", "M"),
+        tuple("B", "A")
+      );
+  }
+
+  @Test
+  void holdingsByInstanceId_defaultSort() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+
+    var rtacHoldingD =  new RtacHolding().effectiveShelvingOrder("A").status("Available").location(new RtacHoldingLocation().name("X"));
+    var rtacHoldingE = new RtacHolding().effectiveShelvingOrder("A").status("Available").location(new RtacHoldingLocation().name("M"));
+    var rtacHoldingF = new RtacHolding().effectiveShelvingOrder("A").status("Checked out").location(new RtacHoldingLocation().name("A"));
+    var rtacHoldingG = new RtacHolding().effectiveShelvingOrder("B").status("Available").location(new RtacHoldingLocation().name("A"));
+
+    var entityD = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingD, Instant.now());
+    var entityE = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingE, Instant.now());
+    var entityF = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingF, Instant.now());
+    var entityG = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingG, Instant.now());
+
+    rtacHoldingRepository.saveAll(List.of(entityD, entityE, entityF, entityG));
+
+    var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings())
+      .extracting(RtacHolding::getEffectiveShelvingOrder, RtacHolding::getStatus, h -> {
+        Assertions.assertNotNull(h.getLocation());
+        return h.getLocation().getName();
+      })
+      .containsExactly(
+        tuple("A", "Available", "M"),
+        tuple("A", "Available", "X"),
+        tuple("A", "Checked out", "A"),
+        tuple("B", "Available", "A")
+      );
   }
 
   @Test
