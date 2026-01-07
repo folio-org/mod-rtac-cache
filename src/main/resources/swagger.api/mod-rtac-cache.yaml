@@ -7,7 +7,7 @@ paths:
     get:
       tags:
         - rtac
-      summary: Search RTAC holdings
+      summary: Search RTAC holdings for a given instance
       operationId: searchRtacCacheHoldings
       parameters:
         - name: instanceId
@@ -19,6 +19,7 @@ paths:
             format: uuid
         - $ref: 'parameters/query-param.yaml'
         - $ref: 'parameters/available-param.yaml'
+        - $ref: 'parameters/sort-param.yaml'
         - $ref: 'parameters/offset-param.yaml'
         - $ref: 'parameters/limit-param.yaml'
       responses:
@@ -49,7 +50,7 @@ paths:
     get:
       tags:
         - rtac
-      summary: Retrieve RTAC holdings for a single instance
+      summary: Browse RTAC holdings for a single instance
       operationId: getRtacCacheHoldingsById
       parameters:
         - name: id
@@ -59,6 +60,7 @@ paths:
           schema:
             type: string
             format: uuid
+        - $ref: 'parameters/sort-param.yaml'
         - $ref: 'parameters/offset-param.yaml'
         - $ref: 'parameters/limit-param.yaml'
       responses:

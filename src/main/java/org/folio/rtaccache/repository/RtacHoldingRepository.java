@@ -20,7 +20,18 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   Page<RtacHoldingEntity> findAllByIdInstanceId(UUID instanceId, Pageable pageable);
 
-  @Query(value = "SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)",
+  @Query(value = """
+      WITH FilteredHoldings AS (
+          SELECT * FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)
+      )
+      SELECT
+          *,
+          rtac_holding_json->>'effectiveShelvingOrder' AS effectiveShelvingOrder,
+          rtac_holding_json->'library'->>'name' AS libraryName,
+          rtac_holding_json->'location'->>'name' AS locationName,
+          rtac_holding_json->>'status' AS status
+      FROM FilteredHoldings
+      """,
       countQuery = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)",
       nativeQuery = true)
   Page<RtacHoldingEntity> findAllByIdInstanceId(@Param("schemas") String schemas, @Param("instanceId") UUID instanceId, @Param("onlyShared") boolean onlyShared, Pageable pageable);
@@ -28,7 +39,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   int countByIdInstanceId(UUID instanceId);
 
   @Query(value = "SELECT instance_id AS instanceId, count(*) AS count FROM rtac_holding WHERE instance_id in (:instanceIds) GROUP BY instance_id",
-      nativeQuery = true)
+    nativeQuery = true)
   List<RtacBatchCountProjection> countBatchByIdInstanceIdIn(@Param("instanceIds") List<UUID> instanceIds);
 
   @Query(value = "SELECT count(*) FROM rtac_holdings_multi_tenant(:schemas, ARRAY[:instanceId], :onlyShared)", nativeQuery = true)
