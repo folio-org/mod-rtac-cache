@@ -21,6 +21,7 @@ import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.spring.FolioExecutionContext;
+import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,8 @@ public class RtacCacheGenerationService {
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
+  private final ConsortiaService consortiaService;
+  private final SystemUserScopedExecutionService systemUserExecutionService;
   private final FolioExecutionContext folioExecutionContext;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
@@ -72,8 +75,10 @@ public class RtacCacheGenerationService {
       var itemsFuture = processDirectItemsForHolding(instance, holding)
         .thenCompose(v -> processItemsBoundWithHolding(instance, holding));
       var piecesFuture = processPiecesForHolding(instance, holding);
+      var centralPiecesFuture = processPiecesInCentralForHolding(instance, holding);
       itemsFuture.join();
       piecesFuture.join();
+      centralPiecesFuture.join();
     };
   }
 
@@ -157,6 +162,20 @@ public class RtacCacheGenerationService {
         }
       }
     }, taskExecutor);
+  }
+
+  private CompletableFuture<Void> processPiecesInCentralForHolding(Instance instance, HoldingsRecord holding) {
+    return CompletableFuture.supplyAsync(consortiaService::getCentralTenantId, taskExecutor)
+      .thenAcceptAsync(centralTenantId -> {
+        if(centralTenantId.isEmpty()) {
+          return;
+        }
+        log.info("Sending request for pieces in central tenant for holding id: {}", holding.getId());
+        systemUserExecutionService.executeSystemUserScoped(centralTenantId.get(), () -> {
+          processPiecesForHolding(instance, holding).join();
+          return null;
+        });
+      }, taskExecutor);
   }
 
   private CompletableFuture<Void> processItemsBatch(Instance instance, HoldingsRecord holding, FolioCqlRequest request) {

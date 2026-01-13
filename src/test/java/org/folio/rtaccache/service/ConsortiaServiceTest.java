@@ -115,4 +115,50 @@ class ConsortiaServiceTest {
 
     assertThat(result).isEmpty();
   }
+
+  @Test
+  void getCentralTenantId_shouldReturnCentralTenantId() {
+    var consortiumId = UUID.randomUUID().toString();
+    var centralTenantId = "central_tenant";
+    var userTenants = new UserTenants().totalRecords(1)
+      .userTenants(List.of(new UserTenantsUserTenantsInner().consortiumId(consortiumId)));
+    var consortiaTenants = new ConsortiaTenants().tenants(
+      List.of(new ConsortiaTenantsTenantsInner().id(centralTenantId).isCentral(true),
+        new ConsortiaTenantsTenantsInner().id("member_tenant").isCentral(false)));
+
+    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(consortiaClient.getConsortiaTenants(consortiumId, ConsortiaService.CONSORTIA_TENANTS_LIMIT))
+      .thenReturn(consortiaTenants);
+
+    var result = consortiaService.getCentralTenantId();
+
+    assertThat(result).hasValue(centralTenantId);
+  }
+
+  @Test
+  void getCentralTenantId_shouldReturnEmpty_whenNoUserTenants() {
+    var userTenants = new UserTenants().totalRecords(0);
+    when(usersClient.getUserTenants()).thenReturn(userTenants);
+
+    var result = consortiaService.getCentralTenantId();
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getCentralTenantId_shouldReturnEmpty_whenNoCentralTenant() {
+    var consortiumId = UUID.randomUUID().toString();
+    var userTenants = new UserTenants().totalRecords(1)
+      .userTenants(List.of(new UserTenantsUserTenantsInner().consortiumId(consortiumId)));
+    var consortiaTenants = new ConsortiaTenants().tenants(
+      List.of(new ConsortiaTenantsTenantsInner().id("member_tenant").isCentral(false)));
+
+    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(consortiaClient.getConsortiaTenants(consortiumId, ConsortiaService.CONSORTIA_TENANTS_LIMIT))
+      .thenReturn(consortiaTenants);
+
+    var result = consortiaService.getCentralTenantId();
+
+    assertThat(result).isEmpty();
+  }
 }

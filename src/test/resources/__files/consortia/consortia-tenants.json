@@ -4,13 +4,17 @@
       "id": "testCentralTenant",
       "name": "Consortia Central Tenant",
       "code": "CT1",
-      "description": "This is the first consortia tenant."
+      "description": "This is the first consortia tenant.",
+      "isCentral": true,
+      "isDeleted": false
     },
     {
       "id": "testMemberTenant",
       "name": "Consortia Member Tenant",
       "code": "CM1",
-      "description": "This is the member consortia tenant."
+      "description": "This is the member consortia tenant.",
+      "isCentral": false,
+      "isDeleted": false
     }
   ],
   "totalRecords": 2
