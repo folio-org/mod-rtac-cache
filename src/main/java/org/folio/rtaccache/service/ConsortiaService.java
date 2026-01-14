@@ -51,12 +51,7 @@ public class ConsortiaService {
     if (userTenants.getTotalRecords() == 0) {
       return Optional.empty();
     }
-    return consortiaClient.getConsortiaTenants(userTenants.getUserTenants().get(0).getConsortiumId(),
-        CONSORTIA_TENANTS_LIMIT).getTenants()
-      .stream()
-      .filter(ConsortiaTenantsTenantsInner::getIsCentral)
-      .map(ConsortiaTenantsTenantsInner::getId)
-      .findAny();
+    return Optional.ofNullable(userTenants.getUserTenants().get(0).getCentralTenantId());
   }
 
 }
