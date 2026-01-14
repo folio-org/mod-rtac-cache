@@ -82,3 +82,9 @@ logging:
   level:
     org.springframework.web: debug
     liquibase: info
+
+rtac:
+  cache:
+    invalidation:
+      cron: "0 0 2 * * ?"
+      retention-days: 7

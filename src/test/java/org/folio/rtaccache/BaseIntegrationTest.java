@@ -7,7 +7,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer;
+import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import org.folio.spring.DefaultFolioExecutionContext;
+import org.folio.spring.FolioExecutionContext;
+import org.folio.spring.FolioModuleMetadata;
 import org.folio.spring.integration.XOkapiHeaders;
 import org.folio.tenant.domain.dto.Parameter;
 import org.folio.tenant.domain.dto.TenantAttributes;
@@ -48,6 +54,9 @@ public abstract class BaseIntegrationTest {
   @Autowired
   protected MockMvc mockMvc;
 
+  @Autowired
+  protected FolioModuleMetadata folioModuleMetadata;
+
   @DynamicPropertySource
   static void dynamicProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
@@ -83,6 +92,14 @@ public abstract class BaseIntegrationTest {
       .andExpect(status().isNoContent());
   }
 
+  protected FolioExecutionContext folioExecutionContext(String tenant) {
+    var headersMap = (Map<String, Collection<String>>) (Map) Map.of(
+      XOkapiHeaders.TENANT, Lists.newArrayList(tenant),
+      XOkapiHeaders.URL, Lists.newArrayList(WIRE_MOCK.baseUrl()),
+      XOkapiHeaders.TOKEN, Lists.newArrayList(TOKEN)
+    );
+    return new DefaultFolioExecutionContext(folioModuleMetadata, headersMap);
+  }
 
 
 }

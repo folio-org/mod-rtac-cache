@@ -103,6 +103,11 @@ folio:
     username: ${SYSTEM_USER_USERNAME:mod-rtac-cache}
     password: ${SYSTEM_USER_PASSWORD}
     lastname: System
+rtac:
+  cache:
+    invalidation:
+      cron: ${RTAC_CACHE_INVALIDATION_CRON:0 0 2 * * ?}
+      retention-days: ${RTAC_CACHE_RETENTION_DAYS:2}
 management:
   endpoints:
     web:
