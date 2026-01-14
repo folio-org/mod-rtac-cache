@@ -58,6 +58,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   void deleteByIdId(UUID id);
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
   void deleteAllByIdInstanceId(UUID instanceId);
 
   @Query(value = """
