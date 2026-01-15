@@ -10,6 +10,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,16 @@ public class RtacHoldingBulkRepository {
     WHERE rtac_holding_json->'library'->>'id' = ?
   """;
 
+  private static final String FORMAT_IDS_DATA_UPDATE_SQL = """
+    UPDATE rtac_holding
+    SET rtac_holding_json = jsonb_set(
+      rtac_holding_json,
+      '{instanceFormatIds}',
+      to_jsonb(?::text[])
+    )
+    WHERE instance_id = ?::uuid
+  """;
+
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
   private static final int BATCH_SIZE = 200;
@@ -85,9 +96,9 @@ public class RtacHoldingBulkRepository {
   public void bulkUpdateLocationData(Location location) throws SQLException {
     try (Connection connection = dataSource.getConnection();
       PreparedStatement ps = connection.prepareStatement(LOCATION_DATA_UPDATE_SQL)) {
-      ps.setObject(1, location.getName());
+      ps.setString(1, location.getName());
       ps.setString(2, location.getCode());
-      ps.setObject(3, location.getId());
+      ps.setString(3, location.getId());
       ps.executeUpdate();
     }
   }
@@ -95,9 +106,23 @@ public class RtacHoldingBulkRepository {
   public void bulkUpdateLibraryData(Loclib library) throws SQLException {
     try (Connection connection = dataSource.getConnection();
       PreparedStatement ps = connection.prepareStatement(LIBRARY_DATA_UPDATE_SQL)) {
-      ps.setObject(1, library.getName());
+      ps.setString(1, library.getName());
       ps.setString(2, library.getCode());
-      ps.setObject(3, library.getId());
+      ps.setString(3, library.getId());
+      ps.executeUpdate();
+    }
+  }
+
+  public void bulkUpdateInstanceFormatIds(Instance instance) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+      PreparedStatement ps = connection.prepareStatement(FORMAT_IDS_DATA_UPDATE_SQL)) {
+      var formatIds = instance.getInstanceFormatIds();
+      var formatIdsArray = connection.createArrayOf(
+        "text",
+        (formatIds == null ? new String[0] : formatIds.toArray(String[]::new))
+      );
+      ps.setArray(1, formatIdsArray);
+      ps.setObject(2, instance.getId());
       ps.executeUpdate();
     }
   }

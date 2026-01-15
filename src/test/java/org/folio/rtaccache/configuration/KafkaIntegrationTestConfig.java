@@ -2,6 +2,7 @@ package org.folio.rtaccache.configuration;
 
 import static org.folio.rtaccache.TestConstant.BOUND_WITH_TOPIC;
 import static org.folio.rtaccache.TestConstant.HOLDINGS_TOPIC;
+import static org.folio.rtaccache.TestConstant.INSTANCE_TOPIC;
 import static org.folio.rtaccache.TestConstant.ITEM_TOPIC;
 import static org.folio.rtaccache.TestConstant.LIBRARY_TOPIC;
 import static org.folio.rtaccache.TestConstant.LOAN_TOPIC;
@@ -18,6 +19,12 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 @Profile("test-kafka")
 public class KafkaIntegrationTestConfig {
+
+  @Bean
+  public NewTopic instanceTopic() {
+    return TopicBuilder.name(INSTANCE_TOPIC)
+      .build();
+  }
 
   @Bean
   public NewTopic holdingsTopic() {
