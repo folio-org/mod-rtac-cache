@@ -195,7 +195,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(f34d3c43-695d-468a-8b05-93a52f2c39a3)" }
         }
@@ -211,7 +211,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(fff4579a-be80-464e-9307-bd1c6d5e1ce0)" }
         }
@@ -227,7 +227,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "headers": {
           "x-okapi-tenant": {
             "equalTo": "testCentralTenant"
@@ -248,7 +248,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "headers": {
           "x-okapi-tenant": {
             "equalTo": "testMemberTenant"
@@ -269,7 +269,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(e42b81ff-629a-4b76-9b6b-7cb92c9ea59e)" }
         }
