@@ -1,5 +1,6 @@
 package org.folio.rtaccache.repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -109,5 +110,8 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
           h.instance_id""",
       nativeQuery = true)
   List<RtacSummaryProjection> findRtacSummariesByInstanceIds(@Param("schemas") String schemas, @Param("instanceIds") UUID[] instanceIds, @Param("onlyShared") boolean onlyShared);
+
+  @Query(value = "SELECT public.delete_old_holdings_all_tenants(:cutoffTime)", nativeQuery = true)
+  int deleteOldHoldingsAllTenants(@Param("cutoffTime") Instant cutoffTime);
 
 }

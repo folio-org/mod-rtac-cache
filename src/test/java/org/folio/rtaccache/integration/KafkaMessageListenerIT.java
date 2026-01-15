@@ -6,12 +6,9 @@ import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.log4j.Log4j2;
@@ -31,10 +28,6 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
-import org.folio.spring.DefaultFolioExecutionContext;
-import org.folio.spring.FolioExecutionContext;
-import org.folio.spring.FolioModuleMetadata;
-import org.folio.spring.integration.XOkapiHeaders;
 import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -120,8 +113,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Autowired
   private RtacHoldingRepository holdingRepository;
   @Autowired
-  private FolioModuleMetadata folioModuleMetadata;
-  @Autowired
   private InventoryReferenceDataService inventoryReferenceDataService;
   @Autowired
   private CacheManager cacheManager;
@@ -133,7 +124,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       holdingRepository.deleteAll();
     } catch (Exception e) {
       log.warn("Failed to clean up rtac_holdings table: {}", e.getMessage());
@@ -143,7 +134,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(1)
   void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       var event = loadInventoryResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
       createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING);
@@ -170,7 +161,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(2)
   void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
@@ -194,7 +185,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(3)
   void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
@@ -217,7 +208,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(4)
   void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
       var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_EVENT_PATH);
@@ -241,7 +232,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(5)
   void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -259,7 +250,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(6)
   void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
@@ -281,7 +272,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(7)
   void shouldUpdateRtacHolding_withItemType_whenItemUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(UPDATE_ITEM_EVENT_PATH);
@@ -303,7 +294,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(8)
   void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(DELETE_ITEM_EVENT_PATH);
@@ -320,7 +311,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(9)
   void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadCirculationResourceEvent(CREATE_LOAN_EVENT_PATH);
@@ -338,7 +329,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(10)
   void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadCirculationResourceEvent(UPDATE_LOAN_EVENT_PATH);
@@ -356,7 +347,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(11)
   void shouldUpdateRtacHoldingRequestCount_withItemType_whenOpenRequestCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadCirculationResourceEvent(CREATE_REQUEST_EVENT_PATH);
@@ -374,7 +365,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(12)
   void shouldDecreaseRtacHoldingRequestCount_withItemType_whenClosedRequestUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadCirculationResourceEvent(UPDATE_REQUEST_EVENT_PATH);
@@ -392,7 +383,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(13)
   void shouldCreateRtacHolding_withPieceType_whenPieceCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
       var event = loadPieceResourceEvent(CREATE_PIECE_EVENT_PATH);
@@ -410,7 +401,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(14)
   void shouldUpdateRtacHolding_withPieceType_whenPieceUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
       var event = loadPieceResourceEvent(UPDATE_PIECE_EVENT_PATH);
@@ -428,7 +419,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(15)
   void shouldDeleteRtacHolding_withPieceType_whenPieceDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
       var event = loadPieceResourceEvent(DELETE_PIECE_EVENT_PATH);
@@ -445,7 +436,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(16)
   void shouldClearLocationsCache_whenLocationCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       //preload cache
       inventoryReferenceDataService.getLocationsMap();
@@ -463,7 +454,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(17)
   void shouldUpdateRtacHolding_whenLocationUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(UPDATE_LOCATION_EVENT_PATH);
@@ -483,7 +474,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Order(18)
   @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLocationsCache_whenLocationDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       //preload cache
       inventoryReferenceDataService.getLocationsMap();
@@ -502,7 +493,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Order(19)
   @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLibraryCache_whenLibraryCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       //preload cache
       inventoryReferenceDataService.getLibraryMap();
@@ -520,7 +511,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(20)
   void shouldUpdateRtacHolding_whenLibraryUpdateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       var event = loadInventoryResourceEvent(UPDATE_LIBRARY_EVENT_PATH);
@@ -540,7 +531,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Order(21)
   @Execution(ExecutionMode.SAME_THREAD)
   void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       //preload cache
       inventoryReferenceDataService.getLibraryMap();
@@ -558,7 +549,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(22)
   void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
       createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING);
@@ -579,7 +570,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(23)
   void shouldDeleteRtacHolding_withItemType_whenBoundWithDeleteEventIsSent() throws JsonProcessingException {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext())) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM, true);
       var event = loadInventoryResourceEvent(DELETE_BOUND_WITH_EVENT_PATH);
@@ -690,14 +681,5 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private void sendBoundWithEvent(InventoryResourceEvent event) {
     var boundWithRecord = new ProducerRecord<>(TestConstant.BOUND_WITH_TOPIC, ITEM_ID, event);
     inventoryKafkaTemplate.send(boundWithRecord);
-  }
-
-  private FolioExecutionContext folioExecutionContext() {
-    var headersMap = (Map<String, Collection<String>>) (Map) Map.of(
-      XOkapiHeaders.TENANT, Lists.newArrayList(TEST_TENANT),
-      XOkapiHeaders.URL, Lists.newArrayList(WIRE_MOCK.baseUrl()),
-      XOkapiHeaders.TOKEN, Lists.newArrayList(TOKEN)
-    );
-    return new DefaultFolioExecutionContext(folioModuleMetadata,  headersMap);
   }
 }
