@@ -3,19 +3,25 @@ package org.folio.rtaccache.integration;
 import static org.folio.rtaccache.domain.dto.CirculationEntityType.LOAN;
 import static org.folio.rtaccache.domain.dto.CirculationEntityType.REQUEST;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.HOLDINGS;
+import static org.folio.rtaccache.domain.dto.InventoryEntityType.INSTANCE;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM_BOUND_WITH;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LIBRARY;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOCATION;
 
+import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
+import org.folio.rtaccache.service.ConsortiaService;
 import org.folio.rtaccache.service.handler.EventHandlerFactory;
 import org.folio.spring.service.SystemUserScopedExecutionService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.kafka.annotation.KafkaListener;
 
 
@@ -23,6 +29,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 @RequiredArgsConstructor
 public class KafkaMessageListener {
 
+  public static final String INSTANCE_LISTENER_ID = "mod-rtac-cache-instance-listener";
   public static final String HOLDINGS_RECORD_LISTENER_ID = "mod-rtac-cache-holdings-record-listener";
   private static final String ITEM_LISTENER_ID = "mod-rtac-cache-item-listener";
   private static final String LOAN_LISTENER_ID = "mod-rtac-cache-loan-listener";
@@ -35,7 +42,24 @@ public class KafkaMessageListener {
 
   private final SystemUserScopedExecutionService executionService;
   private final EventHandlerFactory eventHandlerFactory;
+  private final ConsortiaService consortiaService;
+  @Qualifier("applicationTaskExecutor")
+  private final AsyncTaskExecutor taskExecutor;
 
+  @KafkaListener(
+    id = INSTANCE_LISTENER_ID,
+    containerFactory = "inventoryKafkaListenerContainerFactory",
+    groupId = "#{folioKafkaProperties.listener['instance'].groupId}",
+    concurrency = "#{folioKafkaProperties.listener['instance'].concurrency}",
+    topicPattern = "#{folioKafkaProperties.listener['instance'].topicPattern}")
+  public void handleInstanceRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    var currentTenantId = consumerRecord.value().getTenant();
+    executionService.executeAsyncSystemUserScoped(currentTenantId, () -> {
+      var resourceEvent = consumerRecord.value();
+      handleInstanceEventForCurrentTenant(resourceEvent);
+      handleInstanceEventForConsortiaTenants(currentTenantId, resourceEvent);
+    });
+  }
 
   @KafkaListener(
       id = HOLDINGS_RECORD_LISTENER_ID,
@@ -162,6 +186,52 @@ public class KafkaMessageListener {
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), ITEM_BOUND_WITH)
         .handle(resourceEvent);
     } );
+  }
+
+  private void handleInstanceEventForCurrentTenant(InventoryResourceEvent resourceEvent) {
+    eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), INSTANCE)
+      .handle(resourceEvent);
+  }
+
+  private void handleInstanceEventForConsortiaTenants(String currentTenantId,
+    InventoryResourceEvent resourceEvent) {
+    if (!consortiaService.isCentralTenant()) {
+      return;
+    }
+
+    var futures = new ArrayList<CompletableFuture<Void>>();
+    var consortiaTenants = consortiaService.getConsortiaTenants();
+
+    consortiaTenants.forEach(consortiaTenantId -> {
+      if (consortiaTenantId.equals(currentTenantId)) {
+        return;
+      }
+      futures.add(submitInstanceEventForTenant(consortiaTenantId, resourceEvent));
+    });
+
+    waitForInstanceEventProcessing(futures);
+  }
+
+  private CompletableFuture<Void> submitInstanceEventForTenant(String tenantId,
+    InventoryResourceEvent resourceEvent) {
+    return taskExecutor.submitCompletable(() -> {
+      try {
+        executionService.executeSystemUserScoped(tenantId, () -> {
+          handleInstanceEventForCurrentTenant(resourceEvent);
+          return null;
+        });
+      } catch (Exception e) {
+        log.error("Error during consuming Instance Kafka event in tenant: {}", tenantId, e);
+      }
+    });
+  }
+
+  private void waitForInstanceEventProcessing(ArrayList<CompletableFuture<Void>> futures) {
+    try {
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+    } catch (Exception e) {
+      log.error("Error while waiting for instance Kafka event processing completion ", e);
+    }
   }
 
   private String getFolioTenantFromHeader(ConsumerRecord<String, PieceResourceEvent> consumerRecord) {

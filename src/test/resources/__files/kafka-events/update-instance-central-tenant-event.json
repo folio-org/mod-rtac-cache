@@ -1,0 +1,119 @@
+{
+  "old": {
+    "id": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "_version": 1,
+    "hrid": "instiyey000000000001",
+    "source": "CONSORTIA-MARC",
+    "title": "ABA Journal",
+    "alternativeTitles": [],
+    "editions": [],
+    "series": [],
+    "identifiers": [
+      {
+        "value": "0747-0088",
+        "identifierTypeId": "913300b2-03ed-469a-8179-c1092c991227"
+      },
+      {
+        "value": "84641839",
+        "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb"
+      }
+    ],
+    "contributors": [],
+    "subjects": [],
+    "classifications": [],
+    "publication": [
+      {
+        "publisher": "American Bar Association",
+        "place": "Chicago, Ill.",
+        "dateOfPublication": "1915-1983"
+      }
+    ],
+    "publicationFrequency": [],
+    "publicationRange": [],
+    "electronicAccess": [],
+    "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+    "instanceFormatIds": [],
+    "instanceFormats": [],
+    "physicalDescriptions": [],
+    "languages": [],
+    "notes": [],
+    "administrativeNotes": [],
+    "previouslyHeld": false,
+    "discoverySuppress": false,
+    "deleted": false,
+    "statisticalCodeIds": [],
+    "statusUpdatedDate": "2026-01-13T12:48:51.113+0000",
+    "metadata": {
+      "createdDate": "2026-01-13T12:48:51.113+00:00",
+      "updatedDate": "2026-01-13T12:48:51.113+00:00"
+    },
+    "holdingsRecords2": [],
+    "natureOfContentTermIds": [
+      "0abeee3d-8ad2-4b04-92ff-221b4fce1075"
+    ]
+  },
+  "new": {
+    "id": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "_version": 2,
+    "hrid": "instiyey000000000001",
+    "source": "CONSORTIA-MARC",
+    "title": "ABA Journal",
+    "alternativeTitles": [],
+    "editions": [],
+    "series": [],
+    "identifiers": [
+      {
+        "value": "0747-0088",
+        "identifierTypeId": "913300b2-03ed-469a-8179-c1092c991227"
+      },
+      {
+        "value": "84641839",
+        "identifierTypeId": "c858e4f2-2b6b-4385-842b-60732ee14abb"
+      }
+    ],
+    "contributors": [],
+    "subjects": [],
+    "classifications": [],
+    "publication": [
+      {
+        "publisher": "American Bar Association",
+        "place": "Chicago, Ill.",
+        "dateOfPublication": "1915-1983"
+      }
+    ],
+    "publicationFrequency": [],
+    "publicationRange": [],
+    "electronicAccess": [],
+    "instanceTypeId": "6312d172-f0cf-40f6-b27d-9fa8feaf332f",
+    "instanceFormatIds": [
+      "549e3381-7d49-44f6-8232-37af1cb5ecf3"
+    ],
+    "instanceFormats": [],
+    "physicalDescriptions": [],
+    "languages": [],
+    "notes": [],
+    "administrativeNotes": [],
+    "previouslyHeld": false,
+    "staffSuppress": false,
+    "discoverySuppress": false,
+    "deleted": false,
+    "statisticalCodeIds": [],
+    "statusUpdatedDate": "2026-01-13T12:48:51.113+0000",
+    "tags": {
+      "tagList": []
+    },
+    "metadata": {
+      "createdDate": "2026-01-13T12:48:51.113+00:00",
+      "updatedDate": "2026-01-13T14:50:29.806+00:00",
+      "updatedByUserId": "2a26cc94-9d20-454b-9c1b-57f6e7a63908"
+    },
+    "holdingsRecords2": [],
+    "natureOfContentTermIds": [
+      "0abeee3d-8ad2-4b04-92ff-221b4fce1075"
+    ]
+  },
+  "type": "UPDATE",
+  "tenant": "testCentralTenant",
+  "eventId": "98a4c396-6c75-4474-a5b5-1d8de0b29208",
+  "eventTs": 1768315829846
+}

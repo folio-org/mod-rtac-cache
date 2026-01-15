@@ -4,6 +4,8 @@ public class TestConstant {
   public static final String TEST_TENANT = "testTenant";
   public static final String TEST_CENTRAL_TENANT = "testCentralTenant";
   public static final String TEST_MEMBER_TENANT = "testMemberTenant";
+
+  public static final String INSTANCE_TOPIC = "test.ALL.inventory.instance";
   public static final String HOLDINGS_TOPIC = "test.ALL.inventory.holdings-record";
   public static final String ITEM_TOPIC = "test.ALL.inventory.item";
   public static final String LOCATION_TOPIC = "test.ALL.inventory.location";

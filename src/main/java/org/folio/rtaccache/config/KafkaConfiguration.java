@@ -12,6 +12,7 @@ import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.integration.KafkaMessageListener;
+import org.folio.rtaccache.service.ConsortiaService;
 import org.folio.rtaccache.service.handler.EventHandlerFactory;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -19,6 +20,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -67,8 +69,9 @@ public class KafkaConfiguration {
   @Bean
   @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
   public KafkaMessageListener kafkaMessageListener(SystemUserScopedExecutionService executionService,
-    EventHandlerFactory eventHandlerFactory) {
-    return new KafkaMessageListener(executionService, eventHandlerFactory);
+    EventHandlerFactory eventHandlerFactory, ConsortiaService consortiaService,
+    AsyncTaskExecutor applicationTaskExecutor) {
+    return new KafkaMessageListener(executionService, eventHandlerFactory, consortiaService, applicationTaskExecutor);
   }
 
   private ConsumerFactory<String, InventoryResourceEvent> getInventoryResourceEventConsumerFactory() {

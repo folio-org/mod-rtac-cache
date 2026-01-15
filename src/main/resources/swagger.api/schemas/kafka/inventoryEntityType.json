@@ -3,6 +3,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "description": "Inventory domain entity type of the resource",
   "enum": [
+    "INSTANCE",
     "HOLDINGS",
     "ITEM",
     "ITEM_BOUND_WITH",

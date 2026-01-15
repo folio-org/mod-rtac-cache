@@ -66,6 +66,10 @@ folio:
     retry-delivery-attempts: ${KAFKA_RETRY_DELIVERY_ATTEMPTS:6}
     topics: []
     listener:
+      instance:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.instance}
+        group-id: ${folio.environment}-mod-rtac-cache-instance-group
       holdings-record:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.holdings-record}
