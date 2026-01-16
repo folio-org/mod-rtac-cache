@@ -44,10 +44,8 @@ public class PieceCreateEventHandler implements PieceEventHandler {
       log.info("Current tenant is central tenant, using receiving tenant id from piece data");
       holdingsTenant = pieceData.getReceivingTenantId();
     }
-    var newHoldingEntity = systemUserExecutionService.executeSystemUserScoped(holdingsTenant, () -> {
-        log.info("current tenant id for holdings retrieval: {}", folioExecutionContext.getTenantId());
-        return getRtacHoldingFromPieceEvent(pieceData);
-      }
+    var newHoldingEntity = systemUserExecutionService.executeSystemUserScoped(holdingsTenant, () ->
+      getRtacHoldingFromPieceEvent(pieceData)
     );
     log.info("Obtained new RTAC holding entity for piece id: {}: {}", pieceData.getId(), newHoldingEntity.isPresent());
     systemUserExecutionService.executeSystemUserScoped(eventTenant, () -> {
