@@ -61,7 +61,6 @@ public class PieceCreateEventHandler implements PieceEventHandler {
     return holdingRepository.findByIdIdAndIdType(
         UUID.fromString(pieceData.getHoldingId()), TypeEnum.HOLDING)
       .map(existingHoldingsEntity -> {
-        log.info("Found existing RTAC holding entity for holdings id: {}", existingHoldingsEntity.getId());
         var existingRtacHolding = existingHoldingsEntity.getRtacHolding();
         var newRtacHolding = rtacHoldingMappingService.mapForPieceTypeFrom(
           existingRtacHolding, pieceData);
