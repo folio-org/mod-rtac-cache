@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.Piece;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PieceCreateEventHandler implements PieceEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
@@ -32,24 +30,19 @@ public class PieceCreateEventHandler implements PieceEventHandler {
 
   @Override
   public void handle(PieceResourceEvent resourceEvent) {
-    log.info("Handling piece create event: {}", resourceEvent);
     var pieceData = resourceEvent.getPieceSnapshot();
     if (pieceData == null || pieceData.getHoldingId() == null) {
       return;
     }
     var eventTenant = folioExecutionContext.getTenantId();
-    log.info("Event tenant id: {}", eventTenant);
     var holdingsTenant = eventTenant;
     if (consortiaService.isCentralTenant()) {
-      log.info("Current tenant is central tenant, using receiving tenant id from piece data");
       holdingsTenant = pieceData.getReceivingTenantId();
     }
     var newHoldingEntity = systemUserExecutionService.executeSystemUserScoped(holdingsTenant, () ->
       getRtacHoldingFromPieceEvent(pieceData)
     );
-    log.info("Obtained new RTAC holding entity for piece id: {}: {}", pieceData.getId(), newHoldingEntity.isPresent());
     systemUserExecutionService.executeSystemUserScoped(eventTenant, () -> {
-      log.info("Saving new RTAC holding entity for piece id: {} in tenant: {}", pieceData.getId(), eventTenant);
       newHoldingEntity.ifPresent(holdingRepository::save);
       return null;
     });
