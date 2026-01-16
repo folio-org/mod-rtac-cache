@@ -74,7 +74,7 @@ public class RtacCacheGenerationService {
       saveHolding(instance, holding);
       var itemsFuture = processDirectItemsForHolding(instance, holding)
         .thenCompose(v -> processItemsBoundWithHolding(instance, holding));
-      var piecesFuture = processPiecesForHolding(instance, holding);
+      var piecesFuture = processPiecesForHolding(instance, holding, folioExecutionContext.getTenantId());
       var centralPiecesFuture = processPiecesInCentralForHolding(instance, holding);
       itemsFuture.join();
       piecesFuture.join();
@@ -141,10 +141,10 @@ public class RtacCacheGenerationService {
       }, taskExecutor);
   }
 
-  private CompletableFuture<Void> processPiecesForHolding(Instance instance, HoldingsRecord holding) {
+  private CompletableFuture<Void> processPiecesForHolding(Instance instance, HoldingsRecord holding, String piecesTenantId) {
     return CompletableFuture.supplyAsync(() -> {
       log.info("Sending request for pieces for holding id: {}", holding.getId());
-      return ordersService.getPiecesByHoldingId(holding.getId());
+      return systemUserExecutionService.executeSystemUserScoped(piecesTenantId, () -> ordersService.getPiecesByHoldingId(holding.getId()));
     }, taskExecutor).thenAcceptAsync(response -> {
       log.info("Processing pieces for holding id: {}", holding.getId());
       if (response.getTotalRecords() != 0) {
@@ -155,7 +155,10 @@ public class RtacCacheGenerationService {
             RtacHoldingId.from(rtacHolding), isInstanceShared(instance), rtacHolding, Instant.now()))
           .toList();
         try {
-          rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
+          systemUserExecutionService.executeSystemUserScoped(piecesTenantId, () -> {
+            rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
+            return null;
+          });
           log.info("Saved pieces for holding: {}", holding.getId());
         } catch (Exception e) {
           log.error("Error during bulk upsert of RTAC holdings for pieces: {}", e.getMessage(), e);
@@ -171,10 +174,7 @@ public class RtacCacheGenerationService {
           return;
         }
         log.info("Sending request for pieces in central tenant for holding id: {}", holding.getId());
-        systemUserExecutionService.executeSystemUserScoped(centralTenantId.get(), () -> {
-          processPiecesForHolding(instance, holding).join();
-          return null;
-        });
+        processPiecesForHolding(instance, holding, centralTenantId.get()).join();
       }, taskExecutor);
   }
 
