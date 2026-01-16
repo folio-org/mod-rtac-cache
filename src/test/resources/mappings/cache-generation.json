@@ -34,6 +34,22 @@
     },
     {
       "request": {
+        "method": "GET",
+        "urlPath": "/instance-storage/instances",
+        "queryParameters": {
+          "query": { "contains": "1dbab2d4-42f6-47e0-b0c6-013040bd19af" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/instance3-response.json"
+      }
+    },
+    {
+      "request": {
         "method": "POST",
         "urlPath": "/holdings-storage/holdings/retrieve",
         "bodyPatterns": [
@@ -66,6 +82,24 @@
           "Content-Type": "application/json"
         },
         "bodyFileName": "cache-generation/bound-with-holdings-record-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "urlPath": "/holdings-storage/holdings/retrieve",
+        "bodyPatterns": [
+          {
+            "contains": "instanceId==1dbab2d4-42f6-47e0-b0c6-013040bd19af"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/instance3_holdings-records-response.json"
       }
     },
     {
@@ -142,8 +176,26 @@
     },
     {
       "request": {
+        "method": "POST",
+        "urlPath": "/item-storage/items/retrieve",
+        "bodyPatterns": [
+          {
+            "contains": "holdingsRecordId==5c48620a-7094-4631-ba35-fedddf1236d6"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding5-items-response.json"
+      }
+    },
+    {
+      "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(f34d3c43-695d-468a-8b05-93a52f2c39a3)" }
         }
@@ -159,7 +211,7 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(fff4579a-be80-464e-9307-bd1c6d5e1ce0)" }
         }
@@ -175,7 +227,49 @@
     {
       "request": {
         "method": "GET",
-        "urlPath": "/orders/pieces",
+        "urlPath": "/orders-storage/pieces",
+        "headers": {
+          "x-okapi-tenant": {
+            "equalTo": "testCentralTenant"
+          }
+        },
+        "queryParameters": {
+          "query": { "contains": "holdingId==(5c48620a-7094-4631-ba35-fedddf1236d6)" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/holding5-central-pieces-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/orders-storage/pieces",
+        "headers": {
+          "x-okapi-tenant": {
+            "equalTo": "testMemberTenant"
+          }
+        },
+        "queryParameters": {
+          "query": { "contains": "holdingId==(5c48620a-7094-4631-ba35-fedddf1236d6)" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/empty-pieces-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/orders-storage/pieces",
         "queryParameters": {
           "query": { "contains": "holdingId==(e42b81ff-629a-4b76-9b6b-7cb92c9ea59e)" }
         }
@@ -242,6 +336,22 @@
         "urlPath": "/inventory-storage/bound-with-parts",
         "queryParameters": {
           "query": { "contains": "holdingsRecordId==fff4579a-be80-464e-9307-bd1c6d5e1ce" }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "bodyFileName": "cache-generation/empty-bound-with-response.json"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "urlPath": "/inventory-storage/bound-with-parts",
+        "queryParameters": {
+          "query": { "contains": "holdingsRecordId==5c48620a-7094-4631-ba35-fedddf1236d6" }
         }
       },
       "response": {

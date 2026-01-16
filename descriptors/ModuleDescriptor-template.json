@@ -22,7 +22,7 @@
             "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
-            "orders.pieces.collection.get",
+            "orders-storage.pieces.collection.get",
             "user-tenants.collection.get",
             "consortium-search.holdings.batch.collection.get"
           ]
@@ -43,7 +43,7 @@
             "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
-            "orders.pieces.collection.get",
+            "orders-storage.pieces.collection.get",
             "user-tenants.collection.get",
             "consortium-search.holdings.batch.collection.get"
           ]
@@ -68,7 +68,7 @@
             "inventory-storage.bound-with-parts.collection.get",
             "circulation-storage.loans.collection.get",
             "circulation.requests.collection.get",
-            "orders.pieces.collection.get",
+            "orders-storage.pieces.collection.get",
             "user-tenants.collection.get",
             "consortium-search.holdings.batch.collection.get"
           ]
@@ -147,8 +147,8 @@
       "version": "14.2 14.6"
     },
     {
-      "id": "pieces",
-      "version": "3.0 3.1"
+      "id": "orders-storage.pieces",
+      "version": "5.0"
     },
     {
       "id": "user-tenants",
@@ -238,7 +238,7 @@
         "inventory-storage.holdings-note-types.collection.get",
         "circulation-storage.loans.collection.get",
         "circulation.requests.collection.get",
-        "orders.pieces.collection.get",
+        "orders-storage.pieces.collection.get",
         "user-tenants.collection.get",
         "consortium-search.holdings.batch.collection.get"
       ]

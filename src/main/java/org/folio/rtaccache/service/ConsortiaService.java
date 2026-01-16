@@ -2,6 +2,7 @@ package org.folio.rtaccache.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.ConsortiaClient;
 import org.folio.rtaccache.client.UsersClient;
@@ -17,11 +18,12 @@ public class ConsortiaService {
   private final ConsortiaClient consortiaClient;
   private final UsersClient usersClient;
   private final FolioExecutionContext folioExecutionContext;
+  public static final String IS_CENTRAL_TENANT_CACHE = "isCentralTenantIdCache";
   public static final String CENTRAL_TENANT_CACHE = "centralTenantIdCache";
   public static final String CONSORTIA_TENANTS_CACHE = "consortiaTenantsCache";
   public static final int CONSORTIA_TENANTS_LIMIT = 1000;
 
-  @Cacheable(value = CENTRAL_TENANT_CACHE, key = "@folioExecutionContext.getTenantId()")
+  @Cacheable(value = IS_CENTRAL_TENANT_CACHE, key = "@folioExecutionContext.getTenantId()")
   public boolean isCentralTenant() {
     var userTenants = usersClient.getUserTenants();
     if (userTenants.getTotalRecords() == 0) {
@@ -41,6 +43,15 @@ public class ConsortiaService {
       .stream()
       .map(ConsortiaTenantsTenantsInner::getId)
       .toList();
+  }
+
+  @Cacheable(value = CENTRAL_TENANT_CACHE, key = "@folioExecutionContext.getTenantId()")
+  public Optional<String> getCentralTenantId() {
+    var userTenants = usersClient.getUserTenants();
+    if (userTenants.getTotalRecords() == 0) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(userTenants.getUserTenants().get(0).getCentralTenantId());
   }
 
 }

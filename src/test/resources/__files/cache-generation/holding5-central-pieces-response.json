@@ -1,0 +1,31 @@
+{
+  "pieces": [
+    {
+      "id": "aaf2be29-a8cc-4b0a-9975-bf39e9a71696",
+      "displaySummary": "213",
+      "enumeration": "v.99:no.3-7",
+      "chronology": "testChronology2",
+      "format": "Physical",
+      "itemId": "30a7b749-a90d-46d0-a256-997686430905",
+      "poLineId": "8718f05e-9a40-4ea3-a968-672eafbe8784",
+      "titleId": "8afc4d77-73d0-4518-8234-a293c71b6405",
+      "holdingId": "5c48620a-7094-4631-ba35-fedddf1236d6",
+      "displayOnHolding": true,
+      "displayToPublic": true,
+      "discoverySuppress": false,
+      "receivingStatus": "Received",
+      "supplement": true,
+      "isBound": true,
+      "copyNumber": "test copy number",
+      "receivedDate": "2024-06-24T14:48:02.596+00:00",
+      "statusUpdatedDate": "2024-06-24T14:48:02.596+00:00",
+      "metadata": {
+        "createdDate": "2024-06-24T14:47:32.573+00:00",
+        "createdByUserId": "dc3a69bf-5ddb-47ef-9ac4-b9ef83758828",
+        "updatedDate": "2024-06-24T14:48:09.606+00:00",
+        "updatedByUserId": "dc3a69bf-5ddb-47ef-9ac4-b9ef83758828"
+      }
+    }
+  ],
+  "totalRecords": 1
+}

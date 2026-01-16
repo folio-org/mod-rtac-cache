@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 @FeignClient("orders")
 public interface OrdersClient {
 
-  @GetMapping("/orders/pieces")
+  @GetMapping("/orders-storage/pieces")
   PieceCollection getPieces(@SpringQueryMap FolioCqlRequest request);
 }

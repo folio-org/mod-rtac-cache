@@ -115,4 +115,31 @@ class ConsortiaServiceTest {
 
     assertThat(result).isEmpty();
   }
+
+  @Test
+  void getCentralTenantId_shouldReturnCentralTenantId() {
+    var consortiumId = UUID.randomUUID().toString();
+    var centralTenantId = "central_tenant";
+    var userTenants = new UserTenants().totalRecords(1)
+      .userTenants(List.of(new UserTenantsUserTenantsInner()
+        .consortiumId(consortiumId)
+        .centralTenantId(centralTenantId)));
+
+    when(usersClient.getUserTenants()).thenReturn(userTenants);
+
+    var result = consortiaService.getCentralTenantId();
+
+    assertThat(result).hasValue(centralTenantId);
+  }
+
+  @Test
+  void getCentralTenantId_shouldReturnEmpty_whenNoUserTenants() {
+    var userTenants = new UserTenants().totalRecords(0);
+    when(usersClient.getUserTenants()).thenReturn(userTenants);
+
+    var result = consortiaService.getCentralTenantId();
+
+    assertThat(result).isEmpty();
+  }
+
 }
