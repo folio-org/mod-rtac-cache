@@ -18,7 +18,6 @@ import org.folio.rtaccache.service.handler.PieceEventHandler;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +31,6 @@ public class PieceCreateEventHandler implements PieceEventHandler {
   private final SystemUserScopedExecutionService systemUserExecutionService;
 
   @Override
-  @Transactional
   public void handle(PieceResourceEvent resourceEvent) {
     log.info("Handling piece create event: {}", resourceEvent);
     var pieceData = resourceEvent.getPieceSnapshot();
