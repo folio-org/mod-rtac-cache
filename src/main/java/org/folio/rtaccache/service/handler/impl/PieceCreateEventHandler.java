@@ -11,11 +11,8 @@ import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.rtaccache.service.ConsortiaService;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.PieceEventHandler;
-import org.folio.spring.FolioExecutionContext;
-import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,9 +21,6 @@ public class PieceCreateEventHandler implements PieceEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final RtacHoldingRepository holdingRepository;
-  private final FolioExecutionContext folioExecutionContext;
-  private final ConsortiaService consortiaService;
-  private final SystemUserScopedExecutionService systemUserExecutionService;
 
   @Override
   public void handle(PieceResourceEvent resourceEvent) {
@@ -34,18 +28,8 @@ public class PieceCreateEventHandler implements PieceEventHandler {
     if (pieceData == null || pieceData.getHoldingId() == null) {
       return;
     }
-    var eventTenant = folioExecutionContext.getTenantId();
-    var holdingsTenant = eventTenant;
-    if (consortiaService.isCentralTenant()) {
-      holdingsTenant = pieceData.getReceivingTenantId();
-    }
-    var newHoldingEntity = systemUserExecutionService.executeSystemUserScoped(holdingsTenant, () ->
-      getRtacHoldingFromPieceEvent(pieceData)
-    );
-    systemUserExecutionService.executeSystemUserScoped(eventTenant, () -> {
-      newHoldingEntity.ifPresent(holdingRepository::save);
-      return null;
-    });
+    var newHoldingEntity = getRtacHoldingFromPieceEvent(pieceData);
+    newHoldingEntity.ifPresent(holdingRepository::save);
   }
 
   private Optional<RtacHoldingEntity> getRtacHoldingFromPieceEvent(Piece pieceData) {

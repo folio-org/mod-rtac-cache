@@ -1,6 +1,5 @@
 package org.folio.rtaccache.service.handler.impl;
 
-import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -17,10 +16,7 @@ import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.rtaccache.service.ConsortiaService;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
-import org.folio.spring.FolioExecutionContext;
-import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,12 +37,6 @@ class PieceCreateEventHandlerTest {
   RtacHoldingRepository holdingRepository;
   @Mock
   RtacHoldingMappingService mappingService;
-  @Mock
-  FolioExecutionContext folioExecutionContext;
-  @Mock
-  ConsortiaService consortiaService;
-  @Mock
-  SystemUserScopedExecutionService serviceUserScopedExecutionService;
 
   @Test
   void pieceCreate_shouldSaveEntity() {
@@ -65,38 +55,10 @@ class PieceCreateEventHandlerTest {
       .thenReturn(Optional.of(holdingsEntity));
     when(mappingService.mapForPieceTypeFrom(any(RtacHolding.class), any(Piece.class)))
       .thenReturn(mappedPieceRtac);
-    when(folioExecutionContext.getTenantId()).thenReturn(TEST_TENANT);
-    when(consortiaService.isCentralTenant()).thenReturn(false);
-    when(serviceUserScopedExecutionService.executeSystemUserScoped(any(), any()))
-      .thenAnswer(invocation -> {
-        var callable = invocation.getArgument(1, java.util.concurrent.Callable.class);
-        return callable.call();
-      });
 
     handler.handle(event);
 
     verify(holdingRepository).save(any(RtacHoldingEntity.class));
-  }
-
-  @Test
-  void pieceCreate_shouldSaveInCentral_whenHoldingsInMemberTenant() {
-    var piece = piece();
-    var event = new PieceResourceEvent()
-      .action(PieceEventAction.CREATE)
-      .pieceSnapshot(piece);
-    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
-      .thenReturn(Optional.empty());
-    when(folioExecutionContext.getTenantId()).thenReturn(TEST_TENANT);
-    when(consortiaService.isCentralTenant()).thenReturn(true);
-    when(serviceUserScopedExecutionService.executeSystemUserScoped(any(), any()))
-      .thenAnswer(invocation -> {
-        var callable = invocation.getArgument(1, java.util.concurrent.Callable.class);
-        return callable.call();
-      });
-
-    handler.handle(event);
-
-    verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
   }
 
   @Test
@@ -107,13 +69,6 @@ class PieceCreateEventHandlerTest {
       .pieceSnapshot(piece);
     when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
       .thenReturn(Optional.empty());
-    when(folioExecutionContext.getTenantId()).thenReturn(TEST_TENANT);
-    when(consortiaService.isCentralTenant()).thenReturn(false);
-    when(serviceUserScopedExecutionService.executeSystemUserScoped(any(), any()))
-      .thenAnswer(invocation -> {
-        var callable = invocation.getArgument(1, java.util.concurrent.Callable.class);
-        return callable.call();
-      });
 
     handler.handle(event);
 
@@ -138,6 +93,5 @@ class PieceCreateEventHandlerTest {
     p.setReceivingStatus(Piece.ReceivingStatusEnum.EXPECTED);
     return p;
   }
-
 
 }

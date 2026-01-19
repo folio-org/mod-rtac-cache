@@ -64,13 +64,10 @@ class RtacCacheGenerationServiceEcsIT extends BaseEcsIntegrationTest {
 
     doReturn(TEST_MEMBER_TENANT).when(folioExecutionContext).getTenantId();
     var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_3), PageRequest.of(0, 50));
-    doReturn(TEST_CENTRAL_TENANT).when(folioExecutionContext).getTenantId();
-    var centralHoldings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_3), PageRequest.of(0, 50));
-    var centralPiece = centralHoldings.get()
+    var centralPiece = holdings.get()
       .filter(entity -> TypeEnum.PIECE.equals(entity.getRtacHolding().getType())).findFirst();
 
-    assertEquals(1, holdings.getTotalElements());
-    assertEquals(1, centralHoldings.getTotalElements());
+    assertEquals(2, holdings.getTotalElements());
     assertTrue(centralPiece.isPresent());
     assertEquals(CENTRAL_PIECE_ID, centralPiece.get().getRtacHolding().getId());
     Mockito.reset(folioExecutionContext);

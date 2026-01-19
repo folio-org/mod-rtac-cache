@@ -105,8 +105,14 @@ public class KafkaMessageListener {
     topicPattern = "#{folioKafkaProperties.listener['piece'].topicPattern}")
   public void handlePieceRecord(ConsumerRecord<String, PieceResourceEvent> consumerRecord) {
     var tenantId = getFolioTenantFromHeader(consumerRecord);
+    var resourceEvent = consumerRecord.value();
+    if (resourceEvent != null && resourceEvent.getPieceSnapshot() != null) {
+      var receivingTenantId = resourceEvent.getPieceSnapshot().getReceivingTenantId();
+      if (receivingTenantId != null && !receivingTenantId.isBlank()) {
+        tenantId = receivingTenantId;
+      }
+    }
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
-      var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getPieceEventHandler(resourceEvent.getAction())
         .handle(resourceEvent);
     } );

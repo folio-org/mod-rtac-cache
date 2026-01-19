@@ -155,10 +155,7 @@ public class RtacCacheGenerationService {
             RtacHoldingId.from(rtacHolding), isInstanceShared(instance), rtacHolding, Instant.now()))
           .toList();
         try {
-          systemUserExecutionService.executeSystemUserScoped(piecesTenantId, () -> {
-            rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
-            return null;
-          });
+          rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
           log.info("Saved pieces for holding: {}", holding.getId());
         } catch (Exception e) {
           log.error("Error during bulk upsert of RTAC holdings for pieces: {}", e.getMessage(), e);
