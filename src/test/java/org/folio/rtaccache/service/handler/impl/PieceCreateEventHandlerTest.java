@@ -75,6 +75,23 @@ class PieceCreateEventHandlerTest {
     verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
   }
 
+  @Test
+  void pieceCreate_shouldReturnEarly_whenHoldingIdIsNull() {
+    var piece = new Piece();
+    piece.setId(PIECE_ID);
+    piece.setHoldingId(null);
+
+    var event = new PieceResourceEvent()
+      .action(PieceEventAction.CREATE)
+      .pieceSnapshot(piece);
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).findByIdIdAndIdType(any(UUID.class), any(TypeEnum.class));
+    verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
+    verify(mappingService, never()).mapForPieceTypeFrom(any(RtacHolding.class), any(Piece.class));
+  }
+
   private RtacHolding holdingMapped(TypeEnum type, String id) {
     var rh = new RtacHolding();
     rh.setType(type);
