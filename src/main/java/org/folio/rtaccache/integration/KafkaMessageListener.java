@@ -112,10 +112,9 @@ public class KafkaMessageListener {
         tenantId = receivingTenantId;
       }
     }
-    executionService.executeAsyncSystemUserScoped(tenantId, () -> {
+    executionService.executeAsyncSystemUserScoped(tenantId, () ->
       eventHandlerFactory.getPieceEventHandler(resourceEvent.getAction())
-        .handle(resourceEvent);
-    } );
+      .handle(resourceEvent));
   }
 
   @KafkaListener(
