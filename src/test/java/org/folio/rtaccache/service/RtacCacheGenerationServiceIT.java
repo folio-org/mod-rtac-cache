@@ -26,6 +26,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
   private RtacHoldingRepository rtacHoldingRepository;
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
+
   private static final String INSTANCE_ID_1 = "4de861ab-af9e-4247-bc16-c547d982eb5d";
   private static final String INSTANCE_ID_2 = "5dbab2d4-42f6-47e0-b0c6-023040bd19ff";
   private static final String ITEM_WITH_LOANS_AND_REQUESTS_ID = "9a772288-ead3-4033-b07b-87eff643710f";
