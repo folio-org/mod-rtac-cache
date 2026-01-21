@@ -1,5 +1,6 @@
 package org.folio.rtaccache;
 
+import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 import static org.folio.rtaccache.TestUtil.asString;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -67,7 +68,7 @@ public abstract class BaseIntegrationTest {
 
   @BeforeAll
   static void beforeAll(@Autowired MockMvc mockMvc) throws Exception {
-    setUpTenant(mockMvc);
+    setUpTenant(mockMvc, TEST_TENANT);
   }
 
   protected static HttpHeaders defaultHeaders(String tenant, MediaType mediaType) {
@@ -80,14 +81,14 @@ public abstract class BaseIntegrationTest {
     return httpHeaders;
   }
 
-  protected static void setUpTenant(MockMvc mockMvc) throws Exception {
+  protected static void setUpTenant(MockMvc mockMvc, String tenant) throws Exception {
     var tenantAttributes = new TenantAttributes()
         .moduleTo(MOD_OPAC_RTAC_MODULE)
         .parameters(List.of(new Parameter().key("loadReference").value("true")));
 
     mockMvc.perform(post("/_/tenant")
         .content(asString(tenantAttributes))
-        .headers(defaultHeaders(TestConstant.TEST_TENANT, APPLICATION_JSON))
+        .headers(defaultHeaders(tenant, APPLICATION_JSON))
         .contentType(APPLICATION_JSON))
       .andExpect(status().isNoContent());
   }
