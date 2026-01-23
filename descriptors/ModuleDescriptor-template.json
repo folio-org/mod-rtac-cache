@@ -92,6 +92,11 @@
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/invalidate",
           "permissionsRequired": [ "rtac-cache.invalidate.post" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/rtac-cache/invalidate-all",
+          "permissionsRequired": [ "rtac-cache.invalidate-all.post" ]
         }
       ]
     },
@@ -220,6 +225,11 @@
       "description": "Invalidate RTAC cache entries by instance IDs"
     },
     {
+      "permissionName": "rtac-cache.invalidate-all.post",
+      "displayName": "RTAC Cache - Invalidate all cache entries",
+      "description": "Invalidate all RTAC cache entries"
+    },
+    {
       "permissionName": "rtac-cache.all",
       "displayName": "RTAC Cache - All permissions",
       "description": "All RTAC cache permissions",
@@ -230,7 +240,8 @@
         "rtac-cache.prewarm.collection.get",
         "rtac-cache.prewarm.get",
         "rtac-cache.prewarm.post",
-        "rtac-cache.invalidate.post"
+        "rtac-cache.invalidate.post",
+        "rtac-cache.invalidate-all.post"
           ]
     }
   ],

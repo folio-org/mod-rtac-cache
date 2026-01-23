@@ -121,4 +121,8 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = "DELETE FROM rtac_holding WHERE instance_id IN (:instanceIds)", nativeQuery = true)
   void deleteAllByIdInstanceIdIn(@Param("instanceIds") List<UUID> instanceIds);
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM rtac_holding", nativeQuery = true)
+  void deleteAll();
+
 }

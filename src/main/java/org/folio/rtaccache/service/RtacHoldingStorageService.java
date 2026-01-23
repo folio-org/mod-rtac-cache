@@ -121,6 +121,12 @@ public class RtacHoldingStorageService {
     rtacHoldingRepository.deleteAllByIdInstanceIdIn(instanceIds);
   }
 
+  @Transactional
+  public void deleteAllCacheEntries() {
+    log.info("Deleting all RTAC cache entries");
+    rtacHoldingRepository.deleteAll();
+  }
+
   private List<Throwable> lazyLoadInstances(List<UUID> instanceIds, boolean isCentral) {
     if (isCentral) {
       return rtacHoldingLazyLoadingService.lazyLoadRtacHoldingsEcs(instanceIds);

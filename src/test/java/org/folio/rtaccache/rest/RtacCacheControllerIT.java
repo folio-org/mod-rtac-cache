@@ -366,4 +366,36 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
             .content(new ObjectMapper().writeValueAsString(rtacRequest)))
         .andExpect(status().isBadRequest());
   }
+
+  @Test
+  void postRtacCacheInvalidateAll_success() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    var instanceId1 = UUID.randomUUID();
+    var instanceId2 = UUID.randomUUID();
+    var instanceId3 = UUID.randomUUID();
+    var holdingId1 = UUID.randomUUID();
+    var holdingId2 = UUID.randomUUID();
+    var holdingId3 = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().id(holdingId1.toString());
+    var rtacHolding2 = new RtacHolding().id(holdingId2.toString());
+    var rtacHolding3 = new RtacHolding().id(holdingId3.toString());
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId1, TypeEnum.HOLDING, holdingId1), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId2, TypeEnum.HOLDING, holdingId2), false, rtacHolding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId3, TypeEnum.HOLDING, holdingId3), false, rtacHolding3, Instant.now());
+
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
+    rtacHoldingRepository.save(entity3);
+
+    assertThat(rtacHoldingRepository.count()).isEqualTo(3);
+
+    mockMvc.perform(post("/rtac-cache/invalidate-all")
+            .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+        .andExpect(status().isNoContent());
+
+    assertThat(rtacHoldingRepository.count()).isZero();
+  }
 }
