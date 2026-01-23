@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.UUID;
 import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -63,6 +64,12 @@ public class RtacHoldingBulkRepository {
       '{instanceFormatIds}',
       to_jsonb(?::text[])
     )
+    WHERE instance_id = ?::uuid
+  """;
+
+  private static final String MARK_AS_SHARED_SQL = """
+    UPDATE rtac_holding
+    SET shared = TRUE
     WHERE instance_id = ?::uuid
   """;
 
@@ -127,6 +134,12 @@ public class RtacHoldingBulkRepository {
     }
   }
 
-
+  public void bulkMarkHoldingsAsSharedByInstanceId(UUID instanceId) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+         PreparedStatement ps = connection.prepareStatement(MARK_AS_SHARED_SQL)) {
+      ps.setObject(1, instanceId);
+      ps.executeUpdate();
+    }
+  }
 
 }

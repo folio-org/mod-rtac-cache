@@ -58,4 +58,40 @@ class InstanceUpdateEventHandlerTest {
     verify(holdingRepository).countByIdInstanceId(instanceId);
     verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(instance);
   }
+
+  @Test
+  void instanceUpdate_marksHoldingsShared_whenInstanceBecomesShared() throws Exception {
+    var instanceId = UUID.randomUUID();
+    var oldInstance = new Instance().id(instanceId.toString()).source("local");
+    var newInstance = new Instance().id(instanceId.toString())
+      .source("CONSORTIUM-FOLIO")
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
+    when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(1);
+
+    handler.handle(resourceEvent);
+
+    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
+    verify(rtacHoldingBulkRepository).bulkMarkHoldingsAsSharedByInstanceId(instanceId);
+  }
+
+  @Test
+  void instanceUpdate_doesNotMarkHoldingsShared_whenInstanceAlreadyShared() throws Exception {
+    var instanceId = UUID.randomUUID();
+    var oldInstance = new Instance().id(instanceId.toString()).source("CONSORTIUM-FOLIO");
+    var newInstance = new Instance().id(instanceId.toString())
+      .source("CONSORTIUM-FOLIO")
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
+    when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(1);
+
+    handler.handle(resourceEvent);
+
+    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
+    verify(rtacHoldingBulkRepository, never()).bulkMarkHoldingsAsSharedByInstanceId(any(UUID.class));
+  }
 }

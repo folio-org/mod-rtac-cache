@@ -43,8 +43,8 @@ public class RtacCacheGenerationService {
   private final FolioExecutionContext folioExecutionContext;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
-  private static final String CONSORTIUM_SOURCE = "CONSORTIUM";
   private static final Integer BOUND_WITH_BATCH_SIZE = 500;
+  public static final String CONSORTIUM_SOURCE = "CONSORTIUM";
 
   public CompletableFuture<Void> generateRtacCache(String instanceId) {
     log.info("Started RTAC cache generation for instance id: {} in tenant: {}", instanceId, folioExecutionContext.getTenantId());
