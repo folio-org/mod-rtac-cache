@@ -46,7 +46,11 @@ public class InstanceUpdateEventHandler implements InventoryEventHandler {
   }
 
   private boolean isInstanceBecomeShared(Instance oldInstance, Instance newInstance) {
-    return !oldInstance.getSource().contains(CONSORTIUM_SOURCE) && newInstance.getSource().contains(CONSORTIUM_SOURCE);
+    if (newInstance.getSource() == null) {
+      return false;
+    }
+    return (oldInstance.getSource() == null || !oldInstance.getSource().contains(CONSORTIUM_SOURCE)) &&
+      newInstance.getSource().contains(CONSORTIUM_SOURCE);
   }
 
   @Override

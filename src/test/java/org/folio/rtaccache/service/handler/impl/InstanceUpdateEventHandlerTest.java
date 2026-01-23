@@ -36,8 +36,13 @@ class InstanceUpdateEventHandlerTest {
   @Test
   void instanceUpdate_noBulkUpdate_whenNoHoldingsFound() throws Exception {
     var instanceId = UUID.randomUUID();
-    var instance = new Instance().id(instanceId.toString()).instanceFormatIds(List.of("fmt-1"));
-    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(instance);
+    var oldInstance = new Instance().id(instanceId.toString()).source("CONSORTIUM-FOLIO");
+    var newInstance = new Instance().id(instanceId.toString())
+      .source("CONSORTIUM-FOLIO")
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
     when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(0);
 
     handler.handle(resourceEvent);
@@ -49,14 +54,19 @@ class InstanceUpdateEventHandlerTest {
   @Test
   void instanceUpdate_bulkUpdate_whenHoldingsExistAndFormatIdsPresent() throws Exception {
     var instanceId = UUID.randomUUID();
-    var instance = new Instance().id(instanceId.toString()).instanceFormatIds(List.of("fmt-1"));
-    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(instance);
+    var oldInstance = new Instance().id(instanceId.toString()).source("CONSORTIUM-FOLIO");
+    var newInstance = new Instance().id(instanceId.toString())
+      .source("CONSORTIUM-FOLIO")
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
     when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(2);
 
     handler.handle(resourceEvent);
 
     verify(holdingRepository).countByIdInstanceId(instanceId);
-    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(instance);
+    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
   }
 
   @Test
@@ -93,5 +103,39 @@ class InstanceUpdateEventHandlerTest {
 
     verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
     verify(rtacHoldingBulkRepository, never()).bulkMarkHoldingsAsSharedByInstanceId(any(UUID.class));
+  }
+
+  @Test
+  void instanceUpdate_doesNotMarkHoldingsShared_whenNewInstanceSourceIsNull() throws Exception {
+    var instanceId = UUID.randomUUID();
+    var oldInstance = new Instance().id(instanceId.toString()).source("CONSORTIUM-FOLIO");
+    var newInstance = new Instance().id(instanceId.toString())
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
+    when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(1);
+
+    handler.handle(resourceEvent);
+
+    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
+    verify(rtacHoldingBulkRepository, never()).bulkMarkHoldingsAsSharedByInstanceId(any(UUID.class));
+  }
+
+  @Test
+  void instanceUpdate_marksHoldingsShared_whenOldInstanceSourceIsNull() throws Exception {
+    var instanceId = UUID.randomUUID();
+    var oldInstance = new Instance().id(instanceId.toString());
+    var newInstance = new Instance().id(instanceId.toString()).source("CONSORTIUM-FOLIO")
+      .instanceFormatIds(List.of("fmt-1"));
+
+    when(resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(oldInstance);
+    when(resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class)).thenReturn(newInstance);
+    when(holdingRepository.countByIdInstanceId(instanceId)).thenReturn(1);
+
+    handler.handle(resourceEvent);
+
+    verify(rtacHoldingBulkRepository).bulkUpdateInstanceFormatIds(newInstance);
+    verify(rtacHoldingBulkRepository).bulkMarkHoldingsAsSharedByInstanceId(instanceId);
   }
 }
