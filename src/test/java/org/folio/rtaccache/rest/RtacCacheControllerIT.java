@@ -186,20 +186,15 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   }
 
   @Test
-  void postRtacCacheBatch_withEmptyList() throws Exception {
+  void postRtacCacheBatch_withEmptyList_shouldReturnBadRequest() throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
 
     var rtacRequest = new RtacRequest().instanceIds(List.of());
 
-    var result = mockMvc.perform(post("/rtac-cache/batch")
+    mockMvc.perform(post("/rtac-cache/batch")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(new ObjectMapper().writeValueAsString(rtacRequest)))
-      .andExpect(status().isOk())
-      .andReturn();
-
-    var rtacHoldingsBatch = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldingsBatch.class);
-    assertThat(rtacHoldingsBatch.getHoldings()).isEmpty();
-    assertThat(rtacHoldingsBatch.getErrors()).isEmpty();
+        .andExpect(status().isBadRequest());
   }
 
   @Test
@@ -319,5 +314,56 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
         .content(""))
       .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void postRtacCacheInvalidate_success() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    var instanceId1 = UUID.randomUUID();
+    var instanceId2 = UUID.randomUUID();
+    var instanceId3 = UUID.randomUUID();
+    var holdingId1 = UUID.randomUUID();
+    var holdingId2 = UUID.randomUUID();
+    var holdingId3 = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().id(holdingId1.toString());
+    var rtacHolding2 = new RtacHolding().id(holdingId2.toString());
+    var rtacHolding3 = new RtacHolding().id(holdingId3.toString());
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId1, TypeEnum.HOLDING, holdingId1), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId2, TypeEnum.HOLDING, holdingId2), false, rtacHolding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId3, TypeEnum.HOLDING, holdingId3), false, rtacHolding3, Instant.now());
+
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
+    rtacHoldingRepository.save(entity3);
+
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId1)).isEqualTo(1);
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId2)).isEqualTo(1);
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId3)).isEqualTo(1);
+
+    var rtacRequest = new RtacRequest().instanceIds(List.of(instanceId1.toString(), instanceId2.toString()));
+
+    mockMvc.perform(post("/rtac-cache/invalidate")
+            .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
+            .content(new ObjectMapper().writeValueAsString(rtacRequest)))
+        .andExpect(status().isNoContent());
+
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId1)).isZero();
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId2)).isZero();
+    assertThat(rtacHoldingRepository.countByIdInstanceId(instanceId3)).isEqualTo(1);
+  }
+
+  @Test
+  void postRtacCacheInvalidate_withEmptyList_shouldReturnBadRequest() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    var rtacRequest = new RtacRequest().instanceIds(List.of());
+
+    mockMvc.perform(post("/rtac-cache/invalidate")
+            .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON))
+            .content(new ObjectMapper().writeValueAsString(rtacRequest)))
+        .andExpect(status().isBadRequest());
   }
 }

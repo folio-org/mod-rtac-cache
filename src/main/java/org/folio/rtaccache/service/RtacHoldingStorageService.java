@@ -26,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -112,6 +113,12 @@ public class RtacHoldingStorageService {
     result.setHoldings(holdings);
     result.setErrors(errors);
     return result;
+  }
+
+  @Transactional
+  public void deleteByInstanceIds(List<UUID> instanceIds) {
+    log.debug("Deleting RTAC cache entries for instance IDs: {}", instanceIds);
+    rtacHoldingRepository.deleteAllByIdInstanceIdIn(instanceIds);
   }
 
   private List<Throwable> lazyLoadInstances(List<UUID> instanceIds, boolean isCentral) {

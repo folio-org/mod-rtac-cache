@@ -5,6 +5,7 @@
     "instanceIds": {
       "description": "Inventory instances identifiers",
       "type": "array",
+      "minItems": 1,
       "items": {
         "$ref": "uuid.json"
       }
