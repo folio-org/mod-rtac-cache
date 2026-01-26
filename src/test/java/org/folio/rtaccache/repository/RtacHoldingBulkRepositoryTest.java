@@ -2,6 +2,7 @@ package org.folio.rtaccache.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -140,6 +141,31 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     var unchanged = findByLibraryId(retrieved, LIBRARY_ID_2);
     assertEquals("OTHER_CODE", unchanged.getRtacHolding().getLibrary().getCode());
     assertEquals("Other Name", unchanged.getRtacHolding().getLibrary().getName());
+  }
+
+  @Test
+  void bulkMarkHoldingsAsSharedByInstanceId_marksMatchingInstanceShared() throws SQLException {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+
+    var instanceIdToMark = UUID.randomUUID();
+
+    var holding1 = getRtacHolding(ITEM_ID_1, instanceIdToMark.toString());
+    var holding2 = getRtacHolding(ITEM_ID_2, instanceIdToMark.toString());
+
+    var e1 = new RtacHoldingEntity(RtacHoldingId.from(holding1), false, holding1, Instant.now());
+    var e2 = new RtacHoldingEntity(RtacHoldingId.from(holding2), false, holding2, Instant.now());
+
+    rtacHoldingRepository.saveAll(List.of(e1, e2));
+
+    rtacHoldingBulkRepository.bulkMarkHoldingsAsSharedByInstanceId(instanceIdToMark);
+
+    var retrieved = rtacHoldingRepository.findAll();
+
+    var updatedForInstance = retrieved.stream()
+      .filter(h -> instanceIdToMark.equals(h.getId().getInstanceId()))
+      .toList();
+    assertEquals(2, updatedForInstance.size());
+    assertTrue(updatedForInstance.stream().allMatch(RtacHoldingEntity::isShared));
   }
 
   private RtacHolding getRtacHolding(String itemId1, String instanceId) {

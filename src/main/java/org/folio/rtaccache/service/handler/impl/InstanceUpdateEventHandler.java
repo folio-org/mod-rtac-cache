@@ -1,5 +1,7 @@
 package org.folio.rtaccache.service.handler.impl;
 
+import static org.folio.rtaccache.service.RtacCacheGenerationService.CONSORTIUM_SOURCE;
+
 import java.sql.SQLException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,16 +29,28 @@ public class InstanceUpdateEventHandler implements InventoryEventHandler {
   @Override
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
-    var instance = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class);
-    var count = holdingRepository.countByIdInstanceId(UUID.fromString(instance.getId()));
+    var oldInstance = resourceEventUtil.getOldFromInventoryEvent(resourceEvent, Instance.class);
+    var newInstance = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Instance.class);
+    var count = holdingRepository.countByIdInstanceId(UUID.fromString(newInstance.getId()));
     if (count > 0) {
       try {
-        rtacHoldingBulkRepository.bulkUpdateInstanceFormatIds(instance);
+        rtacHoldingBulkRepository.bulkUpdateInstanceFormatIds(newInstance);
+        if (isInstanceBecomeShared(oldInstance, newInstance)) {
+          rtacHoldingBulkRepository.bulkMarkHoldingsAsSharedByInstanceId(
+            UUID.fromString(newInstance.getId()));
+        }
       } catch (SQLException e) {
-        log.error("Error during updating RTAC holdings with format ids by instanceId: {}", instance.getId(), e);
+        log.error("Error during updating RTAC holdings with format ids by instanceId: {}", newInstance.getId(), e);
       }
     }
+  }
 
+  private boolean isInstanceBecomeShared(Instance oldInstance, Instance newInstance) {
+    if (newInstance.getSource() == null) {
+      return false;
+    }
+    return (oldInstance.getSource() == null || !oldInstance.getSource().contains(CONSORTIUM_SOURCE)) &&
+      newInstance.getSource().contains(CONSORTIUM_SOURCE);
   }
 
   @Override

@@ -36,6 +36,7 @@ public class ItemCreateEventHandler implements InventoryEventHandler {
         var newRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
         var newHoldingEntity = new RtacHoldingEntity();
         newHoldingEntity.setId(newRtacHoldingId);
+        newHoldingEntity.setShared(existingHoldingsEntity.isShared());
         newHoldingEntity.setCreatedAt(Instant.now());
         newHoldingEntity.setRtacHolding(newRtacHolding);
         holdingRepository.save(newHoldingEntity);
