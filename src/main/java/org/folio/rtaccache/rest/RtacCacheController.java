@@ -88,6 +88,30 @@ public class RtacCacheController implements RtacApi {
   }
 
   @Override
+  public ResponseEntity<Void> postRtacCacheInvalidate(RtacRequest rtacRequest) {
+    log.info("Received request to invalidate RTAC cache entries for {} instance IDs", rtacRequest.getInstanceIds().size());
+
+    List<UUID> instanceIds = rtacRequest.getInstanceIds().stream()
+      .map(UUID::fromString)
+      .toList();
+
+    rtacHoldingStorageService.deleteByInstanceIds(instanceIds);
+
+    log.info("Successfully invalidated RTAC cache entries for {} instance IDs", instanceIds.size());
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
+
+  @Override
+  public ResponseEntity<Void> postRtacCacheInvalidateAll() {
+    log.info("Received request to invalidate all RTAC cache entries");
+
+    rtacHoldingStorageService.deleteAllCacheEntries();
+
+    log.info("Successfully invalidated all RTAC cache entries");
+    return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
+
+  @Override
   public ResponseEntity<RtacPreWarmingJob> postRtacCachePreWarmingJob(
     RtacSubmitPreWarming rtacSubmitPrewarmingRequest) {
     return ResponseEntity.ok(rtacCachePreWarmingService.submitPreWarmingJob(rtacSubmitPrewarmingRequest.getInstanceIds()));
