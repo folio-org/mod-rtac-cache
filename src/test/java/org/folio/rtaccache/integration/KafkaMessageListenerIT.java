@@ -103,6 +103,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.6.1";
   private static final ConfluentKafkaContainer kafkaContainer = new ConfluentKafkaContainer(
     DockerImageName.parse(KAFKA_IMAGE_VERSION));
+  private static final String INSTANCE_FORMAT_ID = "549e3381-7d49-44f6-8232-37af1cb5ecf3";
 
   static {
     kafkaContainer.start();
@@ -151,6 +152,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         var holding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID_1));
         assertThat(holding).isPresent();
         assertThat(holding.get().getRtacHolding().getId()).isEqualTo(HOLDINGS_ID_1);
+        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
         assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.HOLDING);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATEMENT);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
@@ -267,6 +269,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
         assertThat(holding.get().getRtacHolding().getLocation().getId()).isEqualTo(NEW_LOCATION_ID);
         assertThat(holding.get().getRtacHolding().getMaterialType().getName()).isEqualTo(NEW_MATERIAL_TYPE_NAME);
@@ -402,6 +405,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(PIECE_ID));
         assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo("Expected");
       });
     });
@@ -571,6 +575,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         var holding = holdingRepository.findById(rtacHoldingId);
         assertThat(holding).isPresent();
         assertThat(holding.get().getRtacHolding().getId()).isEqualTo(ITEM_ID);
+        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
         assertThat(holding.get().getRtacHolding().getIsBoundWith()).isEqualTo(true);
       });
     });
@@ -610,8 +615,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         var holding = holdingRepository.findById(rtacHoldingId);
         assertThat(holding).isPresent();
         assertThat(holding.get().getRtacHolding().getInstanceFormatIds().size()).isEqualTo(1);
-        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(
-          "549e3381-7d49-44f6-8232-37af1cb5ecf3");
+        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
       });
     });
   }
@@ -643,7 +647,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       assertThat(holding).isPresent();
       assertThat(holding.get().getRtacHolding().getInstanceFormatIds()).hasSize(1);
       assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(
-        "549e3381-7d49-44f6-8232-37af1cb5ecf3");
+        INSTANCE_FORMAT_ID);
     }));
   }
 
@@ -692,6 +696,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
     rtacHolding.setTotalHoldRequests(1);
     rtacHolding.setIsBoundWith(isBoundWith);
+    rtacHolding.setInstanceFormatIds(List.of(INSTANCE_FORMAT_ID));
 
     var location = new RtacHoldingLocation();
     location.setId(OLD_LOCATION_ID);

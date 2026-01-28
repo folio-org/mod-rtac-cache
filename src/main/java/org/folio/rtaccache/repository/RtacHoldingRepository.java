@@ -51,6 +51,8 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
 
   Optional<RtacHoldingEntity> findByIdIdAndIdType(UUID id, RtacHolding.TypeEnum type);
 
+  List<RtacHoldingEntity> findAllByIdInstanceIdAndIdType(UUID instanceId, RtacHolding.TypeEnum type);
+
   @Query(value = "SELECT * FROM rtac_holding WHERE rtac_holding_json->>'holdingsId' = :holdingsId", nativeQuery = true)
   List<RtacHoldingEntity> findAllByHoldingsId(@Param("holdingsId") String holdingsId);
 

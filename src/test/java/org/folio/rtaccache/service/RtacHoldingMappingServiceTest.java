@@ -214,6 +214,7 @@ class RtacHoldingMappingServiceTest {
     RtacHolding existingRtacHolding = new RtacHolding();
     existingRtacHolding.setInstanceId(instanceId);
     existingRtacHolding.setHoldingsId(holdingId);
+    existingRtacHolding.setInstanceFormatIds(List.of("fmt-1", "fmt-2")); // cover copy
 
     Item item = new Item();
     item.setId(itemId);
@@ -234,6 +235,7 @@ class RtacHoldingMappingServiceTest {
     assertEquals("new-barcode", result.getBarcode());
     assertEquals("new-call-number", result.getCallNumber());
     assertEquals(NameEnum.AVAILABLE.getValue(), result.getStatus());
+    assertEquals(List.of("fmt-1", "fmt-2"), result.getInstanceFormatIds()); // asserts line 136
   }
 
   @Test
@@ -259,6 +261,33 @@ class RtacHoldingMappingServiceTest {
     assertEquals(holdingId, result.getHoldingsId());
     assertEquals("holding-call-number", result.getCallNumber());
     assertEquals(Piece.ReceivingStatusEnum.EXPECTED.getValue(), result.getStatus());
+  }
+
+  @Test
+  void testMapForBoundWithItemTypeFrom_CopiesInstanceFormatIdsFromHoldingsHolding() {
+    RtacHolding holdingsRtacHolding = new RtacHolding();
+    holdingsRtacHolding.setInstanceId(UUID.randomUUID().toString());
+    holdingsRtacHolding.setHoldingsId(UUID.randomUUID().toString());
+    holdingsRtacHolding.setHoldingsCopyNumber("h-copy-1");
+    holdingsRtacHolding.setInstanceFormatIds(List.of("bfmt-1")); // cover copy
+
+    RtacHolding itemRtacHolding = new RtacHolding();
+    itemRtacHolding.setId(UUID.randomUUID().toString());
+    itemRtacHolding.setBarcode("i-barcode");
+    itemRtacHolding.setCallNumber("i-call");
+    itemRtacHolding.setItemCopyNumber("i-copy-1");
+    itemRtacHolding.setStatus("Available");
+    itemRtacHolding.setSuppressFromDiscovery(false);
+
+    RtacHolding result = rtacHoldingMappingService.mapForBoundWithItemTypeFrom(holdingsRtacHolding, itemRtacHolding);
+
+    assertNotNull(result);
+    assertEquals(RtacHolding.TypeEnum.ITEM, result.getType());
+    assertEquals(itemRtacHolding.getId(), result.getId());
+    assertEquals(holdingsRtacHolding.getInstanceId(), result.getInstanceId());
+    assertEquals(holdingsRtacHolding.getHoldingsId(), result.getHoldingsId());
+    assertEquals(List.of("bfmt-1"), result.getInstanceFormatIds()); // asserts line 162
+    assertEquals(true, result.getIsBoundWith());
   }
 
 }
