@@ -133,6 +133,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setType(TypeEnum.ITEM);
     newRtacHolding.setInstanceId(existingRtacHolding.getInstanceId());
     newRtacHolding.setHoldingsId(existingRtacHolding.getHoldingsId());
+    newRtacHolding.setInstanceFormatIds(existingRtacHolding.getInstanceFormatIds());
     newRtacHolding.setBarcode(item.getBarcode());
     newRtacHolding.setCallNumber(item.getItemLevelCallNumber());
     newRtacHolding.setHoldingsCopyNumber(existingRtacHolding.getHoldingsCopyNumber());
@@ -158,6 +159,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setId(itemRtacHolding.getId());
     newRtacHolding.setType(TypeEnum.ITEM);
     newRtacHolding.setInstanceId(holdingsRtacHolding.getInstanceId());
+    newRtacHolding.setInstanceFormatIds(holdingsRtacHolding.getInstanceFormatIds());
     newRtacHolding.setHoldingsId(holdingsRtacHolding.getHoldingsId());
     newRtacHolding.setBarcode(itemRtacHolding.getBarcode());
     newRtacHolding.setCallNumber(itemRtacHolding.getCallNumber());
@@ -205,6 +207,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setId(piece.getId());
     newRtacHolding.setType(TypeEnum.PIECE);
     newRtacHolding.setInstanceId(existingRtacHolding.getInstanceId());
+    newRtacHolding.setInstanceFormatIds(existingRtacHolding.getInstanceFormatIds());
     newRtacHolding.setHoldingsId(existingRtacHolding.getId());
     newRtacHolding.setCallNumber(existingRtacHolding.getCallNumber());
     newRtacHolding.setHoldingsCopyNumber(piece.getCopyNumber());

@@ -84,6 +84,7 @@ public class RtacCacheGenerationService {
 
   private void saveHolding(Instance instance, HoldingsRecord holding) {
     var rtacHolding = rtacHoldingMappingService.mapFrom(holding);
+    rtacHolding.setInstanceFormatIds(instance.getInstanceFormatIds());
     var entityId = RtacHoldingId.from(rtacHolding);
     var rtacHoldingEntity = new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
     try {
@@ -150,7 +151,11 @@ public class RtacCacheGenerationService {
       if (response.getTotalRecords() != 0) {
         var pieces = response.getPieces();
         var rtacHoldings = pieces.stream()
-          .map(piece -> rtacHoldingMappingService.mapFrom(holding, piece))
+          .map(piece ->  {
+            var rtacHolding = rtacHoldingMappingService.mapFrom(holding, piece);
+            rtacHolding.setInstanceFormatIds(instance.getInstanceFormatIds());
+            return rtacHolding;
+          })
           .map(rtacHolding -> new RtacHoldingEntity(
             RtacHoldingId.from(rtacHolding), isInstanceShared(instance), rtacHolding, Instant.now()))
           .toList();
@@ -216,6 +221,7 @@ public class RtacCacheGenerationService {
     rtacHolding.setDueDate(dueDateMap.getOrDefault(rtacHolding.getId(), null));
     rtacHolding.setTotalHoldRequests(Math.toIntExact(holdCountMap.getOrDefault(rtacHolding.getId(), 0L)));
     rtacHolding.setIsBoundWith(isItemBoundWithHoldings(item, holding));
+    rtacHolding.setInstanceFormatIds(instance.getInstanceFormatIds());
     var entityId = RtacHoldingId.from(rtacHolding);
     return new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
   }

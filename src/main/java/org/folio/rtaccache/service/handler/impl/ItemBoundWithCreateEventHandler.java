@@ -45,6 +45,7 @@ public class ItemBoundWithCreateEventHandler implements InventoryEventHandler {
             var boundWithRtacHoldingEntity = new RtacHoldingEntity();
             var boundWithRtacHoldingId = getRtacHoldingId(boundWithPart);
             boundWithRtacHoldingEntity.setId(boundWithRtacHoldingId);
+            boundWithRtacHoldingEntity.setShared(existingHoldingsEntity.isShared());
             boundWithRtacHoldingEntity.setCreatedAt(existingItemEntity.getCreatedAt());
             boundWithRtacHoldingEntity.setRtacHolding(boundWithRtacHolding);
             rtacHoldingRepository.save(boundWithRtacHoldingEntity);
