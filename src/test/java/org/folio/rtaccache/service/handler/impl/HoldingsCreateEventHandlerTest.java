@@ -2,6 +2,7 @@ package org.folio.rtaccache.service.handler.impl;
 
 import static org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum.HOLDING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -60,6 +61,7 @@ class HoldingsCreateEventHandlerTest {
 
     verify(holdingRepository).save(entityCaptor.capture());
     var savedEntity = entityCaptor.getValue();
+    assertTrue(savedEntity.isShared());
     assertEquals(HOLDINGS_ID, savedEntity.getId().getId().toString());
     assertEquals(INSTANCE_ID, savedEntity.getId().getInstanceId().toString());
     assertEquals(HOLDING, savedEntity.getId().getType());
@@ -105,6 +107,7 @@ class HoldingsCreateEventHandlerTest {
     var rtacHolding = getRtacHolding(type, id);
     var entity = new RtacHoldingEntity();
     entity.setRtacHolding(rtacHolding);
+    entity.setShared(true);
     return entity;
   }
 

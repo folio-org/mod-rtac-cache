@@ -37,12 +37,14 @@ public class HoldingsCreateEventHandler implements InventoryEventHandler {
       if (CollectionUtils.isEmpty(existingRtacHoldings)) {
         return;
       }
-      var existingRtacHolding = existingRtacHoldings.getFirst().getRtacHolding();
+      var existingRtacHoldingEntity = existingRtacHoldings.getFirst();
+      var existingRtacHolding = existingRtacHoldingEntity.getRtacHolding();
       var rtacHolding = rtacHoldingMappingService.mapFrom(holdingsData);
       rtacHolding.setInstanceFormatIds(existingRtacHolding.getInstanceFormatIds());
       var rtacHoldingId = createRtacHoldingIdFromHoldings(holdingsData);
       var rtacHoldingEntity = new RtacHoldingEntity();
       rtacHoldingEntity.setId(rtacHoldingId);
+      rtacHoldingEntity.setShared(existingRtacHoldingEntity.isShared());
       rtacHoldingEntity.setCreatedAt(Instant.now());
       rtacHoldingEntity.setRtacHolding(rtacHolding);
       holdingRepository.save(rtacHoldingEntity);
