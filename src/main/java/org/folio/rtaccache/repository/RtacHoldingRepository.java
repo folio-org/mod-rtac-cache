@@ -119,4 +119,12 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
   @Query(value = "SELECT public.delete_old_holdings_all_tenants(:cutoffTime)", nativeQuery = true)
   int deleteOldHoldingsAllTenants(@Param("cutoffTime") Instant cutoffTime);
 
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM rtac_holding WHERE instance_id IN (:instanceIds)", nativeQuery = true)
+  void deleteAllByIdInstanceIdIn(@Param("instanceIds") List<UUID> instanceIds);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM rtac_holding", nativeQuery = true)
+  void deleteAll();
+
 }
