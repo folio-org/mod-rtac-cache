@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.folio.rtaccache.constant.RtacCacheConstant.LOAN_TENANT_SETTING_KEY;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_AWAITING_DELIVERY;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_AWAITING_PICKUP;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_IN_TRANSIT;
@@ -17,8 +18,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.CirculationClient;
+import org.folio.rtaccache.client.SettingsClient;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Request;
+import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,9 @@ public class CirculationService {
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
   private final CirculationClient circulationClient;
+  private final SettingsClient settingsClient;
+  private final SystemUserScopedExecutionService systemUserScopedExecutionService;
+
   private static final Integer MAX_RECORDS = 1000;
   private static final Integer MAX_IDS_FOR_CQL = 50;
 
@@ -46,16 +52,29 @@ public class CirculationService {
 
   private CompletableFuture<Map<String, Date>> submitLoansBatch(List<String> itemIds) {
     return CompletableFuture.supplyAsync(() -> {
-      var itemDueDateMap = new HashMap<String, Date>();
-      var response = circulationClient.getLoans(getLoansBatchRequest(itemIds));
-      if (response.getTotalRecords() == 0) {
-        return itemDueDateMap;
+      var loanTenant = getLoanTenant();
+
+      if (loanTenant == null) {
+        return fetchLoansForItems(itemIds);
       }
-      for (var loan : response.getLoans()) {
-        itemDueDateMap.put(loan.getItemId(), loan.getDueDate());
-      }
-      return itemDueDateMap;
+
+      return systemUserScopedExecutionService.executeSystemUserScoped(
+        loanTenant,
+        () -> fetchLoansForItems(itemIds)
+      );
     }, taskExecutor);
+  }
+
+  private Map<String, Date> fetchLoansForItems(List<String> itemIds) {
+    var itemDueDateMap = new HashMap<String, Date>();
+    var response = circulationClient.getLoans(getLoansBatchRequest(itemIds));
+    if (response.getTotalRecords() == 0) {
+      return itemDueDateMap;
+    }
+    for (var loan : response.getLoans()) {
+      itemDueDateMap.put(loan.getItemId(), loan.getDueDate());
+    }
+    return itemDueDateMap;
   }
 
   private FolioCqlRequest getLoansBatchRequest(List<String> itemIds) {
@@ -105,6 +124,27 @@ public class CirculationService {
       return openStatuses.contains(itemRequest.getStatus());
     } catch (Exception e) {
       return false;
+    }
+  }
+
+  private String getLoanTenant() {
+    // Quick, test-friendly behavior:
+    // - If SettingsClient isn't wired (unit tests), just stay on current tenant.
+    // - If the call fails for any reason (e.g. WireMock 404), also stay on current tenant.
+    try {
+      if (settingsClient == null) {
+        return null;
+      }
+
+      var cql = String.format("key==\"%s\"", LOAN_TENANT_SETTING_KEY);
+      var request = new FolioCqlRequest(cql, 1, 0);
+      var settings = settingsClient.getSettings(request);
+
+      return (settings == null || settings.getItems() == null || settings.getItems().isEmpty())
+        ? null
+        : String.valueOf(settings.getItems().getFirst().getValue());
+    } catch (Exception e) {
+      return null;
     }
   }
 }

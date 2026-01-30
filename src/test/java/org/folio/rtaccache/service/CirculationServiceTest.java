@@ -1,6 +1,5 @@
 package org.folio.rtaccache.service;
 
-
 import static org.folio.rtaccache.TestUtil.queryContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.any;
@@ -14,11 +13,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.folio.rtaccache.client.CirculationClient;
+import org.folio.rtaccache.client.SettingsClient;
 import org.folio.rtaccache.domain.dto.Loan;
 import org.folio.rtaccache.domain.dto.Loans;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.rtaccache.domain.dto.Request.StatusEnum;
 import org.folio.rtaccache.domain.dto.Requests;
+import org.folio.rtaccache.domain.dto.Settings;
+import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,10 @@ class CirculationServiceTest {
 
   @Mock
   private CirculationClient circulationClient;
+  @Mock
+  private SettingsClient settingsClient;
+  @Mock
+  private SystemUserScopedExecutionService systemUserScopedExecutionService;
   @Spy
   private AsyncTaskExecutor asyncTaskExecutor = new VirtualThreadTaskExecutor();
   @InjectMocks
@@ -40,6 +46,9 @@ class CirculationServiceTest {
 
   @Test
   void getLoanDueDatesForItems_shouldFetchLoansInParallel() {
+    when(settingsClient.getSettings(any()))
+      .thenReturn(new Settings().items(List.of()));
+
     List<String> itemIds = new ArrayList<>();
     for (int i = 0; i < 100; i++) {
       itemIds.add("id_" + i);
