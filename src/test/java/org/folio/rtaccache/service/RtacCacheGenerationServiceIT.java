@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
@@ -36,8 +37,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
 
-  // IMPORTANT: use @MockBean here so the Feign client does not perform real HTTP calls
-  @org.springframework.boot.test.mock.mockito.MockBean
+  @MockitoBean
   private SettingsClient settingsClient;
 
   private static final String INSTANCE_ID_1 = "4de861ab-af9e-4247-bc16-c547d982eb5d";
@@ -48,8 +48,6 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    // Simulate settings module being reachable with no RTAC_LOAN_TENANT configured
-    // Using lenient to avoid strict stubbing issues with Mockito
     lenient().when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
       .thenReturn(new Settings().items(List.of()));
   }

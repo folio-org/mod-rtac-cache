@@ -128,23 +128,12 @@ public class CirculationService {
   }
 
   private String getLoanTenant() {
-    // Quick, test-friendly behavior:
-    // - If SettingsClient isn't wired (unit tests), just stay on current tenant.
-    // - If the call fails for any reason (e.g. WireMock 404), also stay on current tenant.
-    try {
-      if (settingsClient == null) {
-        return null;
-      }
+    var cql = String.format("key==\"%s\"", LOAN_TENANT_SETTING_KEY);
+    var request = new FolioCqlRequest(cql, 1, 0);
+    var settings = settingsClient.getSettings(request);
 
-      var cql = String.format("key==\"%s\"", LOAN_TENANT_SETTING_KEY);
-      var request = new FolioCqlRequest(cql, 1, 0);
-      var settings = settingsClient.getSettings(request);
-
-      return (settings == null || settings.getItems() == null || settings.getItems().isEmpty())
-        ? null
-        : String.valueOf(settings.getItems().getFirst().getValue());
-    } catch (Exception e) {
-      return null;
-    }
+    return (settings == null || settings.getItems().isEmpty())
+      ? null
+      : String.valueOf(settings.getItems().getFirst().getValue());
   }
 }
