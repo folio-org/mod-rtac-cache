@@ -155,4 +155,13 @@
       </sql>
     </rollback>
   </changeSet>
+
+  <changeSet id="update-rtac-holdings-multi-tenant-function-003" author="Ivan_Zhunkivskyi">
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holdings_multi_tenant(text, uuid[]);
+      </sql>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>
