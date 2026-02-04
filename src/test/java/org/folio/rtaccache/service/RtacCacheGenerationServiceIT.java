@@ -71,17 +71,14 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     );
 
     var itemWithLoans = holdings.get()
-      .filter(entity -> entity.getRtacHolding().getDueDate() != null)
-      .findFirst();
+      .filter(entity -> entity.getRtacHolding().getDueDate() != null).findFirst();
 
     var piece = holdings.get()
-      .filter(entity -> TypeEnum.PIECE.equals(entity.getRtacHolding().getType()))
-      .findFirst();
+      .filter(entity -> TypeEnum.PIECE.equals(entity.getRtacHolding().getType())).findFirst();
 
     var itemWithHoldCount = holdings.get()
       .filter(entity -> entity.getRtacHolding().getTotalHoldRequests() != null
-        && entity.getRtacHolding().getTotalHoldRequests() > 0)
-      .findFirst();
+        && entity.getRtacHolding().getTotalHoldRequests() > 0).findFirst();
 
     assertEquals(7, holdings.getTotalElements());
     assertTrue(itemWithLoans.isPresent());
@@ -101,10 +98,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_2);
     future.join();
 
-    var holdings = rtacHoldingRepository.findAllByIdInstanceId(
-      UUID.fromString(INSTANCE_ID_2),
-      PageRequest.of(0, 50)
-    );
+    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_2), PageRequest.of(0, 50));
 
     assertEquals(2, holdings.getTotalElements());
 
