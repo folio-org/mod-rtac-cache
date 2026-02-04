@@ -34,7 +34,7 @@ public class CirculationService {
   private final AsyncTaskExecutor taskExecutor;
   private final CirculationClient circulationClient;
   private final SettingsClient settingsClient;
-  private final SystemUserScopedExecutionService systemUserScopedExecutionService;
+  private final SystemUserScopedExecutionService executionService;
 
   private static final Integer MAX_RECORDS = 1000;
   private static final Integer MAX_IDS_FOR_CQL = 50;
@@ -58,7 +58,7 @@ public class CirculationService {
         return fetchLoansForItems(itemIds);
       }
 
-      return systemUserScopedExecutionService.executeSystemUserScoped(
+      return executionService.executeSystemUserScoped(
         loanTenant,
         () -> fetchLoansForItems(itemIds)
       );
