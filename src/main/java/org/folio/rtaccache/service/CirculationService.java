@@ -1,7 +1,6 @@
 package org.folio.rtaccache.service;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
-import static org.folio.rtaccache.constant.RtacCacheConstant.LOAN_TENANT_SETTING_KEY;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_AWAITING_DELIVERY;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_AWAITING_PICKUP;
 import static org.folio.rtaccache.domain.dto.Request.StatusEnum.OPEN_IN_TRANSIT;
@@ -18,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.CirculationClient;
-import org.folio.rtaccache.client.SettingsClient;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.spring.service.SystemUserScopedExecutionService;
@@ -33,7 +31,7 @@ public class CirculationService {
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
   private final CirculationClient circulationClient;
-  private final SettingsClient settingsClient;
+  private final SettingsService settingsService;
   private final SystemUserScopedExecutionService executionService;
 
   private static final Integer MAX_RECORDS = 1000;
@@ -52,7 +50,7 @@ public class CirculationService {
 
   private CompletableFuture<Map<String, Date>> submitLoansBatch(List<String> itemIds) {
     return CompletableFuture.supplyAsync(() -> {
-      var loanTenant = getLoanTenant();
+      var loanTenant = settingsService.getLoanTenant();
 
       if (loanTenant == null) {
         return fetchLoansForItems(itemIds);
@@ -125,15 +123,5 @@ public class CirculationService {
     } catch (Exception e) {
       return false;
     }
-  }
-
-  private String getLoanTenant() {
-    var cql = String.format("key==\"%s\"", LOAN_TENANT_SETTING_KEY);
-    var request = new FolioCqlRequest(cql, 1, 0);
-    var settings = settingsClient.getSettings(request);
-
-    return (settings == null || settings.getItems().isEmpty())
-      ? null
-      : String.valueOf(settings.getItems().getFirst().getValue());
   }
 }

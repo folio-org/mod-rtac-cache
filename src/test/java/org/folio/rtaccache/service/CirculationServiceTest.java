@@ -13,15 +13,11 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.folio.rtaccache.client.CirculationClient;
-import org.folio.rtaccache.client.SettingsClient;
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Loan;
 import org.folio.rtaccache.domain.dto.Loans;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.rtaccache.domain.dto.Request.StatusEnum;
 import org.folio.rtaccache.domain.dto.Requests;
-import org.folio.rtaccache.domain.dto.Settings;
-import org.folio.rtaccache.domain.dto.SettingsItemsInner;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +35,7 @@ class CirculationServiceTest {
   private CirculationClient circulationClient;
 
   @Mock
-  private SettingsClient settingsClient;
+  private SettingsService settingsService;
 
   @Mock
   private SystemUserScopedExecutionService executionService;
@@ -52,9 +48,7 @@ class CirculationServiceTest {
 
   @Test
   void getLoanDueDatesForItems_shouldFetchLoansInParallel() {
-    // Mock empty settings so that getLoanTenant() returns null
-    var emptySettings = new Settings(List.of());
-    when(settingsClient.getSettings(any(FolioCqlRequest.class))).thenReturn(emptySettings);
+    when(settingsService.getLoanTenant()).thenReturn(null);
 
     List<String> itemIds = new ArrayList<>();
     for (int i = 0; i < 100; i++) {
@@ -86,10 +80,7 @@ class CirculationServiceTest {
 
   @Test
   void getLoanDueDatesForItems_shouldUseLoanTenantWhenSettingPresent() throws Exception {
-    var settingsItem = new SettingsItemsInner().value("centralTenant");
-    var settings = new Settings(List.of(settingsItem));
-
-    when(settingsClient.getSettings(any(FolioCqlRequest.class))).thenReturn(settings);
+    when(settingsService.getLoanTenant()).thenReturn("centralTenant");
 
     doAnswer(invocation -> {
       Callable<?> task = invocation.getArgument(1);
@@ -117,7 +108,7 @@ class CirculationServiceTest {
 
     var response = circulationService.getLoanDueDatesForItems(itemIds);
 
-    verify(settingsClient, times(1)).getSettings(any(FolioCqlRequest.class));
+    verify(settingsService, times(1)).getLoanTenant();
     verify(executionService, times(1)).executeSystemUserScoped(any(), any());
     verify(circulationClient, times(1)).getLoans(any());
     assertEquals(2, response.size());
