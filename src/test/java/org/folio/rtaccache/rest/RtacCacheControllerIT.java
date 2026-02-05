@@ -307,6 +307,91 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  void holdingsByInstanceId_shouldSkipSuppressedItems() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+    var holdingId1 = UUID.randomUUID();
+    var holdingId2 = UUID.randomUUID();
+    var holdingId3 = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().id(holdingId1.toString()).suppressFromDiscovery(false);
+    var rtacHolding2 = new RtacHolding().id(holdingId2.toString()).holdingsId(holdingId1.toString()).suppressFromDiscovery(true);
+    var rtacHolding3 = new RtacHolding().id(holdingId3.toString()).holdingsId(holdingId1.toString()).suppressFromDiscovery(false);
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.HOLDING, holdingId1), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, holdingId2), false, rtacHolding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, holdingId3), false, rtacHolding3, Instant.now());
+
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
+    rtacHoldingRepository.save(entity3);
+
+    var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings()).hasSize(1);
+    assertThat(rtacHoldings.getHoldings().get(0).getId()).isEqualTo(holdingId3.toString());
+  }
+
+  @Test
+  void holdingsByInstanceId_shouldSkipNotSuppressedItemsIfCorrespondingHoldingIsSuppressed() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+    var holdingId1 = UUID.randomUUID();
+    var holdingId2 = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().id(holdingId1.toString()).suppressFromDiscovery(true);
+    var rtacHolding2 = new RtacHolding().id(holdingId2.toString()).holdingsId(holdingId1.toString()).suppressFromDiscovery(false);
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.HOLDING, holdingId1), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, holdingId2), false, rtacHolding2, Instant.now());
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
+
+    var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings()).isEmpty();
+  }
+
+  @Test
+  void holdingsByInstanceId_shouldReturnItemsIfSuppressFromDiscoveryIsNull() throws Exception {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var instanceId = UUID.randomUUID();
+    var holdingId1 = UUID.randomUUID();
+    var holdingId2 = UUID.randomUUID();
+
+    var rtacHolding1 = new RtacHolding().id(holdingId1.toString()).suppressFromDiscovery(null);
+    var rtacHolding2 = new RtacHolding().id(holdingId2.toString()).holdingsId(holdingId1.toString()).suppressFromDiscovery(null);
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.HOLDING, holdingId1), false, rtacHolding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, holdingId2), false, rtacHolding2, Instant.now());
+    rtacHoldingRepository.save(entity1);
+    rtacHoldingRepository.save(entity2);
+
+    var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings()).hasSize(1);
+    assertThat(rtacHoldings.getHoldings().get(0).getId()).isEqualTo(holdingId2.toString());
+  }
+
+  @Test
   void postRtacCacheBatch_withEmptyBody() throws Exception {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
 
