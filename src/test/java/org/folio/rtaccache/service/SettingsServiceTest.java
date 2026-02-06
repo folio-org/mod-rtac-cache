@@ -17,11 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.concurrent.ConcurrentMapCache;
-import org.springframework.cache.support.SimpleCacheManager;
-import org.springframework.test.util.AopTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class SettingsServiceTest {
@@ -73,26 +68,5 @@ class SettingsServiceTest {
     // then
     assertNull(result);
     verify(settingsClient).getSettings(any(FolioCqlRequest.class));
-  }
-
-  @Test
-  void getLoanTenant_shouldBeCacheable() {
-    SimpleCacheManager cacheManager = new SimpleCacheManager();
-    Cache cache = new ConcurrentMapCache("loanTenantCache");
-    cacheManager.setCaches(List.of(cache));
-    cacheManager.initializeCaches();
-
-    SettingsService target = AopTestUtils.getTargetObject(settingsService);
-
-    var item = new SettingsItemsInner().value("centralTenant");
-    var settings = new Settings(List.of(item));
-    when(settingsClient.getSettings(any(FolioCqlRequest.class))).thenReturn(settings);
-
-    var first = target.getLoanTenant();
-    var second = target.getLoanTenant();
-
-    assertEquals("centralTenant", first);
-    assertEquals("centralTenant", second);
-    verify(settingsClient, org.mockito.Mockito.times(2)).getSettings(any(FolioCqlRequest.class));
   }
 }
