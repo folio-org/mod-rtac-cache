@@ -28,10 +28,13 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
     var item = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Item.class);
     holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getId()), TypeEnum.ITEM)
       .ifPresent(existingItemEntity -> {
-        var existingRtacHolding = existingItemEntity.getRtacHolding();
-        var updatedRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
-        existingItemEntity.setRtacHolding(updatedRtacHolding);
-        holdingRepository.save(existingItemEntity);
+        holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getHoldingsRecordId()), TypeEnum.HOLDING)
+          .ifPresent(existingHoldingsEntity -> {
+            var existingRtacHolding = existingHoldingsEntity.getRtacHolding();
+            var updatedRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
+            existingItemEntity.setRtacHolding(updatedRtacHolding);
+            holdingRepository.save(existingItemEntity);
+          });
       });
   }
 

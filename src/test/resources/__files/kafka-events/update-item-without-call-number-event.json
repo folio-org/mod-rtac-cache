@@ -1,0 +1,70 @@
+{
+  "old": {
+    "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "id": "522d41d3-0e04-416d-9f52-90ac67685a78",
+    "_version": 1,
+    "hrid": "colit00001542562",
+    "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "formerIds": [],
+    "itemLevelCallNumber": "NEW-CALL-456",
+    "effectiveCallNumberComponents": {},
+    "yearCaption": [],
+    "administrativeNotes": [],
+    "notes": [],
+    "circulationNotes": [],
+    "status": {
+      "name": "Available",
+      "date": "2025-11-04T00:45:23.144+00:00"
+    },
+    "permanentLoanTypeId": "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+    "electronicAccess": [],
+    "statisticalCodeIds": [],
+    "tags": {
+      "tagList": []
+    },
+    "metadata": {
+      "createdDate": "2025-11-04T00:45:23.144+00:00",
+      "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+      "updatedDate": "2025-11-04T00:45:23.144+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "new": {
+    "instanceId": "843b368d-411c-4dce-bd64-99afc53f508d",
+    "id": "522d41d3-0e04-416d-9f52-90ac67685a78",
+    "_version": 1,
+    "hrid": "colit00001542562",
+    "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
+    "formerIds": [],
+    "barcode": "1232323232",
+    "itemLevelCallNumber": "",
+    "effectiveCallNumberComponents": {},
+    "yearCaption": [],
+    "administrativeNotes": [],
+    "notes": [],
+    "circulationNotes": [],
+    "status": {
+      "name": "Checked out",
+      "date": "2025-11-04T00:45:23.144+00:00"
+    },
+    "materialTypeId": "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+    "permanentLoanTypeId": "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "effectiveLocationId": "2d65e095-5750-56ee-ca60-5584eg7ce39b",
+    "electronicAccess": [],
+    "statisticalCodeIds": [],
+    "tags": {
+      "tagList": []
+    },
+    "metadata": {
+      "createdDate": "2025-11-04T00:45:23.144+00:00",
+      "createdByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2",
+      "updatedDate": "2025-11-04T00:45:23.144+00:00",
+      "updatedByUserId": "daaf98f2-4d8b-4ebf-b473-31f8c449fdc2"
+    }
+  },
+  "type": "UPDATE",
+  "tenant": "testTenant",
+  "eventId": "d05aca1c-e33c-45ee-b624-859a1ad91f35",
+  "eventTs": 1762186771227
+}
