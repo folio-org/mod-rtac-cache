@@ -54,15 +54,12 @@ class CirculationServiceTest {
     for (int i = 0; i < 100; i++) {
       itemIds.add("id_" + i);
     }
-
     var loan = new Loan();
     loan.setItemId("id_1");
     loan.setDueDate(Date.from(Instant.now()));
-
     var loan2 = new Loan();
     loan2.setItemId("id_99");
     loan2.setDueDate(Date.from(Instant.now()));
-
     when(circulationClient.getLoans(argThat(queryContains("id_1"))))
       .thenReturn(new Loans()
         .loans(List.of(loan))

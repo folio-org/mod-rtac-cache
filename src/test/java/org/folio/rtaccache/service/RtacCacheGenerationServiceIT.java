@@ -55,7 +55,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    // make sure any cache state from previous tests is cleared
+    // Because of the loan tenant settings cache, we need to clear it before each test to ensure different scenarios are tested properly
     if (cacheManager != null) {
       cacheManager.getCacheNames().forEach(name -> {
         var cache = cacheManager.getCache(name);
@@ -65,7 +65,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
       });
     }
 
-    // Default: no loan-tenant configured, so existing tests run with local tenant context
+    // No loan-tenant configured for tests by default. Individual tests will override this if needed.
     lenient().when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
       .thenReturn(new Settings().items(List.of()));
   }
@@ -83,10 +83,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     var future = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_1);
     future.join();
 
-    var holdings = rtacHoldingRepository.findAllByIdInstanceId(
-      UUID.fromString(INSTANCE_ID_1),
-      PageRequest.of(0, 50)
-    );
+    var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_1), PageRequest.of(0, 50));
 
     var itemWithLoans = holdings.get()
       .filter(entity -> entity.getRtacHolding().getDueDate() != null).findFirst();
@@ -95,8 +92,8 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
       .filter(entity -> TypeEnum.PIECE.equals(entity.getRtacHolding().getType())).findFirst();
 
     var itemWithHoldCount = holdings.get()
-      .filter(entity -> entity.getRtacHolding().getTotalHoldRequests() != null
-        && entity.getRtacHolding().getTotalHoldRequests() > 0).findFirst();
+      .filter(entity -> entity.getRtacHolding().getTotalHoldRequests() != null &&
+        entity.getRtacHolding().getTotalHoldRequests() > 0).findFirst();
 
     assertEquals(7, holdings.getTotalElements());
     assertTrue(itemWithLoans.isPresent());
@@ -132,26 +129,23 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
 
   @Test
   void generateRtacCache_shouldUseLoanTenantFromSettingsAndUseCache() {
-    // Arrange: configure a loan-tenant in settings
-    var settingsWithLoanTenant = new Settings()
-      .items(List.of(new SettingsItemsInner().value(TestConstant.TEST_CENTRAL_TENANT)));
-
-    // First call: SettingsClient will be invoked and SettingsService will cache the value
-    when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
-      .thenReturn(settingsWithLoanTenant);
-
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
 
-    // Act: run cache generation for two different instances under the same tenant
+    var settingsWithLoanTenant = new Settings()
+      .items(List.of(new SettingsItemsInner().value(TestConstant.TEST_CENTRAL_TENANT)));
+
+    when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
+      .thenReturn(settingsWithLoanTenant);
+
+    // Generate two different instances under the same tenant
     var future1 = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_1);
     future1.join();
 
     var future2 = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_2);
     future2.join();
 
-    // Assert: SettingsClient.getSettings should have been called only once because
-    // SettingsService.getLoanTenant() is @Cacheable and the cached value is reused
+    // SettingsClient.getSettings should have been called only once because of cache
     verify(settingsClient, times(1))
       .getSettings(ArgumentMatchers.any(FolioCqlRequest.class));
   }
