@@ -119,15 +119,12 @@ class CirculationServiceTest {
     for (int i = 0; i < 100; i++) {
       itemIds.add("id_" + i);
     }
-
     var request = new Request();
     request.setItemId("id_1");
     request.setStatus(StatusEnum.OPEN_AWAITING_PICKUP);
-
     var request2 = new Request();
     request2.setItemId("id_99");
     request2.setStatus(StatusEnum.CLOSED_CANCELLED);
-
     when(circulationClient.getRequests(argThat(queryContains("id_1"))))
       .thenReturn(new Requests()
         .requests(List.of(request))

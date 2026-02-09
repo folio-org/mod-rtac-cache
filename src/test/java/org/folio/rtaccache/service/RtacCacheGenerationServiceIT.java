@@ -84,13 +84,10 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     future.join();
 
     var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_1), PageRequest.of(0, 50));
-
     var itemWithLoans = holdings.get()
       .filter(entity -> entity.getRtacHolding().getDueDate() != null).findFirst();
-
     var piece = holdings.get()
       .filter(entity -> TypeEnum.PIECE.equals(entity.getRtacHolding().getType())).findFirst();
-
     var itemWithHoldCount = holdings.get()
       .filter(entity -> entity.getRtacHolding().getTotalHoldRequests() != null &&
         entity.getRtacHolding().getTotalHoldRequests() > 0).findFirst();
@@ -114,14 +111,11 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     future.join();
 
     var holdings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_2), PageRequest.of(0, 50));
-
     assertEquals(2, holdings.getTotalElements());
-
     var rtacHoldingEntity = holdings.get()
       .filter(entity -> entity.getRtacHolding().getType() == TypeEnum.ITEM)
       .findFirst()
       .get();
-
     assertEquals(BOUND_WITH_ITEM_ID, rtacHoldingEntity.getRtacHolding().getId());
     assertTrue(rtacHoldingEntity.getRtacHolding().getIsBoundWith());
     assertFalse(rtacHoldingEntity.isShared());
