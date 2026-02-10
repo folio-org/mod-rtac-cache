@@ -1,5 +1,6 @@
 package org.folio.rtaccache.service;
 
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -43,7 +44,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setInstanceId(holding.getInstanceId());
     rtacHolding.setHoldingsId(holding.getId());
     rtacHolding.setBarcode(item.getBarcode());
-    rtacHolding.setCallNumber(item.getItemLevelCallNumber());
+    rtacHolding.setCallNumber(mapCallNumber(holding, item));
     rtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
     rtacHolding.setItemCopyNumber(item.getCopyNumber());
     rtacHolding.setVolume(mapVolumeFrom(item));
@@ -393,19 +394,29 @@ public class RtacHoldingMappingService {
   }
 
   private String mapCallNumber(RtacHolding existingRtacHolding, HoldingsRecord holding) {
-    if (StringUtils.isNotBlank(existingRtacHolding.getCallNumber())) {
+    if (isNotBlank(existingRtacHolding.getCallNumber())) {
       return existingRtacHolding.getCallNumber();
     }
     return holding.getCallNumber();
   }
 
   private String mapCallNumber(RtacHolding existingRtacHolding, Item item) {
-    log.info("Mapping call number for item with id: {}. Existing RTAC holding call number: {}, item level call number: {}",
-      item.getId(), existingRtacHolding.getCallNumber(), item.getItemLevelCallNumber());
-    if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
-      return item.getItemLevelCallNumber();
+    if (isItemEffectiveCallNumberNotBlank(item)) {
+      return item.getEffectiveCallNumberComponents().getCallNumber();
     }
     return existingRtacHolding.getCallNumber();
+  }
+
+  private String mapCallNumber(HoldingsRecord holding, Item item) {
+    if (isItemEffectiveCallNumberNotBlank(item)) {
+      return item.getEffectiveCallNumberComponents().getCallNumber();
+    }
+    return holding.getCallNumber();
+  }
+
+  private boolean isItemEffectiveCallNumberNotBlank(Item item) {
+    return nonNull(item.getEffectiveCallNumberComponents())
+      && isNotBlank(item.getEffectiveCallNumberComponents().getCallNumber());
   }
 
 }

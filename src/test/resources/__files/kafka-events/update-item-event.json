@@ -7,7 +7,9 @@
     "holdingsRecordId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
     "formerIds": [],
     "itemLevelCallNumber": "NEW-CALL-456",
-    "effectiveCallNumberComponents": {},
+    "effectiveCallNumberComponents": {
+      "callNumber": "NEW-CALL-456"
+    },
     "yearCaption": [],
     "administrativeNotes": [],
     "notes": [],
@@ -39,7 +41,9 @@
     "formerIds": [],
     "barcode": "1232323232",
     "itemLevelCallNumber": "NEW-CALL-456",
-    "effectiveCallNumberComponents": {},
+    "effectiveCallNumberComponents": {
+      "callNumber": "NEW-CALL-456"
+    },
     "yearCaption": [],
     "administrativeNotes": [],
     "notes": [],

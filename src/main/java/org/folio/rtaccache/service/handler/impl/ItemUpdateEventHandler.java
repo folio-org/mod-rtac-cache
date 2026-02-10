@@ -31,11 +31,8 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
     log.info("Handling item update event for item with id: {}", item.getId());
     holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getId()), TypeEnum.ITEM)
       .ifPresent(existingItemEntity -> {
-        log.info("Item with id: {} already exists in cache, updating RTAC holding data for it", item.getId());
         holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getHoldingsRecordId()), TypeEnum.HOLDING)
           .ifPresent(existingHoldingsEntity -> {
-            log.info("Holding with id: {} already exists in cache, updating RTAC holding data for item with id: {}",
-              item.getHoldingsRecordId(), item.getId());
             var existingRtacHolding = existingHoldingsEntity.getRtacHolding();
             var updatedRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
             existingItemEntity.setRtacHolding(updatedRtacHolding);

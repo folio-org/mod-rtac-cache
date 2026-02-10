@@ -8,7 +8,9 @@
     "formerIds": [],
     "barcode": "1232323232",
     "itemLevelCallNumber": "NEW-CALL-456",
-    "effectiveCallNumberComponents": {},
+    "effectiveCallNumberComponents": {
+      "callNumber": "NEW-CALL-456"
+    },
     "yearCaption": [],
     "administrativeNotes": [],
     "notes": [],
