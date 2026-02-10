@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.folio.rtaccache.domain.dto.HoldingsNote;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class RtacHoldingMappingService {
 
   private final InventoryReferenceDataService inventoryReferenceDataService;
@@ -398,6 +400,8 @@ public class RtacHoldingMappingService {
   }
 
   private String mapCallNumber(RtacHolding existingRtacHolding, Item item) {
+    log.info("Mapping call number for item with id: {}. Existing RTAC holding call number: {}, item level call number: {}",
+      item.getId(), existingRtacHolding.getCallNumber(), item.getItemLevelCallNumber());
     if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
       return item.getItemLevelCallNumber();
     }
