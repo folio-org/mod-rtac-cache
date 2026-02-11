@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,22 +43,59 @@ class ItemUpdateEventHandlerTest {
 
   @Test
   void itemUpdate_shouldSaveEntity() {
-    var itemEntity = new RtacHoldingEntity(
-      new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)),
-      false,
-      holdingMapped(TypeEnum.ITEM, ITEM_ID),
-      Instant.now()
-    );
+    var itemEntity = getRtacEntity(TypeEnum.ITEM, ITEM_ID);
+    var holdingsEntity = getRtacEntity(TypeEnum.HOLDING, HOLDINGS_ID);
     var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE)._new(item());
     when(resourceEventUtil.getNewFromInventoryEvent(event, Item.class)).thenReturn(item());
     when(holdingRepository.findByIdIdAndIdType(UUID.fromString(ITEM_ID), TypeEnum.ITEM))
       .thenReturn(Optional.of(itemEntity));
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
+      .thenReturn(Optional.of(holdingsEntity));
     when(mappingService.mapForItemTypeFrom(any(RtacHolding.class), any(Item.class)))
       .thenReturn(holdingMapped(TypeEnum.ITEM, ITEM_ID));
 
     handler.handle(event);
 
     verify(holdingRepository).save(itemEntity);
+  }
+
+  @Test
+  void itemUpdate_shouldNotUpdateEntity_whenItemNotFound() {
+    var itemEntity = getRtacEntity(TypeEnum.ITEM, ITEM_ID);
+    var holdingsEntity = getRtacEntity(TypeEnum.HOLDING, HOLDINGS_ID);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE)._new(item());
+    when(resourceEventUtil.getNewFromInventoryEvent(event, Item.class)).thenReturn(item());
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(ITEM_ID), TypeEnum.ITEM))
+      .thenReturn(Optional.of(itemEntity));
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
+      .thenReturn(Optional.empty());
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).save(itemEntity);
+  }
+
+  @Test
+  void itemUpdate_shouldNotUpdateEntity_whenHoldingsNotFound() {
+    var itemEntity = getRtacEntity(TypeEnum.ITEM, ITEM_ID);
+    var holdingsEntity = getRtacEntity(TypeEnum.HOLDING, HOLDINGS_ID);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE)._new(item());
+    when(resourceEventUtil.getNewFromInventoryEvent(event, Item.class)).thenReturn(item());
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(ITEM_ID), TypeEnum.ITEM))
+      .thenReturn(Optional.empty());;
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).save(itemEntity);
+  }
+
+  private RtacHoldingEntity getRtacEntity(TypeEnum item, String itemId) {
+    return new RtacHoldingEntity(
+      new RtacHoldingId(UUID.fromString(INSTANCE_ID), item, UUID.fromString(itemId)),
+      false,
+      holdingMapped(item, itemId),
+      Instant.now()
+    );
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {

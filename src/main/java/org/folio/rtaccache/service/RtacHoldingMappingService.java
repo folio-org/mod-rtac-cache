@@ -1,5 +1,6 @@
 package org.folio.rtaccache.service;
 
+import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -11,6 +12,8 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.folio.rtaccache.domain.dto.HoldingsNote;
 import org.folio.rtaccache.domain.dto.HoldingsNoteType;
@@ -29,6 +32,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class RtacHoldingMappingService {
 
   private final InventoryReferenceDataService inventoryReferenceDataService;
@@ -40,7 +44,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setInstanceId(holding.getInstanceId());
     rtacHolding.setHoldingsId(holding.getId());
     rtacHolding.setBarcode(item.getBarcode());
-    rtacHolding.setCallNumber(item.getItemLevelCallNumber());
+    rtacHolding.setCallNumber(mapCallNumber(holding, item));
     rtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
     rtacHolding.setItemCopyNumber(item.getCopyNumber());
     rtacHolding.setVolume(mapVolumeFrom(item));
@@ -108,7 +112,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setInstanceId(holding.getInstanceId());
     newRtacHolding.setHoldingsId(holding.getId());
     newRtacHolding.setBarcode(existingRtacHolding.getBarcode());
-    newRtacHolding.setCallNumber(existingRtacHolding.getCallNumber());
+    newRtacHolding.setCallNumber(mapCallNumber(existingRtacHolding, holding));
     newRtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
     newRtacHolding.setItemCopyNumber(existingRtacHolding.getItemCopyNumber());
     newRtacHolding.setVolume(existingRtacHolding.getVolume());
@@ -135,7 +139,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setHoldingsId(existingRtacHolding.getHoldingsId());
     newRtacHolding.setInstanceFormatIds(existingRtacHolding.getInstanceFormatIds());
     newRtacHolding.setBarcode(item.getBarcode());
-    newRtacHolding.setCallNumber(item.getItemLevelCallNumber());
+    newRtacHolding.setCallNumber(mapCallNumber(existingRtacHolding, item));
     newRtacHolding.setHoldingsCopyNumber(existingRtacHolding.getHoldingsCopyNumber());
     newRtacHolding.setItemCopyNumber(item.getCopyNumber());
     newRtacHolding.setVolume(mapVolumeFrom(item));
@@ -253,7 +257,7 @@ public class RtacHoldingMappingService {
   }
 
   private RtacHoldingMaterialType mapMaterialTypeFrom(Item item) {
-    if (item.getMaterialTypeId().isEmpty()) {
+    if (StringUtils.isBlank(item.getMaterialTypeId())) {
       return null;
     }
     var materialType = inventoryReferenceDataService.getMaterialTypesMap().get(item.getMaterialTypeId());
@@ -387,6 +391,32 @@ public class RtacHoldingMappingService {
     return sourceList.stream()
       .map(mapper)
       .toList();
+  }
+
+  private String mapCallNumber(RtacHolding existingRtacHolding, HoldingsRecord holding) {
+    if (isNotBlank(existingRtacHolding.getCallNumber())) {
+      return existingRtacHolding.getCallNumber();
+    }
+    return holding.getCallNumber();
+  }
+
+  private String mapCallNumber(RtacHolding existingRtacHolding, Item item) {
+    if (isItemEffectiveCallNumberNotBlank(item)) {
+      return item.getEffectiveCallNumberComponents().getCallNumber();
+    }
+    return existingRtacHolding.getCallNumber();
+  }
+
+  private String mapCallNumber(HoldingsRecord holding, Item item) {
+    if (isItemEffectiveCallNumberNotBlank(item)) {
+      return item.getEffectiveCallNumberComponents().getCallNumber();
+    }
+    return holding.getCallNumber();
+  }
+
+  private boolean isItemEffectiveCallNumberNotBlank(Item item) {
+    return nonNull(item.getEffectiveCallNumberComponents())
+      && isNotBlank(item.getEffectiveCallNumberComponents().getCallNumber());
   }
 
 }
