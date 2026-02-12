@@ -28,6 +28,11 @@ BEGIN
          SELECT *
          FROM all_tenants h
          WHERE h.instance_id = ANY($1)
+           AND (COALESCE(
+           (select (hi.rtac_holding_json ->> ''suppressFromDiscovery'')::boolean from all_tenants hi where hi.instance_id = h.instance_id AND hi.type = ''HOLDING'' AND hi.id = (h.rtac_holding_json ->> ''holdingsId'')::uuid LIMIT 1),
+           FALSE) = FALSE AND
+           COALESCE((h.rtac_holding_json ->> ''suppressFromDiscovery'')::boolean,
+           FALSE) = FALSE)
            AND ($2 IS NOT TRUE OR h.shared = TRUE)
            AND (
              h.type = ''PIECE''

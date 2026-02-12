@@ -2,6 +2,7 @@ package org.folio.rtaccache.service.handler.impl;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class ItemUpdateEventHandler implements InventoryEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
@@ -26,12 +28,16 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
     var item = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, Item.class);
+    log.info("Handling item update event for item with id: {}", item.getId());
     holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getId()), TypeEnum.ITEM)
       .ifPresent(existingItemEntity -> {
-        var existingRtacHolding = existingItemEntity.getRtacHolding();
-        var updatedRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
-        existingItemEntity.setRtacHolding(updatedRtacHolding);
-        holdingRepository.save(existingItemEntity);
+        holdingRepository.findByIdIdAndIdType(UUID.fromString(item.getHoldingsRecordId()), TypeEnum.HOLDING)
+          .ifPresent(existingHoldingsEntity -> {
+            var existingRtacHolding = existingHoldingsEntity.getRtacHolding();
+            var updatedRtacHolding = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, item);
+            existingItemEntity.setRtacHolding(updatedRtacHolding);
+            holdingRepository.save(existingItemEntity);
+          });
       });
   }
 

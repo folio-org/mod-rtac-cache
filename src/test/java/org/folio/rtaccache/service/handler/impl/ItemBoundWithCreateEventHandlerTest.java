@@ -49,7 +49,7 @@ class ItemBoundWithCreateEventHandlerTest {
   void itemBoundWithCreate_shouldSaveEntity_whenHoldingsChangedAndHoldingsExists() {
     var event = setUpEventWith(boundWithPart(INSTANCE_ID, NEW_HOLDINGS_ID, ITEM_ID));
     var existingItemEntity = setUpExistingItemEntity(INSTANCE_ID, ITEM_ID, OLD_HOLDINGS_ID);
-    setUpExistingHoldingsEntity(INSTANCE_ID, NEW_HOLDINGS_ID);
+    var existingHoldingsEntity = setUpExistingHoldingsEntity(INSTANCE_ID, NEW_HOLDINGS_ID, true);
     setUpMappingServiceForBoundWith(ITEM_ID, INSTANCE_ID, NEW_HOLDINGS_ID);
 
     handler.handle(event);
@@ -61,6 +61,7 @@ class ItemBoundWithCreateEventHandlerTest {
     assertEquals(UUID.fromString(INSTANCE_ID), saved.getId().getInstanceId());
     assertEquals(TypeEnum.ITEM, saved.getId().getType());
     assertEquals(existingItemEntity.getCreatedAt(), saved.getCreatedAt());
+    assertEquals(existingHoldingsEntity.isShared(), saved.isShared()); // verifies setShared(existingHoldingsEntity.isShared())
   }
 
   @Test
@@ -109,14 +110,15 @@ class ItemBoundWithCreateEventHandlerTest {
     return entity;
   }
 
-  private void setUpExistingHoldingsEntity(String instanceId, String holdingsId) {
+  private RtacHoldingEntity setUpExistingHoldingsEntity(String instanceId, String holdingsId, boolean shared) {
     var entity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(instanceId), TypeEnum.HOLDING, UUID.fromString(holdingsId)),
-      false,
+      shared,
       holdingMapped(TypeEnum.HOLDING, holdingsId, instanceId, holdingsId),
       Instant.now()
     );
     when(holdingRepository.findByIdIdAndIdType(UUID.fromString(holdingsId), TypeEnum.HOLDING)).thenReturn(Optional.of(entity));
+    return entity;
   }
 
   private void setUpMappingServiceForBoundWith(String itemId, String instanceId, String newHoldingsId) {

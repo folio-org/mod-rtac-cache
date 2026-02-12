@@ -125,6 +125,60 @@ paths:
               schema:
                 $ref: 'schemas/error.json'
 
+  /rtac-cache/invalidate:
+    post:
+      tags:
+        - rtac
+      summary: Invalidate RTAC cache entries by instance IDs
+      operationId: postRtacCacheInvalidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'schemas/rtacRequest.json'
+      responses:
+        '204':
+          description: RTAC cache entries invalidated successfully
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+
+  /rtac-cache/invalidate-all:
+    post:
+      tags:
+        - rtac
+      summary: Invalidate all RTAC cache entries
+      operationId: postRtacCacheInvalidateAll
+      responses:
+        '204':
+          description: All RTAC cache entries invalidated successfully
+        '403':
+          description: Access Denied
+          content:
+            text/plain:
+              example: "Access Denied"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: 'schemas/error.json'
+
   /rtac-cache/prewarm:
     get:
       tags:

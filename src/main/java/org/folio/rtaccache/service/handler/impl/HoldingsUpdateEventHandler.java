@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class HoldingsUpdateEventHandler implements InventoryEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
@@ -42,6 +44,7 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
+    log.info("Handling Holdings update event for item with id: {}", holdingsData.getId());
     var updatedEntities = holdingRepository.findAllByHoldingsId(holdingsData.getId())
       .stream()
       .map(entity -> {

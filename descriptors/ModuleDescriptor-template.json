@@ -87,6 +87,16 @@
           "methods": [ "POST" ],
           "pathPattern": "/rtac-cache/prewarm",
           "permissionsRequired": [ "rtac-cache.prewarm.post" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/rtac-cache/invalidate",
+          "permissionsRequired": [ "rtac-cache.invalidate.post" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/rtac-cache/invalidate-all",
+          "permissionsRequired": [ "rtac-cache.invalidate-all.post" ]
         }
       ]
     },
@@ -210,6 +220,16 @@
       "description": "Submit RTAC cache pre-warming job"
     },
     {
+      "permissionName": "rtac-cache.invalidate.post",
+      "displayName": "RTAC Cache - Invalidate cache entries",
+      "description": "Invalidate RTAC cache entries by instance IDs"
+    },
+    {
+      "permissionName": "rtac-cache.invalidate-all.post",
+      "displayName": "RTAC Cache - Invalidate all cache entries",
+      "description": "Invalidate all RTAC cache entries"
+    },
+    {
       "permissionName": "rtac-cache.all",
       "displayName": "RTAC Cache - All permissions",
       "description": "All RTAC cache permissions",
@@ -219,7 +239,9 @@
         "rtac-cache.search.collection.get",
         "rtac-cache.prewarm.collection.get",
         "rtac-cache.prewarm.get",
-        "rtac-cache.prewarm.post"
+        "rtac-cache.prewarm.post",
+        "rtac-cache.invalidate.post",
+        "rtac-cache.invalidate-all.post"
           ]
     }
   ],

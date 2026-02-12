@@ -72,6 +72,7 @@
   </changeSet>
 
   <changeSet id="create-rtac-holdings-multi-tenant-function-001" author="Steve Ellis">
+    <validCheckSum>1:any</validCheckSum>
     <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
     <rollback>
       <sql>
@@ -139,6 +140,7 @@
   </changeSet>
 
   <changeSet id="update-rtac-holdings-multi-tenant-function-002" author="Ivan_Zhunkivskyi">
+    <validCheckSum>1:any</validCheckSum>
     <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
     <rollback>
       <sql>
@@ -152,6 +154,16 @@
     <rollback>
       <sql>
         DROP FUNCTION IF EXISTS public.delete_old_holdings_all_tenants(timestamp with time zone);
+      </sql>
+    </rollback>
+  </changeSet>
+
+  <changeSet id="update-rtac-holdings-multi-tenant-function-003" author="Ivan_Zhunkivskyi">
+    <validCheckSum>1:any</validCheckSum>
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sql>
+        DROP FUNCTION IF EXISTS rtac_holdings_multi_tenant(text, uuid[]);
       </sql>
     </rollback>
   </changeSet>
