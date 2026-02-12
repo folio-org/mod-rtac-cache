@@ -79,7 +79,7 @@ class CirculationServiceTest {
   }
 
   @Test
-  void getLoanDueDatesForItems_shouldUseLoanTenantWhenSettingPresent() throws Exception {
+  void getLoanDueDatesForItems_shouldUseLoanTenantWhenSettingPresent() {
     when(settingsService.getLoanTenant()).thenReturn("centralTenant");
 
     doAnswer(invocation -> {
