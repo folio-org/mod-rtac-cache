@@ -112,7 +112,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setInstanceId(holding.getInstanceId());
     newRtacHolding.setHoldingsId(holding.getId());
     newRtacHolding.setBarcode(existingRtacHolding.getBarcode());
-    newRtacHolding.setCallNumber(mapCallNumber(existingRtacHolding, holding));
+    newRtacHolding.setCallNumber(existingRtacHolding.getCallNumber());
     newRtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
     newRtacHolding.setItemCopyNumber(existingRtacHolding.getItemCopyNumber());
     newRtacHolding.setVolume(existingRtacHolding.getVolume());
@@ -393,30 +393,24 @@ public class RtacHoldingMappingService {
       .toList();
   }
 
-  private String mapCallNumber(RtacHolding existingRtacHolding, HoldingsRecord holding) {
-    if (isNotBlank(existingRtacHolding.getCallNumber())) {
-      return existingRtacHolding.getCallNumber();
-    }
-    return holding.getCallNumber();
-  }
-
   private String mapCallNumber(RtacHolding existingRtacHolding, Item item) {
-    if (isItemEffectiveCallNumberNotBlank(item)) {
+    if (nonNull(item.getEffectiveCallNumberComponents())) {
       return item.getEffectiveCallNumberComponents().getCallNumber();
+    }
+    if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
+      return item.getItemLevelCallNumber();
     }
     return existingRtacHolding.getCallNumber();
   }
 
   private String mapCallNumber(HoldingsRecord holding, Item item) {
-    if (isItemEffectiveCallNumberNotBlank(item)) {
+    if (nonNull(item.getEffectiveCallNumberComponents())) {
       return item.getEffectiveCallNumberComponents().getCallNumber();
     }
+    if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
+      return item.getItemLevelCallNumber();
+    }
     return holding.getCallNumber();
-  }
-
-  private boolean isItemEffectiveCallNumberNotBlank(Item item) {
-    return nonNull(item.getEffectiveCallNumberComponents())
-      && isNotBlank(item.getEffectiveCallNumberComponents().getCallNumber());
   }
 
 }
