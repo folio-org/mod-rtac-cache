@@ -1,10 +1,10 @@
 package org.folio.rtaccache.service;
 
-
 import static org.folio.rtaccache.TestUtil.queryContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,12 +13,15 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
+
 import org.folio.rtaccache.client.CirculationClient;
 import org.folio.rtaccache.domain.dto.Loan;
 import org.folio.rtaccache.domain.dto.Loans;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.rtaccache.domain.dto.Request.StatusEnum;
 import org.folio.rtaccache.domain.dto.Requests;
+import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,13 +36,23 @@ class CirculationServiceTest {
 
   @Mock
   private CirculationClient circulationClient;
+
+  @Mock
+  private SettingsService settingsService;
+
+  @Mock
+  private SystemUserScopedExecutionService executionService;
+
   @Spy
   private AsyncTaskExecutor asyncTaskExecutor = new VirtualThreadTaskExecutor();
+
   @InjectMocks
   private CirculationService circulationService;
 
   @Test
   void getLoanDueDatesForItems_shouldFetchLoansInParallel() {
+    when(settingsService.getLoanTenant()).thenReturn(null);
+
     List<String> itemIds = new ArrayList<>();
     for (int i = 0; i < 100; i++) {
       itemIds.add("id_" + i);
@@ -63,6 +76,44 @@ class CirculationServiceTest {
 
     verify(circulationClient, times(2)).getLoans(any());
     assertEquals(2, response.size());
+  }
+
+  @Test
+  void getLoanDueDatesForItems_shouldUseLoanTenantWhenSettingPresent() {
+    when(settingsService.getLoanTenant()).thenReturn("centralTenant");
+
+    doAnswer(invocation -> {
+      Callable<?> task = invocation.getArgument(1);
+      try {
+        return task.call();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }).when(executionService).executeSystemUserScoped(any(), any());
+
+    List<String> itemIds = List.of("id_1", "id_2");
+
+    var loan1 = new Loan();
+    loan1.setItemId("id_1");
+    loan1.setDueDate(Date.from(Instant.now()));
+
+    var loan2 = new Loan();
+    loan2.setItemId("id_2");
+    loan2.setDueDate(Date.from(Instant.now()));
+
+    when(circulationClient.getLoans(any()))
+      .thenReturn(new Loans()
+        .loans(List.of(loan1, loan2))
+        .totalRecords(2));
+
+    var response = circulationService.getLoanDueDatesForItems(itemIds);
+
+    verify(settingsService, times(1)).getLoanTenant();
+    verify(executionService, times(1)).executeSystemUserScoped(any(), any());
+    verify(circulationClient, times(1)).getLoans(any());
+    assertEquals(2, response.size());
+    assertEquals(loan1.getDueDate(), response.get("id_1"));
+    assertEquals(loan2.getDueDate(), response.get("id_2"));
   }
 
   @Test
