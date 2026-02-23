@@ -70,7 +70,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setType(TypeEnum.HOLDING);
     rtacHolding.setInstanceId(holding.getInstanceId());
     rtacHolding.setHoldingsId(holding.getId());
-    rtacHolding.setCallNumber(holding.getCallNumber());
+    rtacHolding.setCallNumber(assembleCallNumber(holding.getCallNumber(), holding.getCallNumberPrefix(), holding.getCallNumberSuffix()));
     rtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
     rtacHolding.setStatus(mapHoldingsStatusFrom(holding));
     rtacHolding.setSuppressFromDiscovery(holding.getDiscoverySuppress());
@@ -90,7 +90,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setType(TypeEnum.PIECE);
     rtacHolding.setInstanceId(holding.getInstanceId());
     rtacHolding.setHoldingsId(holding.getId());
-    rtacHolding.setCallNumber(holding.getCallNumber());
+    rtacHolding.setCallNumber(assembleCallNumber(holding.getCallNumber(), holding.getCallNumberPrefix(), holding.getCallNumberSuffix()));
     rtacHolding.setHoldingsCopyNumber(piece.getCopyNumber());
     rtacHolding.setStatus(piece.getReceivingStatus().getValue());
     rtacHolding.setVolume(mapVolumeFrom(piece));
@@ -192,7 +192,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setType(TypeEnum.PIECE);
     newRtacHolding.setInstanceId(holding.getInstanceId());
     newRtacHolding.setHoldingsId(holding.getId());
-    newRtacHolding.setCallNumber(holding.getCallNumber());
+    newRtacHolding.setCallNumber(assembleCallNumber(holding.getCallNumber(), holding.getCallNumberPrefix(), holding.getCallNumberSuffix()));
     newRtacHolding.setHoldingsCopyNumber(existingRtacHolding.getHoldingsCopyNumber());
     newRtacHolding.setStatus(existingRtacHolding.getStatus());
     newRtacHolding.setVolume(existingRtacHolding.getVolume());
@@ -394,23 +394,51 @@ public class RtacHoldingMappingService {
   }
 
   private String mapCallNumber(RtacHolding existingRtacHolding, Item item) {
-    if (nonNull(item.getEffectiveCallNumberComponents())) {
-      return item.getEffectiveCallNumberComponents().getCallNumber();
+    var itemCallNumber = mapItemCallNumber(item);
+    if (isNotBlank(itemCallNumber)) {
+      return itemCallNumber;
+    } else {
+      return existingRtacHolding.getCallNumber();
     }
-    if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
-      return item.getItemLevelCallNumber();
-    }
-    return existingRtacHolding.getCallNumber();
   }
 
   private String mapCallNumber(HoldingsRecord holding, Item item) {
+    var itemCallNumber = mapItemCallNumber(item);
+    if (isNotBlank(itemCallNumber)) {
+      return itemCallNumber;
+    } else {
+      return assembleCallNumber(holding.getCallNumber(), holding.getCallNumberPrefix(), holding.getCallNumberSuffix());
+    }
+  }
+  
+  private String mapItemCallNumber(Item item) {
     if (nonNull(item.getEffectiveCallNumberComponents())) {
-      return item.getEffectiveCallNumberComponents().getCallNumber();
+      return assembleCallNumber(item.getEffectiveCallNumberComponents().getCallNumber(),
+        item.getEffectiveCallNumberComponents().getPrefix(),
+        item.getEffectiveCallNumberComponents().getSuffix());
     }
     if (StringUtils.isNotBlank(item.getItemLevelCallNumber())) {
-      return item.getItemLevelCallNumber();
+      return assembleCallNumber(item.getItemLevelCallNumber(),
+        item.getItemLevelCallNumberPrefix(),
+        item.getItemLevelCallNumberSuffix());
     }
-    return holding.getCallNumber();
+    return null;
   }
 
+  private String assembleCallNumber(String callNumber, String prefix, String suffix) {
+    if (isNotBlank(prefix) || isNotBlank(suffix)) {
+      var sj = new StringJoiner(" ");
+      if (isNotBlank(prefix)) {
+        sj.add(prefix);
+      }
+      if (isNotBlank(callNumber)) {
+        sj.add(callNumber);
+      }
+      if (isNotBlank(suffix)) {
+        sj.add(suffix);
+      }
+      return sj.toString();
+    }
+    return callNumber;
+  }
 }
