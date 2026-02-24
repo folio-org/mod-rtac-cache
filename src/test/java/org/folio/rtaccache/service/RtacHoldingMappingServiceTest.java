@@ -155,6 +155,58 @@ class RtacHoldingMappingServiceTest {
   }
 
   @Test
+  void testMapItemToRtacHolding_withItemCallNumberWithPrefixAndSuffix() {
+    var instanceId = UUID.randomUUID().toString();
+    var holdingId = UUID.randomUUID().toString();
+
+    var holding = new HoldingsRecord();
+    holding.setInstanceId(instanceId);
+    holding.setId(holdingId);
+    holding.setCallNumber("PS3545.H16");
+
+    var status = new ItemStatus();
+    status.setName(NameEnum.AVAILABLE);
+
+    var item = new Item();
+    item.setId(UUID.randomUUID().toString());
+    var callNumberComponents = new ItemEffectiveCallNumberComponents();
+    callNumberComponents.setCallNumber("new-call-number");
+    callNumberComponents.setPrefix("prefix");
+    callNumberComponents.setSuffix("suffix");
+    item.setEffectiveCallNumberComponents(callNumberComponents);
+    item.setStatus(status);
+
+    var result = rtacHoldingMappingService.mapFrom(holding, item);
+
+    assertEquals("prefix new-call-number suffix", result.getCallNumber());
+  }
+
+  @Test
+  void testMapItemToRtacHolding_withItemLevelCallNumberWithPrefixAndSuffix() {
+    var instanceId = UUID.randomUUID().toString();
+    var holdingId = UUID.randomUUID().toString();
+
+    var holding = new HoldingsRecord();
+    holding.setInstanceId(instanceId);
+    holding.setId(holdingId);
+    holding.setCallNumber("PS3545.H16");
+
+    var status = new ItemStatus();
+    status.setName(NameEnum.AVAILABLE);
+
+    var item = new Item();
+    item.setId(UUID.randomUUID().toString());
+    item.setItemLevelCallNumber("new-call-number");
+    item.setItemLevelCallNumberPrefix("prefix");
+    item.setItemLevelCallNumberSuffix("suffix");
+    item.setStatus(status);
+
+    var result = rtacHoldingMappingService.mapFrom(holding, item);
+
+    assertEquals("prefix new-call-number suffix", result.getCallNumber());
+  }
+
+  @Test
   void testMapItemToRtacHolding_withHoldingsCallNumber() {
     var instanceId = UUID.randomUUID().toString();
     var holdingId = UUID.randomUUID().toString();
@@ -174,6 +226,30 @@ class RtacHoldingMappingServiceTest {
     var result = rtacHoldingMappingService.mapFrom(holding, item);
 
     assertEquals("PS3545.H16", result.getCallNumber());
+  }
+
+  @Test
+  void testMapItemToRtacHolding_withHoldingsCallNumberWithPrefixAndSuffix() {
+    var instanceId = UUID.randomUUID().toString();
+    var holdingId = UUID.randomUUID().toString();
+
+    var holding = new HoldingsRecord();
+    holding.setInstanceId(instanceId);
+    holding.setId(holdingId);
+    holding.setCallNumber("PS3545.H16");
+    holding.setCallNumberPrefix("prefix");
+    holding.setCallNumberSuffix("suffix");
+
+    var status = new ItemStatus();
+    status.setName(NameEnum.AVAILABLE);
+
+    var item = new Item();
+    item.setId(UUID.randomUUID().toString());
+    item.setStatus(status);
+
+    var result = rtacHoldingMappingService.mapFrom(holding, item);
+
+    assertEquals("prefix PS3545.H16 suffix", result.getCallNumber());
   }
 
   @Test
