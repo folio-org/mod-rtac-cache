@@ -14,7 +14,7 @@ public class OrdersService {
   private static final Integer MAX_RECORDS = 1000;
 
   public PieceCollection getPiecesByHoldingId(String holdingId) {
-    var cql = String.format("holdingId==(%s) and displayToPublic=true and displayOnHolding=true", holdingId);
+    var cql = String.format("holdingId==(%s) and displayToPublic==true and displayOnHolding==true", holdingId);
     var request = new FolioCqlRequest(cql, MAX_RECORDS, 0);
     return ordersClient.getPieces(request);
   }
