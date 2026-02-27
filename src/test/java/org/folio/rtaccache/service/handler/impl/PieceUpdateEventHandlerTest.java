@@ -19,6 +19,7 @@ import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,7 +47,7 @@ class PieceUpdateEventHandlerTest {
       holdingMapped(TypeEnum.PIECE, PIECE_ID),
       Instant.now()
     );
-    var piece = piece();
+    var piece = piece(true);
     var mappedPieceRtac = holdingMapped(TypeEnum.PIECE, PIECE_ID);
     var event = new PieceResourceEvent()
       .action(PieceEventAction.EDIT)
@@ -63,18 +64,60 @@ class PieceUpdateEventHandlerTest {
   }
 
   @Test
-  void pieceUpdate_shouldNotSave_whenPieceNotFound() {
-    var piece = piece();
+  void pieceUpdate_shouldCreateEntityFromHoldingWhenUpdatedToPublic() {
+    var holdingEntity = new RtacHoldingEntity(
+      new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.HOLDING, UUID.fromString(HOLDINGS_ID)),
+      false,
+      holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID),
+      Instant.now()
+    );
+    var piece = piece(true);
+    var mappedPieceRtac = holdingMapped(TypeEnum.PIECE, PIECE_ID);
     var event = new PieceResourceEvent()
       .action(PieceEventAction.EDIT)
       .pieceId(PIECE_ID)
       .pieceSnapshot(piece);
     when(holdingRepository.findByIdIdAndIdType(UUID.fromString(PIECE_ID), TypeEnum.PIECE))
       .thenReturn(Optional.empty());
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
+      .thenReturn(Optional.of(holdingEntity));
+    when(mappingService.mapForPieceTypeFrom(any(RtacHolding.class), any(Piece.class)))
+      .thenReturn(mappedPieceRtac);
+
+    handler.handle(event);
+
+    verify(holdingRepository).save(ArgumentMatchers.argThat(entity ->
+      entity.getId().getId().equals(UUID.fromString(PIECE_ID))));
+  }
+
+  @Test
+  void pieceUpdate_shouldNotSave_whenPieceNotFound() {
+    var piece = piece(true);
+    var event = new PieceResourceEvent()
+      .action(PieceEventAction.EDIT)
+      .pieceId(PIECE_ID)
+      .pieceSnapshot(piece);
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(PIECE_ID), TypeEnum.PIECE))
+      .thenReturn(Optional.empty());
+    when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
+      .thenReturn(Optional.empty());
 
     handler.handle(event);
 
     verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
+  }
+
+  @Test
+  void pieceUpdate_shouldDelete_whenPieceNotPublic() {
+    var piece = piece(false);
+    var event = new PieceResourceEvent()
+      .action(PieceEventAction.EDIT)
+      .pieceId(PIECE_ID)
+      .pieceSnapshot(piece);
+
+    handler.handle(event);
+
+    verify(holdingRepository).deleteByIdId(UUID.fromString(PIECE_ID));
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {
@@ -87,10 +130,12 @@ class PieceUpdateEventHandlerTest {
     return rh;
   }
 
-  private Piece piece() {
+  private Piece piece(boolean isPublic) {
     var p = new Piece();
     p.setId(PIECE_ID);
     p.setHoldingId(HOLDINGS_ID);
+    p.setDisplayToPublic(isPublic);
+    p.setDisplayOnHolding(isPublic);
     p.setCopyNumber("PCN");
     p.setReceivingStatus(Piece.ReceivingStatusEnum.EXPECTED);
     return p;

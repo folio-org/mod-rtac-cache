@@ -1,7 +1,11 @@
 package org.folio.rtaccache.service.handler.impl;
 
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
@@ -21,15 +25,45 @@ public class PieceUpdateEventHandler implements PieceEventHandler {
   @Override
   @Transactional
   public void handle(PieceResourceEvent resourceEvent) {
-    holdingRepository.findByIdIdAndIdType(
-        UUID.fromString(resourceEvent.getPieceId()), TypeEnum.PIECE)
-      .ifPresent(existingPieceEntity -> {
-        var pieceData = resourceEvent.getPieceSnapshot();
-        var existingRtacHolding = existingPieceEntity.getRtacHolding();
-        var updatedRtacHolding = rtacHoldingMappingService.mapForPieceTypeFrom(
-          existingRtacHolding, pieceData);
-        existingPieceEntity.setRtacHolding(updatedRtacHolding);
-        holdingRepository.save(existingPieceEntity);
+    if (resourceEvent.getPieceSnapshot() == null || resourceEvent.getPieceId() == null) {
+      return;
+    }
+    if (isPublicPiece(resourceEvent)) {
+      var entityToSave = getUpdatedExistingPiece(resourceEvent)
+        .orElseGet(() -> createNewPieceFromHolding(resourceEvent).orElse(null));
+      if (entityToSave != null) {
+        holdingRepository.save(entityToSave);
+      }
+    } else {
+      holdingRepository.deleteByIdId(UUID.fromString(resourceEvent.getPieceId()));
+    }
+  }
+
+  private Optional<RtacHoldingEntity> getUpdatedExistingPiece(PieceResourceEvent resourceEvent) {
+    return holdingRepository.findByIdIdAndIdType(
+      UUID.fromString(resourceEvent.getPieceId()), TypeEnum.PIECE).map(existingPieceEntity -> {
+      var pieceData = resourceEvent.getPieceSnapshot();
+      var existingRtacHolding = existingPieceEntity.getRtacHolding();
+      var updatedRtacHolding = rtacHoldingMappingService.mapForPieceTypeFrom(
+        existingRtacHolding, pieceData);
+      existingPieceEntity.setRtacHolding(updatedRtacHolding);
+      return existingPieceEntity;
+    });
+  }
+
+  private Optional<RtacHoldingEntity> createNewPieceFromHolding(PieceResourceEvent resourceEvent) {
+    var pieceData = resourceEvent.getPieceSnapshot();
+    return holdingRepository.findByIdIdAndIdType(
+        UUID.fromString(pieceData.getHoldingId()), TypeEnum.HOLDING)
+      .map(existingEntity -> {
+        var newRtacHolding = rtacHoldingMappingService.mapForPieceTypeFrom(
+          existingEntity.getRtacHolding(), pieceData);
+        var newEntity = new RtacHoldingEntity();
+        newEntity.setId(RtacHoldingId.from(newRtacHolding));
+        newEntity.setShared(existingEntity.isShared());
+        newEntity.setCreatedAt(Instant.now());
+        newEntity.setRtacHolding(newRtacHolding);
+        return newEntity;
       });
   }
 

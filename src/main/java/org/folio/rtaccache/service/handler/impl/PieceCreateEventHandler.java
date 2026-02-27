@@ -28,8 +28,10 @@ public class PieceCreateEventHandler implements PieceEventHandler {
     if (pieceData == null || pieceData.getHoldingId() == null) {
       return;
     }
-    var newHoldingEntity = getRtacHoldingFromPieceEvent(pieceData);
-    newHoldingEntity.ifPresent(holdingRepository::save);
+    if (isPublicPiece(resourceEvent)) {
+      var newHoldingEntity = getRtacHoldingFromPieceEvent(pieceData);
+      newHoldingEntity.ifPresent(holdingRepository::save);
+    }
   }
 
   private Optional<RtacHoldingEntity> getRtacHoldingFromPieceEvent(Piece pieceData) {

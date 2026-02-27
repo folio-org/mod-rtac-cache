@@ -46,7 +46,7 @@ class PieceCreateEventHandlerTest {
       holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID),
       Instant.now()
     );
-    var piece = piece();
+    var piece = piece(true);
     var mappedPieceRtac = holdingMapped(TypeEnum.PIECE, PIECE_ID);
     var event = new PieceResourceEvent()
       .action(PieceEventAction.CREATE)
@@ -63,12 +63,25 @@ class PieceCreateEventHandlerTest {
 
   @Test
   void pieceCreate_shouldNotSave_whenHoldingsNotFound() {
-    var piece = piece();
+    var piece = piece(true);
     var event = new PieceResourceEvent()
       .action(PieceEventAction.CREATE)
       .pieceSnapshot(piece);
     when(holdingRepository.findByIdIdAndIdType(UUID.fromString(HOLDINGS_ID), TypeEnum.HOLDING))
       .thenReturn(Optional.empty());
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).save(any(RtacHoldingEntity.class));
+  }
+
+  @Test
+  void pieceCreate_shouldNotSaveWhenIsNotPublic() {
+    var piece = piece(false);
+    var event = new PieceResourceEvent()
+      .action(PieceEventAction.CREATE)
+      .pieceSnapshot(piece);
+
 
     handler.handle(event);
 
@@ -102,10 +115,12 @@ class PieceCreateEventHandlerTest {
     return rh;
   }
 
-  private Piece piece() {
+  private Piece piece(boolean isPublic) {
     var p = new Piece();
     p.setId(PIECE_ID);
     p.setHoldingId(HOLDINGS_ID);
+    p.setDisplayToPublic(isPublic);
+    p.setDisplayOnHolding(isPublic);
     p.setCopyNumber("PCN");
     p.setReceivingStatus(Piece.ReceivingStatusEnum.EXPECTED);
     return p;

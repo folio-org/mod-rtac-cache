@@ -9,4 +9,12 @@ public interface PieceEventHandler extends EventHandler<PieceEventAction, PieceR
 
   void handle(PieceResourceEvent resourceEvent);
 
+  default boolean isPublicPiece(PieceResourceEvent resourceEvent) {
+    if (resourceEvent.getPieceSnapshot() != null && resourceEvent.getPieceSnapshot().getDisplayToPublic() != null
+        && resourceEvent.getPieceSnapshot().getDisplayOnHolding() != null) {
+      return resourceEvent.getPieceSnapshot().getDisplayToPublic() &&
+        resourceEvent.getPieceSnapshot().getDisplayOnHolding();
+    }
+    return false;
+  }
 }
