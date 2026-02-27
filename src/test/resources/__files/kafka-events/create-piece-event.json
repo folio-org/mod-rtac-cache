@@ -12,8 +12,8 @@
     "poLineId": "a22efa99-4f2d-43d1-9c3e-0d98be3205eb",
     "titleId": "b7aa8e9c-db80-4c6b-8e84-c85c6f10ff53",
     "holdingId": "55fa3746-8176-49c5-9809-b29dd7bb9b47",
-    "displayOnHolding": false,
-    "displayToPublic": false,
+    "displayOnHolding": true,
+    "displayToPublic": true,
     "receivingStatus": "Expected",
     "isBound": false
   }
