@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -86,8 +87,12 @@ public class RtacHoldingStorageService {
         try {
           List<StatusSummary> statusSummaries = objectMapper.readValue(projection.statusSummariesJson(), new TypeReference<>() {});
           summary.setStatusSummaries(statusSummaries);
+          if (projection.instanceFormatIds() != null) {
+            List<String> instanceFormatIds = objectMapper.readValue(projection.instanceFormatIds(), new TypeReference<>() {});
+            summary.setInstanceFormatIds(instanceFormatIds.stream().filter(Objects::nonNull).toList());
+          }
         } catch (JsonProcessingException e) {
-          throw new RtacDataProcessingException(String.format("Failed to parse locationStatusJson for instanceId %s", id), e);
+          throw new RtacDataProcessingException(String.format("Failed to parse json for instanceId %s", id), e);
         }
         holdings.add(summary);
       } else {
