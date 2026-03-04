@@ -5,6 +5,7 @@ import java.util.UUID;
 public record RtacSummaryProjection(
     UUID instanceId,
     boolean hasVolumes,
+    String instanceFormatIds,
     String statusSummariesJson
 ) {
   public record StatusSummary(

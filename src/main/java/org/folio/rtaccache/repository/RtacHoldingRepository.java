@@ -92,6 +92,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
         SELECT
           h.instance_id AS instanceId,
           bool_or(h.rtac_holding_json->>'volume' IS NOT NULL AND h.rtac_holding_json->>'volume' != '') AS hasVolumes,
+          (SELECT h_if.rtac_holding_json->>'instanceFormatIds' FROM Filtered h_if WHERE h_if.instance_id = h.instance_id LIMIT 1) AS instanceFormatIds,
           (
             SELECT
               json_agg(
