@@ -300,33 +300,6 @@ class RtacHoldingMappingServiceTest {
   }
 
   @Test
-  void testMapForItemTypeFromHolding() {
-    var instanceId = UUID.randomUUID().toString();
-    var holdingId = UUID.randomUUID().toString();
-
-    var existingRtacHolding = new RtacHolding();
-    existingRtacHolding.setId(UUID.randomUUID().toString());
-    existingRtacHolding.setBarcode("barcode-123");
-    existingRtacHolding.setCallNumber("existing-call-number");
-
-    var holding = new HoldingsRecord();
-    holding.setInstanceId(instanceId);
-    holding.setId(holdingId);
-    holding.setCopyNumber("copy-1");
-
-    var result = rtacHoldingMappingService.mapForItemTypeFrom(existingRtacHolding, holding);
-
-    assertNotNull(result);
-    assertEquals(existingRtacHolding.getId(), result.getId());
-    assertEquals(RtacHolding.TypeEnum.ITEM, result.getType());
-    assertEquals(instanceId, result.getInstanceId());
-    assertEquals(holdingId, result.getHoldingsId());
-    assertEquals("barcode-123", result.getBarcode());
-    assertEquals("existing-call-number", result.getCallNumber());
-    assertEquals("copy-1", result.getHoldingsCopyNumber());
-  }
-
-  @Test
   void testMapForItemTypeFromItem() {
     var instanceId = UUID.randomUUID().toString();
     var holdingId = UUID.randomUUID().toString();
