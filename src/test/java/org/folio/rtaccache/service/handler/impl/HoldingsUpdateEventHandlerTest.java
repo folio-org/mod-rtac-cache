@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -39,6 +41,8 @@ class HoldingsUpdateEventHandlerTest {
   @Mock
   RtacHoldingRepository holdingRepository;
   @Mock
+  RtacHoldingBulkRepository holdingBulkRepository;
+  @Mock
   RtacHoldingMappingService mappingService;
   @Mock
   ResourceEventUtil resourceEventUtil;
@@ -49,28 +53,34 @@ class HoldingsUpdateEventHandlerTest {
   }
 
   @Test
-  void holdingsUpdate_shouldSaveAll() {
+  void holdingsUpdate_shouldSaveAll() throws SQLException {
     var existing = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.HOLDING, UUID.fromString(HOLDINGS_ID)),
       false,
       holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID),
       Instant.now()
     );
-    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE)._new(holdingsRecord());
-    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(holdingRepository.findAllByHoldingsId(HOLDINGS_ID)).thenReturn(List.of(existing));
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    newRecord.setCopyNumber("HCN2");
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(holdingRepository.findAllByInstanceIdAndHoldingsIdAndTypeIn(UUID.fromString(INSTANCE_ID), HOLDINGS_ID, List.of(TypeEnum.HOLDING.name(), TypeEnum.PIECE.name()))).thenReturn(List.of(existing));
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID));
 
     handler.handle(event);
 
+    verify(holdingBulkRepository).bulkUpdateHoldingsCopyNumberByInstanceId(UUID.fromString(INSTANCE_ID), HOLDINGS_ID, "HCN2");
     verify(holdingRepository).saveAll(anyList());
   }
 
   @Test
   void holdingsUpdate_shouldNotUpdate_whenNoRtacHoldingExists() {
-    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE)._new(holdingsRecord());
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(holdingsRecord())._new(holdingsRecord());
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(holdingsRecord());
-    when(holdingRepository.findAllByHoldingsId(HOLDINGS_ID)).thenReturn(Collections.emptyList());
+    when(holdingRepository.findAllByInstanceIdAndHoldingsIdAndTypeIn(UUID.fromString(INSTANCE_ID), HOLDINGS_ID, List.of(TypeEnum.HOLDING.name(), TypeEnum.PIECE.name()))).thenReturn(Collections.emptyList());
 
     handler.handle(event);
 

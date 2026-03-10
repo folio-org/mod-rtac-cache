@@ -73,6 +73,18 @@ public class RtacHoldingBulkRepository {
     WHERE instance_id = ?::uuid
   """;
 
+  private static final String HOLDINGS_COPY_NUMBER_DATA_UPDATE_SQL = """
+    UPDATE rtac_holding
+    SET rtac_holding_json = jsonb_set(
+      rtac_holding_json,
+      '{holdingsCopyNumber}',
+      to_jsonb(?::text)
+    )
+    WHERE instance_id = ?::uuid
+    AND type = 'ITEM'
+    AND rtac_holding_json->>'holdingsId' = ?
+  """;
+
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
   private static final int BATCH_SIZE = 200;
@@ -138,6 +150,16 @@ public class RtacHoldingBulkRepository {
     try (Connection connection = dataSource.getConnection();
          PreparedStatement ps = connection.prepareStatement(MARK_AS_SHARED_SQL)) {
       ps.setObject(1, instanceId);
+      ps.executeUpdate();
+    }
+  }
+
+  public void bulkUpdateHoldingsCopyNumberByInstanceId(UUID instanceId, String holdingsId, String holdingsCopyNumber) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+         PreparedStatement ps = connection.prepareStatement(HOLDINGS_COPY_NUMBER_DATA_UPDATE_SQL)) {
+      ps.setString(1, holdingsCopyNumber);
+      ps.setObject(2, instanceId);
+      ps.setString(3, holdingsId);
       ps.executeUpdate();
     }
   }

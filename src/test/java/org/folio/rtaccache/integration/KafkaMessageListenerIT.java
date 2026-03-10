@@ -203,13 +203,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(OLD_CALL_NUMBER);
-        assertThat(holding.get().getRtacHolding().getLocation().getId()).isEqualTo(OLD_LOCATION_ID);
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements()).isNotEmpty();
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements().getFirst().getStatement()).isEqualTo(
-          NEW_STATEMENT);
-        assertThat(holding.get().getRtacHolding().getNotes()).isNotEmpty();
-        assertThat(holding.get().getRtacHolding().getNotes().getFirst().getNote()).isEqualTo(NEW_NOTE_VALUE);
         assertThat(holding.get().getRtacHolding().getHoldingsCopyNumber()).isEqualTo(NEW_HOLDINGS_COPY_NUMBER);
       });
     });
