@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.CirculationClient;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Request;
+import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ public class CirculationService {
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
   private final CirculationClient circulationClient;
+  private final SettingsService settingsService;
+  private final SystemUserScopedExecutionService executionService;
+
   private static final Integer MAX_RECORDS = 1000;
   private static final Integer MAX_IDS_FOR_CQL = 50;
 
@@ -46,16 +50,29 @@ public class CirculationService {
 
   private CompletableFuture<Map<String, Date>> submitLoansBatch(List<String> itemIds) {
     return CompletableFuture.supplyAsync(() -> {
-      var itemDueDateMap = new HashMap<String, Date>();
-      var response = circulationClient.getLoans(getLoansBatchRequest(itemIds));
-      if (response.getTotalRecords() == 0) {
-        return itemDueDateMap;
+      var loanTenant = settingsService.getLoanTenant();
+
+      if (loanTenant == null) {
+        return fetchLoansForItems(itemIds);
       }
-      for (var loan : response.getLoans()) {
-        itemDueDateMap.put(loan.getItemId(), loan.getDueDate());
-      }
-      return itemDueDateMap;
+
+      return executionService.executeSystemUserScoped(
+        loanTenant,
+        () -> fetchLoansForItems(itemIds)
+      );
     }, taskExecutor);
+  }
+
+  private Map<String, Date> fetchLoansForItems(List<String> itemIds) {
+    var itemDueDateMap = new HashMap<String, Date>();
+    var response = circulationClient.getLoans(getLoansBatchRequest(itemIds));
+    if (response.getTotalRecords() == 0) {
+      return itemDueDateMap;
+    }
+    for (var loan : response.getLoans()) {
+      itemDueDateMap.put(loan.getItemId(), loan.getDueDate());
+    }
+    return itemDueDateMap;
   }
 
   private FolioCqlRequest getLoansBatchRequest(List<String> itemIds) {

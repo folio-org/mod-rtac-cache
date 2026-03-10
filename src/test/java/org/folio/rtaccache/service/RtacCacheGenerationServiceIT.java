@@ -3,19 +3,31 @@ package org.folio.rtaccache.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
+import org.folio.rtaccache.client.SettingsClient;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.dto.Settings;
+import org.folio.rtaccache.domain.dto.SettingsItemsInner;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
@@ -29,10 +41,35 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
 
   @Autowired
   private RtacCacheGenerationService rtacCacheGenerationService;
+
   @Autowired
   private RtacHoldingRepository rtacHoldingRepository;
+
   @MockitoSpyBean
   private FolioExecutionContext folioExecutionContext;
+
+  @MockitoBean
+  private SettingsClient settingsClient;
+
+  @Autowired(required = false)
+  private CacheManager cacheManager;
+
+  @BeforeEach
+  void setUp() {
+    // Because of the loan tenant settings cache, we need to clear it before each test to ensure different scenarios are tested properly
+    if (cacheManager != null) {
+      cacheManager.getCacheNames().forEach(name -> {
+        var cache = cacheManager.getCache(name);
+        if (cache != null) {
+          cache.clear();
+        }
+      });
+    }
+
+    // No loan-tenant configured for tests by default. Individual tests will override this if needed.
+    lenient().when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
+      .thenReturn(new Settings().items(List.of()));
+  }
 
   @AfterEach
   void tearDown() {
@@ -93,6 +130,29 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
     assertEquals(INSTANCE_FORMAT_ID, rtacHoldingEntity.getRtacHolding().getInstanceFormatIds().getFirst());
     assertTrue(rtacHoldingEntity.getRtacHolding().getIsBoundWith());
     assertFalse(rtacHoldingEntity.isShared());
+  }
+
+  @Test
+  void generateRtacCache_shouldUseLoanTenantFromSettingsAndUseCache() {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    when(folioExecutionContext.getOkapiUrl()).thenReturn(WIRE_MOCK.baseUrl());
+
+    var settingsWithLoanTenant = new Settings()
+      .items(List.of(new SettingsItemsInner().value(TestConstant.TEST_CENTRAL_TENANT)));
+
+    when(settingsClient.getSettings(ArgumentMatchers.any(FolioCqlRequest.class)))
+      .thenReturn(settingsWithLoanTenant);
+
+    // Generate two different instances under the same tenant
+    var future1 = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_1);
+    future1.join();
+
+    var future2 = rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_2);
+    future2.join();
+
+    // SettingsClient.getSettings should have been called only once because of cache
+    verify(settingsClient, times(1))
+      .getSettings(ArgumentMatchers.any(FolioCqlRequest.class));
   }
 
 }
