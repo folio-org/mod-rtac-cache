@@ -21,8 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class LoanUpdateEventHandlerTest {
 
-  private static final String INSTANCE_ID = UUID.randomUUID().toString();
-  private static final String HOLDINGS_ID = UUID.randomUUID().toString();
   private static final String ITEM_ID = UUID.randomUUID().toString();
 
   @InjectMocks

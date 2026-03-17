@@ -9,6 +9,7 @@ import org.folio.rtaccache.domain.dto.CirculationEntityType;
 import org.folio.rtaccache.domain.dto.CirculationEventType;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.Request;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.handler.CirculationEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -46,7 +47,7 @@ public class RequestCreateEventHandler implements CirculationEventHandler {
       holdingRepository.updateItemsHoldCount(UUID.fromString(instanceId), UUID.fromString(itemId), 1);
     } catch (SQLException e) {
       log.error("Error during updating RTAC holdings with incremented hold count by item id: {}", itemId, e);
-      throw new RuntimeException(e);
+      throw new RtacKafkaUpdateException(e);
     }
   }
 

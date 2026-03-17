@@ -10,6 +10,7 @@ import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.InventoryEventHandler;
@@ -40,7 +41,7 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
       holdingBulkRepository.updatePieceDataFromKafkaHoldingsEvent(instanceId, oldHoldingsData.getId(), holding);
     } catch (SQLException | JsonProcessingException e) {
       log.error("Error while updating holdings data", e);
-      throw new RuntimeException(e);
+      throw new RtacKafkaUpdateException(e);
     }
     if (!Objects.equals(oldHoldingsData.getCopyNumber(), holdingsData.getCopyNumber())) {
       updateHoldingsCopyNumberForItems(holdingsData);
@@ -55,6 +56,7 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
     } catch (SQLException e) {
       log.error("Error occurred during bulk update of holdings copy number for instance with id: {}, holdings id: {}",
         holdingsData.getInstanceId(), holdingsData.getId(), e);
+      throw new RtacKafkaUpdateException(e);
     }
   }
 

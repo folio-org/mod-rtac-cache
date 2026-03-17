@@ -8,6 +8,7 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.domain.kafka.KafkaItem;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
@@ -37,10 +38,10 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
         rtacHoldingUpdate);
     } catch (SQLException e) {
       log.error("Error during updating RTAC holdings with item data by item id: {}", item.getId(), e);
-      throw new RuntimeException(e);
+      throw new RtacKafkaUpdateException(e);
     } catch (JsonProcessingException e) {
       log.error("Error during mapping item data to JSON for item with id: {}", item.getId(), e);
-      throw new RuntimeException(e);
+      throw new RtacKafkaUpdateException(e);
     }
   }
 

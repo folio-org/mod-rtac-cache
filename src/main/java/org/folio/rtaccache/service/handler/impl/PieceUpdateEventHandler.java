@@ -11,6 +11,7 @@ import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
@@ -40,7 +41,7 @@ public class PieceUpdateEventHandler implements PieceEventHandler {
           rtacHoldingBulkRepository.updatePieceDataFromKafkaPiecesEvent(UUID.fromString(resourceEvent.getPieceId()), existingPiece.get().getRtacHolding());
         } catch (SQLException e) {
           log.error("Error during updating RTAC holdings with piece data by piece id: {}", resourceEvent.getPieceId(), e);
-          throw new RuntimeException(e);
+          throw new RtacKafkaUpdateException(e);
         }
       } else {
         createNewPieceFromHolding(resourceEvent).ifPresent(holdingRepository::save);

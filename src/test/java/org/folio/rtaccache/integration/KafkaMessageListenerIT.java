@@ -67,7 +67,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
-  private static final String UPDATE_ITEM_EVENT_WITHOUT_CALL_NUMBER_PATH = "__files/kafka-events/update-item-without-call-number-event.json";
   private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
   private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
   private static final String CREATE_REQUEST_EVENT_PATH = "__files/kafka-events/create-request-event.json";
@@ -664,13 +663,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private void createExistingRtacHoldingEntity(String id, TypeEnum type, boolean isBoundWith) {
     var entity = createGeneralRtacHoldingEntity(id, type);
     var rtacHolding = createRtacHolding(id, type, isBoundWith, OLD_CALL_NUMBER);
-    entity.setRtacHolding(rtacHolding);
-    holdingRepository.save(entity);
-  }
-
-  private void createExistingRtacHoldingEntityWithoutCallNumber(String id, TypeEnum type) {
-    var entity = createGeneralRtacHoldingEntity(id, type);
-    var rtacHolding = createRtacHolding(id, type, false, null);
     entity.setRtacHolding(rtacHolding);
     holdingRepository.save(entity);
   }

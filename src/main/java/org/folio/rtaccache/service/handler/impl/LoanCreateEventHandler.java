@@ -9,6 +9,7 @@ import org.folio.rtaccache.domain.dto.CirculationEntityType;
 import org.folio.rtaccache.domain.dto.CirculationEventType;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.Loan;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.handler.CirculationEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -36,7 +37,7 @@ public class LoanCreateEventHandler implements CirculationEventHandler {
       holdingRepository.updateItemsDueDate(itemId, dueDate);
     } catch (SQLException e) {
       log.error("Error during updating RTAC holdings with due date by item id: {}", itemId, e);
-      throw new RuntimeException(e);
+      throw new RtacKafkaUpdateException(e);
     }
   }
 
