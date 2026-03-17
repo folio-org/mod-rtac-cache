@@ -1,14 +1,17 @@
 package org.folio.rtaccache.service.handler.impl;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.PieceEventHandler;
@@ -17,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class PieceUpdateEventHandler implements PieceEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
+  private final RtacHoldingBulkRepository rtacHoldingBulkRepository;
   private final RtacHoldingRepository holdingRepository;
 
   @Override
@@ -29,10 +34,16 @@ public class PieceUpdateEventHandler implements PieceEventHandler {
       return;
     }
     if (isPublicPiece(resourceEvent)) {
-      var entityToSave = getUpdatedExistingPiece(resourceEvent)
-        .orElseGet(() -> createNewPieceFromHolding(resourceEvent).orElse(null));
-      if (entityToSave != null) {
-        holdingRepository.save(entityToSave);
+      var existingPiece = getUpdatedExistingPiece(resourceEvent);
+      if (existingPiece.isPresent()) {
+        try {
+          rtacHoldingBulkRepository.updatePieceDataFromKafkaPiecesEvent(UUID.fromString(resourceEvent.getPieceId()), existingPiece.get().getRtacHolding());
+        } catch (SQLException e) {
+          log.error("Error during updating RTAC holdings with piece data by piece id: {}", resourceEvent.getPieceId(), e);
+          throw new RuntimeException(e);
+        }
+      } else {
+        createNewPieceFromHolding(resourceEvent).ifPresent(holdingRepository::save);
       }
     } else {
       holdingRepository.deleteByIdId(UUID.fromString(resourceEvent.getPieceId()));

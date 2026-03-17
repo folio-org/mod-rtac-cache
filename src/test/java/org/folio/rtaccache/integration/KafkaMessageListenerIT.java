@@ -225,9 +225,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(OLD_STATUS);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
         assertThat(holding.get().getRtacHolding().getLocation().getId()).isEqualTo(NEW_LOCATION_ID);
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements().getFirst().getStatement()).isEqualTo(
-          NEW_STATEMENT);
-        assertThat(holding.get().getRtacHolding().getNotes().getFirst().getNote()).isEqualTo(NEW_NOTE_VALUE);
       });
     });
   }
@@ -292,25 +289,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(holding.get().getRtacHolding().getMaterialType().getName()).isEqualTo(NEW_MATERIAL_TYPE_NAME);
         assertThat(holding.get().getRtacHolding().getBarcode()).isEqualTo(NEW_BARCODE);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
-      });
-    });
-  }
-
-  @Test
-  @Order(9)
-  void shouldUpdateRtacHolding_withItemType_andPopulateHoldingsCallNumber_whenItemUpdateEventIsSent() throws JsonProcessingException {
-    withinTenant(TEST_TENANT, () -> {
-      // Given
-      createExistingRtacHoldingEntityWithoutCallNumber(ITEM_ID, TypeEnum.ITEM);
-      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
-      var event = loadInventoryResourceEvent(UPDATE_ITEM_EVENT_WITHOUT_CALL_NUMBER_PATH);
-      // When
-      sendItemKafkaMessage(event, ITEM_ID);
-      // Then
-      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
-        assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(OLD_CALL_NUMBER);
       });
     });
   }

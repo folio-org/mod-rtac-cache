@@ -132,6 +132,25 @@ public class RtacHoldingMappingService {
     return newRtacHolding;
   }
 
+  public RtacHolding mapForUpdateItemFrom(Item item) {
+    var newRtacHolding = new RtacHolding();
+    newRtacHolding.setId(item.getId());
+    newRtacHolding.setType(TypeEnum.ITEM);
+    newRtacHolding.setBarcode(item.getBarcode());
+    newRtacHolding.setCallNumber(mapItemCallNumber(item));
+    newRtacHolding.setItemCopyNumber(item.getCopyNumber());
+    newRtacHolding.setVolume(mapVolumeFrom(item));
+    newRtacHolding.setEffectiveShelvingOrder(item.getEffectiveShelvingOrder());
+    newRtacHolding.setStatus(item.getStatus().getName().getValue());
+    newRtacHolding.setSuppressFromDiscovery(item.getDiscoverySuppress());
+    newRtacHolding.setLocation(mapLocationFrom(item.getEffectiveLocationId()));
+    newRtacHolding.setLibrary(mapLibraryFrom(item.getEffectiveLocationId()));
+    newRtacHolding.setMaterialType(mapMaterialTypeFrom(item));
+    newRtacHolding.setTemporaryLoanType(mapLoanTypeFrom(item.getTemporaryLoanTypeId()));
+    newRtacHolding.setPermanentLoanType(mapLoanTypeFrom(item.getPermanentLoanTypeId()));
+    return newRtacHolding;
+  }
+
   public RtacHolding mapForBoundWithItemTypeFrom(RtacHolding holdingsRtacHolding, RtacHolding itemRtacHolding) {
     var newRtacHolding = new RtacHolding();
     newRtacHolding.setId(itemRtacHolding.getId());

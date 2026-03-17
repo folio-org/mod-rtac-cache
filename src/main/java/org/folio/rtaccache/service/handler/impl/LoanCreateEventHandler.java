@@ -1,14 +1,15 @@
 package org.folio.rtaccache.service.handler.impl;
 
 
+import java.sql.SQLException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.CirculationEntityType;
 import org.folio.rtaccache.domain.dto.CirculationEventType;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.Loan;
-import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
-import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.handler.CirculationEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class LoanCreateEventHandler implements CirculationEventHandler {
 
-  private final RtacHoldingRepository holdingRepository;
+  private final RtacHoldingBulkRepository holdingRepository;
   private final ResourceEventUtil resourceEventUtil;
 
   @Override
@@ -29,13 +31,13 @@ public class LoanCreateEventHandler implements CirculationEventHandler {
     if(dueDate == null) {
       return;
     }
-    var itemId = loanData.getItemId();
-    holdingRepository.findByIdIdAndIdType(UUID.fromString(itemId), TypeEnum.ITEM)
-      .ifPresent(existingItemEntity -> {
-        var existingRtacHolding = existingItemEntity.getRtacHolding();
-        existingRtacHolding.setDueDate(dueDate);
-        holdingRepository.save(existingItemEntity);
-      });
+    var itemId = UUID.fromString(loanData.getItemId());
+    try {
+      holdingRepository.updateItemsDueDate(itemId, dueDate);
+    } catch (SQLException e) {
+      log.error("Error during updating RTAC holdings with due date by item id: {}", itemId, e);
+      throw new RuntimeException(e);
+    }
   }
 
   @Override

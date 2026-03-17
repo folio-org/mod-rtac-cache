@@ -1,24 +1,16 @@
 package org.folio.rtaccache.service.handler.impl;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-
-import jakarta.annotation.PostConstruct;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
-import org.folio.rtaccache.domain.dto.RtacHolding;
-import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
-import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -31,19 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class HoldingsUpdateEventHandler implements InventoryEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
-  private final RtacHoldingRepository holdingRepository;
   private final RtacHoldingBulkRepository holdingBulkRepository;
   private final ResourceEventUtil resourceEventUtil;
-
-  private Map<TypeEnum, BiFunction<RtacHolding, HoldingsRecord, RtacHolding>> holdingsUpdateHandlers;
-
-  @PostConstruct
-  void init() {
-    holdingsUpdateHandlers = Map.of(
-      TypeEnum.HOLDING, this::mapForHoldingTypeFrom,
-      TypeEnum.PIECE, rtacHoldingMappingService::mapForPieceTypeFrom
-    );
-  }
 
   @Override
   @Transactional
@@ -52,32 +33,23 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     log.info("Handling Holdings update event for item with id: {}", holdingsData.getId());
     var instanceId = UUID.fromString(oldHoldingsData.getInstanceId());
-    var updatedEntities = holdingRepository.findAllByInstanceIdAndHoldingsIdAndTypeIn(instanceId, holdingsData.getId(),
-        List.of(TypeEnum.HOLDING.name(), TypeEnum.PIECE.name()))
-      .stream()
-      .map(entity -> {
-        var existingRtacHolding = entity.getRtacHolding();
-        var handler = holdingsUpdateHandlers.get(existingRtacHolding.getType());
-        entity.setRtacHolding(handler.apply(existingRtacHolding, holdingsData));
-        return entity;
-      })
-      .toList();
-
-    if (isNotEmpty(updatedEntities)) {
-      holdingRepository.saveAll(updatedEntities);
+    var holdingsId = UUID.fromString(oldHoldingsData.getId());
+    try {
+      var holding = rtacHoldingMappingService.mapFrom(holdingsData);
+      holdingBulkRepository.updateHoldingsDataFromKafkaHoldingsEvent(instanceId, holdingsId, holding);
+      holdingBulkRepository.updatePieceDataFromKafkaHoldingsEvent(instanceId, oldHoldingsData.getId(), holding);
+    } catch (SQLException | JsonProcessingException e) {
+      log.error("Error while updating holdings data", e);
+      throw new RuntimeException(e);
     }
     if (!Objects.equals(oldHoldingsData.getCopyNumber(), holdingsData.getCopyNumber())) {
-      updateHoldingsCopyNumber(holdingsData);
+      updateHoldingsCopyNumberForItems(holdingsData);
     }
   }
 
-  private RtacHolding mapForHoldingTypeFrom(RtacHolding rtacHolding, HoldingsRecord holdings) {
-    return rtacHoldingMappingService.mapFrom(holdings);
-  }
-
-  private void updateHoldingsCopyNumber(HoldingsRecord holdingsData) {
+  private void updateHoldingsCopyNumberForItems(HoldingsRecord holdingsData) {
     try {
-      holdingBulkRepository.bulkUpdateHoldingsCopyNumberByInstanceId(
+      holdingBulkRepository.updateItemsHoldingsCopyNumber(
         UUID.fromString(holdingsData.getInstanceId()),
         holdingsData.getId(), holdingsData.getCopyNumber());
     } catch (SQLException e) {
