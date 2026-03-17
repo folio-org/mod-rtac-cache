@@ -12,13 +12,16 @@ import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.util.ResourceEventUtil;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,21 @@ class HoldingsUpdateEventHandlerTest {
     verify(holdingBulkRepository).updateItemsHoldingsCopyNumber(UUID.fromString(INSTANCE_ID), HOLDINGS_ID, "HCN2");
     verify(holdingBulkRepository).updateHoldingsDataFromKafkaHoldingsEvent(UUID.fromString(INSTANCE_ID), UUID.fromString(HOLDINGS_ID), mappedHolding);
     verify(holdingBulkRepository).updatePieceDataFromKafkaHoldingsEvent(UUID.fromString(INSTANCE_ID), HOLDINGS_ID, mappedHolding);
+  }
+
+  @Test
+  void holdingsUpdate_shouldRethrowWhenExceptionHappensDuringSave() throws SQLException, JsonProcessingException {
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    newRecord.setCopyNumber("HCN2");
+    var mappedHolding = holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(mappedHolding);
+    Mockito.doThrow(new SQLException("DB error")).when(holdingBulkRepository).updateHoldingsDataFromKafkaHoldingsEvent(any(), any(), any());
+
+    Assertions.assertThrowsExactly(RtacKafkaUpdateException.class, () -> handler.handle(event));
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {

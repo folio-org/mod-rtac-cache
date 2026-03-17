@@ -1,5 +1,7 @@
 package org.folio.rtaccache.service.handler.impl;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +44,19 @@ class LoanCreateEventHandlerTest {
     handler.handle(event);
 
     verify(holdingRepository).updateItemsDueDate(UUID.fromString(ITEM_ID), loan.getDueDate());
+  }
+
+  @Test
+  void loanCreate_shouldDoNothingWhenLoanDueDateIsNull() throws SQLException {
+    var loan = loan(null, "Open");
+    var event = new CirculationResourceEvent()
+      .type(CirculationEventType.CREATED)
+      .data(new org.folio.rtaccache.domain.dto.CirculationResourceEventData()._new(loan));
+    when(resourceEventUtil.getNewFromCirculationEvent(event, Loan.class)).thenReturn(loan);
+
+    handler.handle(event);
+
+    verify(holdingRepository, never()).updateItemsDueDate(any(), any());
   }
 
   private Loan loan(Date dueDate, String statusName) {
