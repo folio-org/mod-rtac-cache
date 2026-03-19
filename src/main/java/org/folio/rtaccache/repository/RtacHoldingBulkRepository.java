@@ -81,7 +81,7 @@ public class RtacHoldingBulkRepository {
     SET rtac_holding_json = jsonb_set(
       rtac_holding_json,
       '{holdingsCopyNumber}',
-      to_jsonb(?::text)
+      COALESCE(to_jsonb(?::text), 'null'::jsonb)
     )
     WHERE instance_id = ?::uuid
     AND type = 'ITEM'
@@ -93,7 +93,7 @@ public class RtacHoldingBulkRepository {
     SET rtac_holding_json = jsonb_set(
       rtac_holding_json,
       '{dueDate}',
-      to_jsonb(?::text)
+      COALESCE(to_jsonb(?::text), 'null'::jsonb)
     )
     WHERE type = 'ITEM'
     AND id = ?::uuid

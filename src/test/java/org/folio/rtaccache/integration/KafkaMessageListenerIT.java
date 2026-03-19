@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,6 +95,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String NEW_STATEMENT = "Test";
   private static final String NEW_STATUS = "Checked out";
   private static final String OLD_STATUS = "Available";
+  private static final Date OLD_DUE_DATE = Date.from(Instant.parse("2026-03-18T16:28:32.811+00:00"));
   private static final String NEW_MATERIAL_TYPE_NAME = "book";
   private static final String NEW_BARCODE = "1232323232";
   private static final String NEW_VOLUME = "(Test)";
@@ -340,7 +342,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getDueDate()).isEqualTo("2026-01-19T23:59:00.000+00:00");
+        assertThat(holding.get().getRtacHolding().getDueDate()).isNull();
       });
     });
   }
@@ -685,6 +687,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHolding.setInstanceId(INSTANCE_ID_1);
     rtacHolding.setHoldingsId(HOLDINGS_ID_1);
     rtacHolding.setType(type);
+    rtacHolding.setDueDate(OLD_DUE_DATE);
     rtacHolding.setStatus(OLD_STATUS);
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
     rtacHolding.setTotalHoldRequests(1);
