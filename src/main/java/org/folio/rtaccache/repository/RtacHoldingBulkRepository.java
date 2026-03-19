@@ -112,61 +112,61 @@ public class RtacHoldingBulkRepository {
   """;
 
   private static final String ITEM_KAFKA_UPDATE_SQL = """
-      UPDATE rtac_holding
-      SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
-        'barcode', ?::text,
-        'callNumber', ?::text,
-        'itemCopyNumber', ?::text,
-        'volume', ?::text,
-        'effectiveShelvingOrder', ?::text,
-        'status', ?::text,
-        'suppressFromDiscovery', ?::boolean,
-        'location', ?::jsonb,
-        'library', ?::jsonb,
-        'materialType', ?::jsonb,
-        'temporaryLoanType', ?::text,
-        'permanentLoanType', ?::text )
-      WHERE instance_id = ?::uuid AND type = 'ITEM'
-      AND id = ?::uuid
-    """;
+    UPDATE rtac_holding
+    SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
+      'barcode', ?::text,
+      'callNumber', ?::text,
+      'itemCopyNumber', ?::text,
+      'volume', ?::text,
+      'effectiveShelvingOrder', ?::text,
+      'status', ?::text,
+      'suppressFromDiscovery', ?::boolean,
+      'location', ?::jsonb,
+      'library', ?::jsonb,
+      'materialType', ?::jsonb,
+      'temporaryLoanType', ?::text,
+      'permanentLoanType', ?::text )
+    WHERE instance_id = ?::uuid AND type = 'ITEM'
+    AND id = ?::uuid
+  """;
 
   private static final String HOLDINGS_KAFKA_UPDATE_SQL = """
-      UPDATE rtac_holding
-      SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
-        'callNumber', ?::text,
-        'holdingsCopyNumber', ?::text,
-        'status', ?::text,
-        'suppressFromDiscovery', ?::boolean,
-        'location', ?::jsonb,
-        'library', ?::jsonb,
-        'holdingsStatements', ?::jsonb,
-        'holdingsStatementsForIndexes', ?::jsonb,
-        'holdingsStatementsForSupplements', ?::jsonb,
-        'notes', ?::jsonb )
-      WHERE instance_id = ?::uuid AND type = 'HOLDING'
-      AND id = ?::uuid
-    """;
+    UPDATE rtac_holding
+    SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
+      'callNumber', ?::text,
+      'holdingsCopyNumber', ?::text,
+      'status', ?::text,
+      'suppressFromDiscovery', ?::boolean,
+      'location', ?::jsonb,
+      'library', ?::jsonb,
+      'holdingsStatements', ?::jsonb,
+      'holdingsStatementsForIndexes', ?::jsonb,
+      'holdingsStatementsForSupplements', ?::jsonb,
+      'notes', ?::jsonb )
+    WHERE instance_id = ?::uuid AND type = 'HOLDING'
+    AND id = ?::uuid
+  """;
 
   private static final String HOLDINGS_PIECES_KAFKA_UPDATE_SQL = """
-      UPDATE rtac_holding
-      SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
-        'callNumber', ?::text,
-        'location', ?::jsonb,
-        'library', ?::jsonb)
-      WHERE instance_id = ?::uuid AND type = 'PIECE'
-      AND rtac_holding_json->>'holdingsId' = ?
-    """;
+    UPDATE rtac_holding
+    SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
+      'callNumber', ?::text,
+      'location', ?::jsonb,
+      'library', ?::jsonb)
+    WHERE instance_id = ?::uuid AND type = 'PIECE'
+    AND rtac_holding_json->>'holdingsId' = ?
+  """;
 
   private static final String PIECE_KAFKA_UPDATE_SQL = """
-      UPDATE rtac_holding
-      SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
-        'holdingsCopyNumber', ?::text,
-        'status', ?::text,
-        'volume', ?::text,
-        'suppressFromDiscovery', ?::boolean )
-      WHERE type = 'PIECE'
-      AND id = ?::uuid
-    """;
+    UPDATE rtac_holding
+    SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
+      'holdingsCopyNumber', ?::text,
+      'status', ?::text,
+      'volume', ?::text,
+      'suppressFromDiscovery', ?::boolean )
+    WHERE type = 'PIECE'
+    AND id = ?::uuid
+  """;
 
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
