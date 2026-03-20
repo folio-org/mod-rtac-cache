@@ -5,6 +5,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import org.folio.rtaccache.domain.dto.PieceEventAction;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.junit.jupiter.api.Test;
@@ -35,12 +37,14 @@ class PieceUpdateEventHandlerTest {
   PieceUpdateEventHandler handler;
 
   @Mock
+  RtacHoldingBulkRepository rtacHoldingBulkRepository;
+  @Mock
   RtacHoldingRepository holdingRepository;
   @Mock
   RtacHoldingMappingService mappingService;
 
   @Test
-  void pieceUpdate_shouldSaveEntity() {
+  void pieceUpdate_shouldSaveEntity() throws SQLException {
     var pieceEntity = new RtacHoldingEntity(
       new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.PIECE, UUID.fromString(PIECE_ID)),
       false,
@@ -60,7 +64,8 @@ class PieceUpdateEventHandlerTest {
 
     handler.handle(event);
 
-    verify(holdingRepository).save(pieceEntity);
+    verify(rtacHoldingBulkRepository).updatePieceDataFromKafkaPiecesEvent(
+      UUID.fromString(PIECE_ID), mappedPieceRtac);
   }
 
   @Test

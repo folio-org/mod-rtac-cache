@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,7 +68,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
-  private static final String UPDATE_ITEM_EVENT_WITHOUT_CALL_NUMBER_PATH = "__files/kafka-events/update-item-without-call-number-event.json";
   private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
   private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
   private static final String CREATE_REQUEST_EVENT_PATH = "__files/kafka-events/create-request-event.json";
@@ -95,6 +95,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String NEW_STATEMENT = "Test";
   private static final String NEW_STATUS = "Checked out";
   private static final String OLD_STATUS = "Available";
+  private static final Date OLD_DUE_DATE = Date.from(Instant.parse("2026-03-18T16:28:32.811+00:00"));
   private static final String NEW_MATERIAL_TYPE_NAME = "book";
   private static final String NEW_BARCODE = "1232323232";
   private static final String NEW_VOLUME = "(Test)";
@@ -203,13 +204,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(OLD_CALL_NUMBER);
-        assertThat(holding.get().getRtacHolding().getLocation().getId()).isEqualTo(OLD_LOCATION_ID);
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements()).isNotEmpty();
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements().getFirst().getStatement()).isEqualTo(
-          NEW_STATEMENT);
-        assertThat(holding.get().getRtacHolding().getNotes()).isNotEmpty();
-        assertThat(holding.get().getRtacHolding().getNotes().getFirst().getNote()).isEqualTo(NEW_NOTE_VALUE);
         assertThat(holding.get().getRtacHolding().getHoldingsCopyNumber()).isEqualTo(NEW_HOLDINGS_COPY_NUMBER);
       });
     });
@@ -232,9 +226,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(OLD_STATUS);
         assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(NEW_CALL_NUMBER);
         assertThat(holding.get().getRtacHolding().getLocation().getId()).isEqualTo(NEW_LOCATION_ID);
-        assertThat(holding.get().getRtacHolding().getHoldingsStatements().getFirst().getStatement()).isEqualTo(
-          NEW_STATEMENT);
-        assertThat(holding.get().getRtacHolding().getNotes().getFirst().getNote()).isEqualTo(NEW_NOTE_VALUE);
       });
     });
   }
@@ -304,25 +295,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(9)
-  void shouldUpdateRtacHolding_withItemType_andPopulateHoldingsCallNumber_whenItemUpdateEventIsSent() throws JsonProcessingException {
-    withinTenant(TEST_TENANT, () -> {
-      // Given
-      createExistingRtacHoldingEntityWithoutCallNumber(ITEM_ID, TypeEnum.ITEM);
-      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
-      var event = loadInventoryResourceEvent(UPDATE_ITEM_EVENT_WITHOUT_CALL_NUMBER_PATH);
-      // When
-      sendItemKafkaMessage(event, ITEM_ID);
-      // Then
-      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
-        assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getCallNumber()).isEqualTo(OLD_CALL_NUMBER);
-      });
-    });
-  }
-
-  @Test
   @Order(10)
   void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() throws JsonProcessingException {
     withinTenant(TEST_TENANT, () -> {
@@ -370,7 +342,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
         assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getDueDate()).isEqualTo("2026-01-19T23:59:00.000+00:00");
+        assertThat(holding.get().getRtacHolding().getDueDate()).isNull();
       });
     });
   }
@@ -697,13 +669,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     holdingRepository.save(entity);
   }
 
-  private void createExistingRtacHoldingEntityWithoutCallNumber(String id, TypeEnum type) {
-    var entity = createGeneralRtacHoldingEntity(id, type);
-    var rtacHolding = createRtacHolding(id, type, false, null);
-    entity.setRtacHolding(rtacHolding);
-    holdingRepository.save(entity);
-  }
-
   private RtacHoldingEntity createGeneralRtacHoldingEntity(String id, TypeEnum type) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
     RtacHoldingId rtacHoldingId = new RtacHoldingId();
@@ -722,6 +687,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     rtacHolding.setInstanceId(INSTANCE_ID_1);
     rtacHolding.setHoldingsId(HOLDINGS_ID_1);
     rtacHolding.setType(type);
+    rtacHolding.setDueDate(OLD_DUE_DATE);
     rtacHolding.setStatus(OLD_STATUS);
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
     rtacHolding.setTotalHoldRequests(1);

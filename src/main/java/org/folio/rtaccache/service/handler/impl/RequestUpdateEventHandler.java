@@ -1,15 +1,17 @@
 package org.folio.rtaccache.service.handler.impl;
 
+import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.CirculationEntityType;
 import org.folio.rtaccache.domain.dto.CirculationEventType;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.rtaccache.domain.dto.Request.StatusEnum;
-import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
-import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.handler.CirculationEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
 import org.springframework.stereotype.Service;
@@ -17,9 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class RequestUpdateEventHandler implements CirculationEventHandler {
 
-  private final RtacHoldingRepository holdingRepository;
+  private final RtacHoldingBulkRepository holdingRepository;
   private final ResourceEventUtil resourceEventUtil;
 
   @Override
@@ -39,21 +42,20 @@ public class RequestUpdateEventHandler implements CirculationEventHandler {
       return;
     }
     var itemId = requestData.getItemId();
-    if (itemId == null) {
+    var instanceId = requestData.getInstanceId();
+    if (itemId == null || instanceId == null) {
       return;
     }
-    holdingRepository.findByIdIdAndIdType(UUID.fromString(itemId), TypeEnum.ITEM)
-      .ifPresent(existingItemEntity -> {
-        var existingRtacHolding = existingItemEntity.getRtacHolding();
-        var existingTotalRequestsCount = existingRtacHolding.getTotalHoldRequests();
-        if (existingTotalRequestsCount == null) {
-          return;
-        }
-        if (isClosed && existingTotalRequestsCount > 0) {
-          existingRtacHolding.setTotalHoldRequests(existingTotalRequestsCount - 1);
-          holdingRepository.save(existingItemEntity);
-        }
-      });
+
+    if (isClosed) {
+      try {
+        holdingRepository.updateItemsHoldCount(UUID.fromString(instanceId), UUID.fromString(itemId), -1);
+      } catch (SQLException e) {
+        log.error("Error during decreasing hold count in RTAC holdings by item id: {}", itemId, e);
+        throw new RtacKafkaUpdateException(e);
+      }
+    }
+
   }
 
   @Override

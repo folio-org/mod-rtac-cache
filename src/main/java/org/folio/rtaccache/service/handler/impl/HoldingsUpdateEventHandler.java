@@ -1,19 +1,17 @@
 package org.folio.rtaccache.service.handler.impl;
 
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-
-import jakarta.annotation.PostConstruct;
-import java.util.Map;
-import java.util.function.BiFunction;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.sql.SQLException;
+import java.util.Objects;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
-import org.folio.rtaccache.domain.dto.RtacHolding;
-import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
-import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
+import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -26,42 +24,40 @@ import org.springframework.transaction.annotation.Transactional;
 public class HoldingsUpdateEventHandler implements InventoryEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
-  private final RtacHoldingRepository holdingRepository;
+  private final RtacHoldingBulkRepository holdingBulkRepository;
   private final ResourceEventUtil resourceEventUtil;
-
-  private Map<TypeEnum, BiFunction<RtacHolding, HoldingsRecord, RtacHolding>> holdingsUpdateHandlers;
-
-  @PostConstruct
-  void init() {
-    holdingsUpdateHandlers = Map.of(
-      TypeEnum.HOLDING, this::mapForHoldingTypeFrom,
-      TypeEnum.ITEM, rtacHoldingMappingService::mapForItemTypeFrom,
-      TypeEnum.PIECE, rtacHoldingMappingService::mapForPieceTypeFrom
-    );
-  }
 
   @Override
   @Transactional
   public void handle(InventoryResourceEvent resourceEvent) {
+    var oldHoldingsData = resourceEventUtil.getOldFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     log.info("Handling Holdings update event for item with id: {}", holdingsData.getId());
-    var updatedEntities = holdingRepository.findAllByHoldingsId(holdingsData.getId())
-      .stream()
-      .map(entity -> {
-        var existingRtacHolding = entity.getRtacHolding();
-        var handler = holdingsUpdateHandlers.get(existingRtacHolding.getType());
-        entity.setRtacHolding(handler.apply(existingRtacHolding, holdingsData));
-        return entity;
-      })
-      .toList();
-
-    if (isNotEmpty(updatedEntities)) {
-      holdingRepository.saveAll(updatedEntities);
+    var instanceId = UUID.fromString(oldHoldingsData.getInstanceId());
+    var holdingsId = UUID.fromString(oldHoldingsData.getId());
+    try {
+      var holding = rtacHoldingMappingService.mapFrom(holdingsData);
+      holdingBulkRepository.updateHoldingsDataFromKafkaHoldingsEvent(instanceId, holdingsId, holding);
+      holdingBulkRepository.updatePieceDataFromKafkaHoldingsEvent(instanceId, oldHoldingsData.getId(), holding);
+    } catch (SQLException | JsonProcessingException e) {
+      log.error("Error while updating holdings data", e);
+      throw new RtacKafkaUpdateException(e);
+    }
+    if (!Objects.equals(oldHoldingsData.getCopyNumber(), holdingsData.getCopyNumber())) {
+      updateHoldingsCopyNumberForItems(holdingsData);
     }
   }
 
-  private RtacHolding mapForHoldingTypeFrom(RtacHolding rtacHolding, HoldingsRecord holdings) {
-    return rtacHoldingMappingService.mapFrom(holdings);
+  private void updateHoldingsCopyNumberForItems(HoldingsRecord holdingsData) {
+    try {
+      holdingBulkRepository.updateItemsHoldingsCopyNumber(
+        UUID.fromString(holdingsData.getInstanceId()),
+        holdingsData.getId(), holdingsData.getCopyNumber());
+    } catch (SQLException e) {
+      log.error("Error occurred during bulk update of holdings copy number for instance with id: {}, holdings id: {}",
+        holdingsData.getInstanceId(), holdingsData.getId(), e);
+      throw new RtacKafkaUpdateException(e);
+    }
   }
 
   @Override

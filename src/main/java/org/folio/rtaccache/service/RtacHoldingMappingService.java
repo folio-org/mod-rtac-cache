@@ -105,32 +105,6 @@ public class RtacHoldingMappingService {
     return rtacHolding;
   }
 
-  public RtacHolding mapForItemTypeFrom(RtacHolding existingRtacHolding, HoldingsRecord holding) {
-    var newRtacHolding = new RtacHolding();
-    newRtacHolding.setId(existingRtacHolding.getId());
-    newRtacHolding.setType(TypeEnum.ITEM);
-    newRtacHolding.setInstanceId(holding.getInstanceId());
-    newRtacHolding.setHoldingsId(holding.getId());
-    newRtacHolding.setBarcode(existingRtacHolding.getBarcode());
-    newRtacHolding.setCallNumber(existingRtacHolding.getCallNumber());
-    newRtacHolding.setHoldingsCopyNumber(holding.getCopyNumber());
-    newRtacHolding.setItemCopyNumber(existingRtacHolding.getItemCopyNumber());
-    newRtacHolding.setVolume(existingRtacHolding.getVolume());
-    newRtacHolding.setEffectiveShelvingOrder(existingRtacHolding.getEffectiveShelvingOrder());
-    newRtacHolding.setStatus(existingRtacHolding.getStatus());
-    newRtacHolding.setSuppressFromDiscovery(existingRtacHolding.getSuppressFromDiscovery());
-    newRtacHolding.setLocation(existingRtacHolding.getLocation());
-    newRtacHolding.setLibrary(existingRtacHolding.getLibrary());
-    newRtacHolding.setMaterialType(existingRtacHolding.getMaterialType());
-    newRtacHolding.setTemporaryLoanType(existingRtacHolding.getTemporaryLoanType());
-    newRtacHolding.setPermanentLoanType(existingRtacHolding.getPermanentLoanType());
-    newRtacHolding.setHoldingsStatements(mapArraySafe(holding.getHoldingsStatements(), this::mapHoldingsStatementFrom));
-    newRtacHolding.setHoldingsStatementsForIndexes(mapArraySafe(holding.getHoldingsStatementsForIndexes(), this::mapHoldingsStatementFrom));
-    newRtacHolding.setHoldingsStatementsForSupplements(mapArraySafe(holding.getHoldingsStatementsForSupplements(), this::mapHoldingsStatementFrom));
-    newRtacHolding.setNotes(mapHoldingsNotesFrom(holding));
-    return newRtacHolding;
-  }
-
   public RtacHolding mapForItemTypeFrom(RtacHolding existingRtacHolding, Item item) {
     var newRtacHolding = new RtacHolding();
     newRtacHolding.setId(item.getId());
@@ -155,6 +129,25 @@ public class RtacHoldingMappingService {
     newRtacHolding.setHoldingsStatementsForIndexes(existingRtacHolding.getHoldingsStatementsForIndexes());
     newRtacHolding.setHoldingsStatementsForSupplements(existingRtacHolding.getHoldingsStatementsForSupplements());
     newRtacHolding.setNotes(existingRtacHolding.getNotes());
+    return newRtacHolding;
+  }
+
+  public RtacHolding mapForUpdateItemFrom(Item item) {
+    var newRtacHolding = new RtacHolding();
+    newRtacHolding.setId(item.getId());
+    newRtacHolding.setType(TypeEnum.ITEM);
+    newRtacHolding.setBarcode(item.getBarcode());
+    newRtacHolding.setCallNumber(mapItemCallNumber(item));
+    newRtacHolding.setItemCopyNumber(item.getCopyNumber());
+    newRtacHolding.setVolume(mapVolumeFrom(item));
+    newRtacHolding.setEffectiveShelvingOrder(item.getEffectiveShelvingOrder());
+    newRtacHolding.setStatus(item.getStatus().getName().getValue());
+    newRtacHolding.setSuppressFromDiscovery(item.getDiscoverySuppress());
+    newRtacHolding.setLocation(mapLocationFrom(item.getEffectiveLocationId()));
+    newRtacHolding.setLibrary(mapLibraryFrom(item.getEffectiveLocationId()));
+    newRtacHolding.setMaterialType(mapMaterialTypeFrom(item));
+    newRtacHolding.setTemporaryLoanType(mapLoanTypeFrom(item.getTemporaryLoanTypeId()));
+    newRtacHolding.setPermanentLoanType(mapLoanTypeFrom(item.getPermanentLoanTypeId()));
     return newRtacHolding;
   }
 
@@ -410,7 +403,7 @@ public class RtacHoldingMappingService {
       return assembleCallNumber(holding.getCallNumber(), holding.getCallNumberPrefix(), holding.getCallNumberSuffix());
     }
   }
-  
+
   private String mapItemCallNumber(Item item) {
     if (nonNull(item.getEffectiveCallNumberComponents())) {
       return assembleCallNumber(item.getEffectiveCallNumberComponents().getCallNumber(),
