@@ -168,6 +168,24 @@ public class RtacHoldingBulkRepository {
     AND id = ?::uuid
   """;
 
+  private static final String MOVE_HOLDINGS_HIERARCHY_TO_INSTANCE_SQL = """
+    UPDATE rtac_holding moving
+    SET instance_id = ?::uuid,
+        rtac_holding_json = moving.rtac_holding_json || jsonb_build_object(
+          'instanceId', ?::text,
+          'instanceFormatIds', COALESCE(target.rtac_holding_json->'instanceFormatIds', '[]'::jsonb)
+        )
+    FROM (
+      SELECT src.rtac_holding_json
+      FROM rtac_holding src
+      WHERE src.instance_id = ?::uuid
+        AND src.type = 'HOLDING'
+      LIMIT 1
+    ) AS target
+    WHERE (moving.instance_id = ?::uuid AND moving.type = 'HOLDING' AND moving.id = ?::uuid)
+       OR (moving.instance_id = ?::uuid AND moving.type IN ('ITEM', 'PIECE') AND moving.rtac_holding_json->>'holdingsId' = ?)
+  """;
+
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
   private static final int BATCH_SIZE = 200;
@@ -342,6 +360,23 @@ public class RtacHoldingBulkRepository {
       ps.setString(3, rtacHolding.getVolume());
       ps.setBoolean(4, rtacHolding.getSuppressFromDiscovery() != null && rtacHolding.getSuppressFromDiscovery());
       ps.setObject(5, pieceId);
+      ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
+    }
+  }
+
+  public void moveHoldingsHierarchyToInstance(UUID oldInstanceId, UUID newInstanceId, String holdingsId)
+    throws SQLException {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(MOVE_HOLDINGS_HIERARCHY_TO_INSTANCE_SQL)) {
+      ps.setObject(1, newInstanceId);
+      ps.setString(2, newInstanceId.toString());
+      ps.setObject(3, newInstanceId);
+      ps.setObject(4, oldInstanceId);
+      ps.setObject(5, UUID.fromString(holdingsId));
+      ps.setObject(6, oldInstanceId);
+      ps.setString(7, holdingsId);
       ps.executeUpdate();
     } finally {
       DataSourceUtils.releaseConnection(connection, dataSource);

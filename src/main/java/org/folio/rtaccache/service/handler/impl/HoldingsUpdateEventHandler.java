@@ -12,6 +12,7 @@ import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -25,6 +26,7 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
 
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final RtacHoldingBulkRepository holdingBulkRepository;
+  private final RtacHoldingRepository holdingRepository;
   private final ResourceEventUtil resourceEventUtil;
 
   @Override
@@ -33,9 +35,20 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
     var oldHoldingsData = resourceEventUtil.getOldFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     var holdingsData = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, HoldingsRecord.class);
     log.info("Handling Holdings update event for item with id: {}", holdingsData.getId());
-    var instanceId = UUID.fromString(oldHoldingsData.getInstanceId());
+    var oldInstanceId = UUID.fromString(oldHoldingsData.getInstanceId());
+    var newInstanceId = UUID.fromString(holdingsData.getInstanceId());
+    var instanceId = oldInstanceId;
     var holdingsId = UUID.fromString(oldHoldingsData.getId());
     try {
+      if (!Objects.equals(oldHoldingsData.getInstanceId(), holdingsData.getInstanceId())) {
+        if (holdingRepository.countByIdInstanceId(newInstanceId) > 0) {
+          holdingBulkRepository.moveHoldingsHierarchyToInstance(oldInstanceId, newInstanceId, oldHoldingsData.getId());
+          instanceId = newInstanceId;
+        } else {
+          holdingRepository.deleteAllByHoldingsId(oldHoldingsData.getId());
+          return;
+        }
+      }
       var holding = rtacHoldingMappingService.mapFrom(holdingsData);
       holdingBulkRepository.updateHoldingsDataFromKafkaHoldingsEvent(instanceId, holdingsId, holding);
       holdingBulkRepository.updatePieceDataFromKafkaHoldingsEvent(instanceId, oldHoldingsData.getId(), holding);
