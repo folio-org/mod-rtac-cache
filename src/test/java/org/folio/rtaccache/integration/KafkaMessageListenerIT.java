@@ -637,7 +637,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(28)
-  void shouldMoveHoldingsHierarchyToCachedInstance_whenHoldingsInstanceIdChanged() throws JsonProcessingException {
+  void shouldMoveHoldingsHierarchyToCachedInstance_whenHoldingsInstanceIdChanged() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
@@ -663,7 +663,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(29)
-  void shouldMoveItemToAnotherHolding_whenItemHoldingChanged() throws JsonProcessingException {
+  void shouldMoveItemToAnotherHolding_whenItemHoldingChanged() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
@@ -745,10 +745,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     holdingRepository.save(entity);
   }
 
-  private RtacHoldingEntity createGeneralRtacHoldingEntity(String id, TypeEnum type) {
-    return createGeneralRtacHoldingEntity(id, type, INSTANCE_ID_1);
-  }
-
   private RtacHoldingEntity createGeneralRtacHoldingEntity(String id, TypeEnum type, String instanceId) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
     RtacHoldingId rtacHoldingId = new RtacHoldingId();
@@ -758,10 +754,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     entity.setId(rtacHoldingId);
     entity.setCreatedAt(Instant.now());
     return entity;
-  }
-
-  private RtacHolding createRtacHolding(String id, TypeEnum type, boolean isBoundWith, String callNumber) {
-    return createRtacHolding(id, type, isBoundWith, callNumber, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
   }
 
   private RtacHolding createRtacHolding(String id, TypeEnum type, boolean isBoundWith, String callNumber,
