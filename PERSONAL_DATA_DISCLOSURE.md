@@ -16,8 +16,8 @@ For the purposes of this form, "store" includes the following:
 
 ## Personal Data processed by this Module
 
-- [ ] This module does not store any PD.
-- [ ] This module does not process any PD.
+- [x] This module does not store any PD.
+- [x] This module does not process any PD.
 - [ ] This module provides [custom fields](https://github.com/folio-org/folio-custom-fields).
 - [ ] This module stores fields with free-form text (tags, notes, descriptions, etc.)
 - [ ] This module caches PD
