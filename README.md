@@ -54,30 +54,30 @@ requires and provides, the permissions, and the additional module metadata.
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `DB_USERNAME` | `folio_admin` | DB username |
-| `DB_PASSWORD` | `folio_admin` | DB password |
-| `DB_HOST` | `localhost` | Postgres host |
-| `DB_PORT` | `5432` | Postgres port |
-| `DB_DATABASE` | `db` | Postgres database name |
-| `KAFKA_HOST` | `localhost` | Kafka broker host |
-| `KAFKA_PORT` | `9092` | Kafka broker port |
-| `MAX_POLL_RECORDS` | `50` | Kafka consumer max poll size |
-| `KAFKA_SECURITY_PROTOCOL` | `PLAINTEXT` | Kafka security protocol |
-| `KAFKA_SSL_KEYSTORE_PASSWORD` | *(empty)* | Kafka SSL keystore password |
-| `KAFKA_SSL_KEYSTORE_LOCATION` | *(empty)* | Kafka SSL keystore path |
-| `KAFKA_SSL_TRUSTSTORE_PASSWORD` | *(empty)* | Kafka SSL truststore password |
-| `KAFKA_SSL_TRUSTSTORE_LOCATION` | *(empty)* | Kafka SSL truststore path |
-| `ENV` | `folio` | FOLIO environment name |
-| `OKAPI_URL` | `http://localhost:8082` | Okapi base URL |
-| `KAFKA_RETRY_INTERVAL_MS` | `2000` | Retry interval |
-| `KAFKA_RETRY_DELIVERY_ATTEMPTS` | `6` | Retry attempts |
-| `KAFKA_EVENTS_CONCURRENCY` | `2` | Kafka listener concurrency |
-| `KAFKA_EVENTS_CONSUMER_PATTERN` | computed per topic | Kafka topic pattern override |
-| `SYSTEM_USER_ENABLED` | `false` | Enable system user |
-| `SYSTEM_USER_USERNAME` | `mod-rtac-cache` | System username |
-| `SYSTEM_USER_PASSWORD` | *(none)* | System password (required when enabled) |
-| `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?` | Cache invalidation schedule |
-| `RTAC_CACHE_RETENTION_DAYS` | `2` | Cache retention days |
+| Variable | Default                 | Purpose |
+|---|-------------------------|---|
+| `DB_USERNAME` | `folio_admin`           | DB username |
+| `DB_PASSWORD` | `folio_admin`           | DB password |
+| `DB_HOST` | `localhost`             | Postgres host |
+| `DB_PORT` | `5432`                  | Postgres port |
+| `DB_DATABASE` | `db`                    | Postgres database name |
+| `KAFKA_HOST` | `localhost`             | Kafka broker host |
+| `KAFKA_PORT` | `9092`                  | Kafka broker port |
+| `MAX_POLL_RECORDS` | `50`                    | Kafka consumer max poll size |
+| `KAFKA_SECURITY_PROTOCOL` | `PLAINTEXT`             | Kafka security protocol |
+| `KAFKA_SSL_KEYSTORE_PASSWORD` | *(empty)*               | Kafka SSL keystore password |
+| `KAFKA_SSL_KEYSTORE_LOCATION` | *(empty)*               | Kafka SSL keystore path |
+| `KAFKA_SSL_TRUSTSTORE_PASSWORD` | *(empty)*               | Kafka SSL truststore password |
+| `KAFKA_SSL_TRUSTSTORE_LOCATION` | *(empty)*               | Kafka SSL truststore path |
+| `ENV` | `folio`                 | FOLIO environment name |
+| `OKAPI_URL` | `http://localhost:8081` | Okapi base URL |
+| `KAFKA_RETRY_INTERVAL_MS` | `2000`                  | Retry interval |
+| `KAFKA_RETRY_DELIVERY_ATTEMPTS` | `6`                     | Retry attempts |
+| `KAFKA_EVENTS_CONCURRENCY` | `2`                     | Kafka listener concurrency |
+| `KAFKA_EVENTS_CONSUMER_PATTERN` | computed per topic      | Kafka topic pattern override |
+| `SYSTEM_USER_ENABLED` | `false`                 | Enable system user |
+| `SYSTEM_USER_USERNAME` | `mod-rtac-cache`        | System username |
+| `SYSTEM_USER_PASSWORD` | *(none)*                | System password (required when enabled) |
+| `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?`           | Cache invalidation schedule |
+| `RTAC_CACHE_RETENTION_DAYS` | `2`                     | Cache retention days |
 

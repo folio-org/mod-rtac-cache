@@ -296,7 +296,7 @@
       { "name": "KAFKA_SSL_TRUSTSTORE_PASSWORD", "value": "" },
       { "name": "KAFKA_SSL_TRUSTSTORE_LOCATION", "value": "" },
       { "name": "ENV", "value": "folio" },
-      { "name": "OKAPI_URL", "value": "http://localhost:8082" },
+      { "name": "OKAPI_URL", "value": "http://localhost:8081" },
       { "name": "KAFKA_RETRY_INTERVAL_MS", "value": "2000" },
       { "name": "KAFKA_RETRY_DELIVERY_ATTEMPTS", "value": "6" },
       { "name": "KAFKA_EVENTS_CONCURRENCY", "value": "2" },
