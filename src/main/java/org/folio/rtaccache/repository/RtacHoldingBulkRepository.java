@@ -366,7 +366,7 @@ public class RtacHoldingBulkRepository {
     }
   }
 
-  public void moveHoldingsHierarchyToInstance(UUID oldInstanceId, UUID newInstanceId, String holdingsId)
+  public int moveHoldingsHierarchyToInstance(UUID oldInstanceId, UUID newInstanceId, String holdingsId)
     throws SQLException {
     var connection = DataSourceUtils.getConnection(dataSource);
     try (PreparedStatement ps = connection.prepareStatement(MOVE_HOLDINGS_HIERARCHY_TO_INSTANCE_SQL)) {
@@ -377,7 +377,7 @@ public class RtacHoldingBulkRepository {
       ps.setObject(5, UUID.fromString(holdingsId));
       ps.setObject(6, oldInstanceId);
       ps.setString(7, holdingsId);
-      ps.executeUpdate();
+      return ps.executeUpdate();
     } finally {
       DataSourceUtils.releaseConnection(connection, dataSource);
     }

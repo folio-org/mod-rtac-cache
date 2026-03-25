@@ -42,7 +42,11 @@ public class HoldingsUpdateEventHandler implements InventoryEventHandler {
     try {
       if (!Objects.equals(oldHoldingsData.getInstanceId(), holdingsData.getInstanceId())) {
         if (holdingRepository.countByIdInstanceId(newInstanceId) > 0) {
-          holdingBulkRepository.moveHoldingsHierarchyToInstance(oldInstanceId, newInstanceId, oldHoldingsData.getId());
+          var updated = holdingBulkRepository.moveHoldingsHierarchyToInstance(oldInstanceId, newInstanceId, oldHoldingsData.getId());
+          if (updated == 0) {
+            holdingRepository.deleteAllByIdInstanceId(newInstanceId);
+            return;
+          }
           instanceId = newInstanceId;
         } else {
           holdingRepository.deleteAllByHoldingsId(oldHoldingsData.getId());

@@ -32,7 +32,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
 import org.folio.spring.scope.FolioExecutionContextSetter;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -132,8 +132,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
   }
 
-  @BeforeEach
-  void setUp() {
+  @AfterEach
+  void tearDown() {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       holdingRepository.deleteAll();
     } catch (Exception e) {

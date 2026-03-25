@@ -91,6 +91,8 @@ class HoldingsUpdateEventHandlerTest {
     when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
     when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(mappedHolding);
     when(holdingRepository.countByIdInstanceId(UUID.fromString(targetInstanceId))).thenReturn(1);
+    when(holdingBulkRepository.moveHoldingsHierarchyToInstance(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(targetInstanceId), HOLDINGS_ID)).thenReturn(1);
 
     handler.handle(event);
 
@@ -100,6 +102,29 @@ class HoldingsUpdateEventHandlerTest {
       UUID.fromString(targetInstanceId), UUID.fromString(HOLDINGS_ID), mappedHolding);
     verify(holdingBulkRepository).updatePieceDataFromKafkaHoldingsEvent(
       UUID.fromString(targetInstanceId), HOLDINGS_ID, mappedHolding);
+  }
+
+  @Test
+  void holdingsUpdate_shouldDeleteTargetInstanceWhenNothingMoved() throws SQLException, JsonProcessingException {
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    var targetInstanceId = UUID.randomUUID().toString();
+    newRecord.setInstanceId(targetInstanceId);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(targetInstanceId))).thenReturn(1);
+    when(holdingBulkRepository.moveHoldingsHierarchyToInstance(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(targetInstanceId), HOLDINGS_ID)).thenReturn(0);
+
+    handler.handle(event);
+
+    verify(holdingRepository).deleteAllByIdInstanceId(UUID.fromString(targetInstanceId));
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updateHoldingsDataFromKafkaHoldingsEvent(any(), any(), any());
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updatePieceDataFromKafkaHoldingsEvent(any(), anyString(), any());
   }
 
   @Test
