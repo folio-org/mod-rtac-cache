@@ -2,12 +2,10 @@ package org.folio.rtaccache.service.handler.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.InventoryEntityType;
 import org.folio.rtaccache.domain.dto.InventoryEventType;
@@ -46,7 +44,6 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
 
     if (isItemMoved(oldItem, item)) {
       moveItemToHolding(oldItem, item);
-      return;
     }
 
     var rtacHoldingUpdate = rtacHoldingMappingService.mapForUpdateItemFrom(item);
@@ -72,27 +69,26 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
 
   private void moveItemToHolding(KafkaItem oldItem, KafkaItem item) {
     var instanceId = UUID.fromString(item.getInstanceId());
+    var oldInstanceId = UUID.fromString(oldItem.getInstanceId());
     var targetHoldingId = new RtacHoldingId(instanceId, TypeEnum.HOLDING, UUID.fromString(item.getHoldingsRecordId()));
     var targetHoldingEntity = rtacHoldingRepository.findById(targetHoldingId);
     if (targetHoldingEntity.isEmpty()) {
       rtacHoldingRepository.deleteByIdId(UUID.fromString(item.getId()));
       return;
     }
-
-    var existingInstanceId = oldItem != null && oldItem.getInstanceId() != null
-      ? oldItem.getInstanceId() : item.getInstanceId();
-    var existingItemId = new RtacHoldingId(UUID.fromString(existingInstanceId), TypeEnum.ITEM, UUID.fromString(item.getId()));
-    var existingItemEntity = rtacHoldingRepository.findById(existingItemId).orElse(null);
-    var movedItem = rtacHoldingMappingService.mapForItemTypeFrom(targetHoldingEntity.get().getRtacHolding(), item);
-    var movedEntity = new RtacHoldingEntity();
-    movedEntity.setId(RtacHoldingId.from(movedItem));
-    movedEntity.setShared(targetHoldingEntity.get().isShared());
-    movedEntity.setCreatedAt(existingItemEntity != null ? existingItemEntity.getCreatedAt() : Instant.now());
-    movedEntity.setRtacHolding(movedItem);
-    rtacHoldingRepository.save(movedEntity);
-
-    if (existingItemEntity != null && !existingItemEntity.getId().equals(movedEntity.getId())) {
-      rtacHoldingRepository.deleteById(existingItemEntity.getId());
+    try {
+      var updated = holdingRepository.moveItemToAnotherHolding(
+        oldInstanceId,
+        UUID.fromString(item.getId()),
+        targetHoldingEntity.get().getRtacHolding()
+      );
+      if (updated == 0) {
+        rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
+      }
+    } catch (SQLException e) {
+      log.error("Error during moving item with id: {} to another holding with id: {} in instance with id: {}",
+        item.getId(), item.getHoldingsRecordId(), item.getInstanceId(), e);
+      throw new RtacKafkaUpdateException(e);
     }
   }
 

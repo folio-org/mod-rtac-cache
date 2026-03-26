@@ -1,14 +1,12 @@
 package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.util.UUID;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
@@ -80,28 +78,21 @@ class ItemUpdateEventHandlerTest {
     targetHoldingEntity.setRtacHolding(targetHolding);
     targetHoldingEntity.setShared(true);
 
-    var existingItemEntity = new RtacHoldingEntity();
-    existingItemEntity.setId(new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)));
-    existingItemEntity.setCreatedAt(Instant.now());
-
     when(resourceEventUtil.getOldFromInventoryEvent(event, KafkaItem.class)).thenReturn(oldItem);
     when(resourceEventUtil.getNewFromInventoryEvent(event, KafkaItem.class)).thenReturn(newItem);
+    var mappedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
+    when(mappingService.mapForUpdateItemFrom(any(Item.class))).thenReturn(mappedItemHolding);
     when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(newInstanceId), TypeEnum.HOLDING, UUID.fromString(newHoldingsId))))
       .thenReturn(java.util.Optional.of(targetHoldingEntity));
-    when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID))))
-      .thenReturn(java.util.Optional.of(existingItemEntity));
-    var movedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
-    movedItemHolding.setInstanceId(newInstanceId);
-    movedItemHolding.setHoldingsId(newHoldingsId);
-    when(mappingService.mapForItemTypeFrom(targetHolding, newItem)).thenReturn(movedItemHolding);
+    when(holdingRepository.moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding))
+      .thenReturn(1);
 
     handler.handle(event);
 
-    verify(rtacHoldingRepository).save(argThat(saved ->
-      saved.getId().getInstanceId().equals(UUID.fromString(newInstanceId))
-        && saved.getId().getId().equals(UUID.fromString(ITEM_ID))));
-    verify(rtacHoldingRepository).deleteById(existingItemEntity.getId());
-    verify(holdingRepository, never()).updateItemDataFromKafkaItemEvent(any(), any(), any());
+    verify(holdingRepository).moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
+      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(rtacHoldingRepository, never()).deleteAllByIdInstanceId(any());
   }
 
   @Test
@@ -135,13 +126,16 @@ class ItemUpdateEventHandlerTest {
 
     when(resourceEventUtil.getOldFromInventoryEvent(event, KafkaItem.class)).thenReturn(oldItem);
     when(resourceEventUtil.getNewFromInventoryEvent(event, KafkaItem.class)).thenReturn(newItem);
+    var mappedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
+    when(mappingService.mapForUpdateItemFrom(any(Item.class))).thenReturn(mappedItemHolding);
     when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(newInstanceId), TypeEnum.HOLDING, UUID.fromString(newHoldingsId))))
       .thenReturn(java.util.Optional.empty());
 
     handler.handle(event);
 
     verify(rtacHoldingRepository).deleteByIdId(UUID.fromString(ITEM_ID));
-    verify(holdingRepository, never()).updateItemDataFromKafkaItemEvent(any(), any(), any());
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
+      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
   }
 
   @Test
@@ -161,28 +155,54 @@ class ItemUpdateEventHandlerTest {
     targetHoldingEntity.setRtacHolding(targetHolding);
     targetHoldingEntity.setShared(true);
 
-    var existingItemEntity = new RtacHoldingEntity();
-    existingItemEntity.setId(new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID)));
-    existingItemEntity.setCreatedAt(Instant.now());
-
-    var mappedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
-    mappedItemHolding.setHoldingsId(newHoldingsId);
-
     when(resourceEventUtil.getOldFromInventoryEvent(event, KafkaItem.class)).thenReturn(oldItem);
     when(resourceEventUtil.getNewFromInventoryEvent(event, KafkaItem.class)).thenReturn(newItem);
+    var mappedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
+    when(mappingService.mapForUpdateItemFrom(any(Item.class))).thenReturn(mappedItemHolding);
     when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.HOLDING, UUID.fromString(newHoldingsId))))
       .thenReturn(java.util.Optional.of(targetHoldingEntity));
-    when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(INSTANCE_ID), TypeEnum.ITEM, UUID.fromString(ITEM_ID))))
-      .thenReturn(java.util.Optional.of(existingItemEntity));
-    when(mappingService.mapForItemTypeFrom(targetHolding, newItem)).thenReturn(mappedItemHolding);
+    when(holdingRepository.moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding))
+      .thenReturn(1);
 
     handler.handle(event);
 
-    verify(rtacHoldingRepository).save(argThat(saved ->
-      saved.getId().getInstanceId().equals(UUID.fromString(INSTANCE_ID))
-        && newHoldingsId.equals(saved.getRtacHolding().getHoldingsId())));
-    verify(rtacHoldingRepository, never()).deleteById(any());
-    verify(holdingRepository, never()).updateItemDataFromKafkaItemEvent(any(), any(), any());
+    verify(holdingRepository).moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(rtacHoldingRepository, never()).deleteAllByIdInstanceId(any());
+  }
+
+  @Test
+  void itemUpdate_shouldDeleteTargetInstanceCacheWhenMovedItemIsNotFound() throws SQLException, JsonProcessingException {
+    var oldItem = item();
+    var newItem = item();
+    var newInstanceId = UUID.randomUUID().toString();
+    var newHoldingsId = UUID.randomUUID().toString();
+    newItem.setInstanceId(newInstanceId);
+    newItem.setHoldingsRecordId(newHoldingsId);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldItem)._new(newItem);
+
+    var targetHolding = holdingMapped(TypeEnum.HOLDING, newHoldingsId);
+    targetHolding.setInstanceId(newInstanceId);
+    targetHolding.setHoldingsId(newHoldingsId);
+    var targetHoldingEntity = new RtacHoldingEntity();
+    targetHoldingEntity.setId(new RtacHoldingId(UUID.fromString(newInstanceId), TypeEnum.HOLDING, UUID.fromString(newHoldingsId)));
+    targetHoldingEntity.setRtacHolding(targetHolding);
+
+    when(resourceEventUtil.getOldFromInventoryEvent(event, KafkaItem.class)).thenReturn(oldItem);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, KafkaItem.class)).thenReturn(newItem);
+    var mappedItemHolding = holdingMapped(TypeEnum.ITEM, ITEM_ID);
+    when(mappingService.mapForUpdateItemFrom(any(Item.class))).thenReturn(mappedItemHolding);
+    when(rtacHoldingRepository.findById(new RtacHoldingId(UUID.fromString(newInstanceId), TypeEnum.HOLDING, UUID.fromString(newHoldingsId))))
+      .thenReturn(java.util.Optional.of(targetHoldingEntity));
+    when(holdingRepository.moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding))
+      .thenReturn(0);
+
+    handler.handle(event);
+
+    verify(rtacHoldingRepository).deleteAllByIdInstanceId(UUID.fromString(newInstanceId));
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
+      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {

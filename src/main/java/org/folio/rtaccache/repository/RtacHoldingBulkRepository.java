@@ -186,6 +186,20 @@ public class RtacHoldingBulkRepository {
        OR (moving.instance_id = ?::uuid AND moving.type IN ('ITEM', 'PIECE') AND moving.rtac_holding_json->>'holdingsId' = ?)
   """;
 
+  private static final String MOVE_ITEM_TO_ANOTHER_HOLDING_SQL = """
+    UPDATE rtac_holding
+    SET instance_id = ?::uuid,
+        rtac_holding_json = rtac_holding_json || jsonb_build_object(
+          'instanceId', ?::text,
+          'holdingsId', ?::text,
+          'instanceFormatIds', COALESCE(to_jsonb(?::text[]), '[]'::jsonb),
+          'holdingsCopyNumber', COALESCE(to_jsonb(?::text), 'null'::jsonb)
+        )
+    WHERE instance_id = ?::uuid
+      AND type = 'ITEM'
+      AND id = ?::uuid
+  """;
+
   private final DataSource dataSource;
   private final ObjectMapper objectMapper;
   private static final int BATCH_SIZE = 200;
@@ -377,6 +391,28 @@ public class RtacHoldingBulkRepository {
       ps.setObject(5, UUID.fromString(holdingsId));
       ps.setObject(6, oldInstanceId);
       ps.setString(7, holdingsId);
+      return ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
+    }
+  }
+
+  public int moveItemToAnotherHolding(UUID instanceId, UUID itemId, RtacHolding rtacHolding) throws SQLException {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(MOVE_ITEM_TO_ANOTHER_HOLDING_SQL)) {
+      var instanceFormatIds = rtacHolding.getInstanceFormatIds();
+      var instanceFormatIdsArray = connection.createArrayOf(
+        "text",
+        instanceFormatIds == null ? new String[0] : instanceFormatIds.toArray(String[]::new)
+      );
+
+      ps.setObject(1, UUID.fromString(rtacHolding.getInstanceId()));
+      ps.setString(2, rtacHolding.getInstanceId());
+      ps.setString(3, rtacHolding.getHoldingsId());
+      ps.setArray(4, instanceFormatIdsArray);
+      ps.setString(5, rtacHolding.getHoldingsCopyNumber());
+      ps.setObject(6, instanceId);
+      ps.setObject(7, itemId);
       return ps.executeUpdate();
     } finally {
       DataSourceUtils.releaseConnection(connection, dataSource);
