@@ -32,7 +32,7 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
 import org.folio.spring.scope.FolioExecutionContextSetter;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -65,9 +65,11 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_HOLDINGS_EVENT_PATH = "__files/kafka-events/create-holdings-event.json";
   private static final String DELETE_HOLDINGS_EVENT_PATH = "__files/kafka-events/delete-holdings-event.json";
   private static final String UPDATE_HOLDINGS_EVENT_PATH = "__files/kafka-events/update-holdings-event.json";
+  private static final String UPDATE_HOLDINGS_MOVE_TO_CACHED_INSTANCE_EVENT_PATH = "__files/kafka-events/update-holdings-move-to-cached-instance-event.json";
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
+  private static final String UPDATE_ITEM_MOVE_TO_ANOTHER_HOLDING_EVENT_PATH = "__files/kafka-events/update-item-move-to-another-holding-event.json";
   private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
   private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
   private static final String CREATE_REQUEST_EVENT_PATH = "__files/kafka-events/create-request-event.json";
@@ -106,6 +108,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final ConfluentKafkaContainer kafkaContainer = new ConfluentKafkaContainer(
     DockerImageName.parse(KAFKA_IMAGE_VERSION));
   private static final String INSTANCE_FORMAT_ID = "549e3381-7d49-44f6-8232-37af1cb5ecf3";
+  private static final String INSTANCE_FORMAT_ID_2 = "f95fe9e7-0475-4c5c-bb13-56af8d017f33";
 
   static {
     kafkaContainer.start();
@@ -129,8 +132,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
   }
 
-  @BeforeEach
-  void setUp() {
+  @AfterEach
+  void tearDown() {
     try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TEST_TENANT))) {
       holdingRepository.deleteAll();
     } catch (Exception e) {
@@ -632,6 +635,69 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     assertInstanceFormatIdsUpdated(TEST_CENTRAL_TENANT, TypeEnum.PIECE, PIECE_ID);
   }
 
+  @Test
+  @Order(28)
+  void shouldMoveHoldingsHierarchyToCachedInstance_whenHoldingsInstanceIdChanged() {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
+      createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING, INSTANCE_ID_2, HOLDINGS_ID_2, INSTANCE_FORMAT_ID_2);
+      var event = loadInventoryResourceEvent(UPDATE_HOLDINGS_MOVE_TO_CACHED_INSTANCE_EVENT_PATH);
+
+      // When
+      sendHoldingsKafkaMessage(event, HOLDINGS_ID_1);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        assertHoldingMovedToInstance(HOLDINGS_ID_1, TypeEnum.HOLDING, INSTANCE_ID_2, HOLDINGS_ID_1, INSTANCE_FORMAT_ID_2);
+        assertHoldingMovedToInstance(ITEM_ID, TypeEnum.ITEM, INSTANCE_ID_2, HOLDINGS_ID_1, INSTANCE_FORMAT_ID_2);
+        assertHoldingMovedToInstance(PIECE_ID, TypeEnum.PIECE, INSTANCE_ID_2, HOLDINGS_ID_1, INSTANCE_FORMAT_ID_2);
+
+        var oldItemId = new RtacHoldingId(UUID.fromString(INSTANCE_ID_1), TypeEnum.ITEM, UUID.fromString(ITEM_ID));
+        assertThat(holdingRepository.findById(oldItemId)).isEmpty();
+      });
+    });
+  }
+
+  @Test
+  @Order(29)
+  void shouldMoveItemToAnotherHolding_whenItemHoldingChanged() {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING, INSTANCE_ID_1, HOLDINGS_ID_2, INSTANCE_FORMAT_ID_2);
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID);
+      var event = loadInventoryResourceEvent(UPDATE_ITEM_MOVE_TO_ANOTHER_HOLDING_EVENT_PATH);
+
+      // When
+      sendItemKafkaMessage(event, ITEM_ID);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var itemId = new RtacHoldingId(UUID.fromString(INSTANCE_ID_1), TypeEnum.ITEM, UUID.fromString(ITEM_ID));
+        var movedItem = holdingRepository.findById(itemId);
+
+        assertThat(movedItem).isPresent();
+        assertThat(movedItem.get().getRtacHolding().getHoldingsId()).isEqualTo(HOLDINGS_ID_2);
+        assertThat(movedItem.get().getRtacHolding().getInstanceFormatIds()).containsExactly(INSTANCE_FORMAT_ID_2);
+        assertThat(movedItem.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
+      });
+    });
+  }
+
+  private void assertHoldingMovedToInstance(String id, TypeEnum type, String instanceId, String holdingsId,
+                                            String instanceFormatId) {
+    var rtacHoldingId = new RtacHoldingId(UUID.fromString(instanceId), type, UUID.fromString(id));
+    var holding = holdingRepository.findById(rtacHoldingId);
+
+    assertThat(holding).isPresent();
+    assertThat(holding.get().getRtacHolding().getInstanceId()).isEqualTo(instanceId);
+    assertThat(holding.get().getRtacHolding().getHoldingsId()).isEqualTo(holdingsId);
+    assertThat(holding.get().getRtacHolding().getInstanceFormatIds()).containsExactly(instanceFormatId);
+  }
+
   private void assertInstanceFormatIdsUpdated(String tenant, TypeEnum type, String holdingId) {
     withinTenant(tenant, () -> await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
       var rtacHoldingId = new RtacHoldingId(UUID.fromString(INSTANCE_ID_1), type, UUID.fromString(holdingId));
@@ -663,36 +729,47 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   private void createExistingRtacHoldingEntity(String id, TypeEnum type, boolean isBoundWith) {
-    var entity = createGeneralRtacHoldingEntity(id, type);
-    var rtacHolding = createRtacHolding(id, type, isBoundWith, OLD_CALL_NUMBER);
+    createExistingRtacHoldingEntity(id, type, isBoundWith, INSTANCE_ID_1, HOLDINGS_ID_1, INSTANCE_FORMAT_ID, OLD_CALL_NUMBER);
+  }
+
+  private void createExistingRtacHoldingEntity(String id, TypeEnum type, String instanceId, String holdingsId,
+                                               String instanceFormatId) {
+    createExistingRtacHoldingEntity(id, type, false, instanceId, holdingsId, instanceFormatId, OLD_CALL_NUMBER);
+  }
+
+  private void createExistingRtacHoldingEntity(String id, TypeEnum type, boolean isBoundWith, String instanceId,
+                                               String holdingsId, String instanceFormatId, String callNumber) {
+    var entity = createGeneralRtacHoldingEntity(id, type, instanceId);
+    var rtacHolding = createRtacHolding(id, type, isBoundWith, callNumber, instanceId, holdingsId, instanceFormatId);
     entity.setRtacHolding(rtacHolding);
     holdingRepository.save(entity);
   }
 
-  private RtacHoldingEntity createGeneralRtacHoldingEntity(String id, TypeEnum type) {
+  private RtacHoldingEntity createGeneralRtacHoldingEntity(String id, TypeEnum type, String instanceId) {
     RtacHoldingEntity entity = new RtacHoldingEntity();
     RtacHoldingId rtacHoldingId = new RtacHoldingId();
     rtacHoldingId.setId(UUID.fromString(id));
-    rtacHoldingId.setInstanceId(UUID.fromString(INSTANCE_ID_1));
+    rtacHoldingId.setInstanceId(UUID.fromString(instanceId));
     rtacHoldingId.setType(type);
     entity.setId(rtacHoldingId);
     entity.setCreatedAt(Instant.now());
     return entity;
   }
 
-  private RtacHolding createRtacHolding(String id, TypeEnum type, boolean isBoundWith, String callNumber) {
+  private RtacHolding createRtacHolding(String id, TypeEnum type, boolean isBoundWith, String callNumber,
+                                        String instanceId, String holdingsId, String instanceFormatId) {
     var rtacHolding = new RtacHolding();
     rtacHolding.setCallNumber(callNumber);
     rtacHolding.setId(id);
-    rtacHolding.setInstanceId(INSTANCE_ID_1);
-    rtacHolding.setHoldingsId(HOLDINGS_ID_1);
+    rtacHolding.setInstanceId(instanceId);
+    rtacHolding.setHoldingsId(holdingsId);
     rtacHolding.setType(type);
     rtacHolding.setDueDate(OLD_DUE_DATE);
     rtacHolding.setStatus(OLD_STATUS);
     rtacHolding.setHoldingsCopyNumber(OLD_HOLDINGS_COPY_NUMBER);
     rtacHolding.setTotalHoldRequests(1);
     rtacHolding.setIsBoundWith(isBoundWith);
-    rtacHolding.setInstanceFormatIds(List.of(INSTANCE_FORMAT_ID));
+    rtacHolding.setInstanceFormatIds(List.of(instanceFormatId));
 
     var location = new RtacHoldingLocation();
     location.setId(OLD_LOCATION_ID);

@@ -1,6 +1,8 @@
 package org.folio.rtaccache.service.handler.impl;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +16,7 @@ import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.exception.RtacKafkaUpdateException;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingMappingService;
 import org.folio.rtaccache.util.ResourceEventUtil;
 import org.junit.jupiter.api.Assertions;
@@ -35,6 +38,8 @@ class HoldingsUpdateEventHandlerTest {
 
   @Mock
   RtacHoldingBulkRepository holdingBulkRepository;
+  @Mock
+  RtacHoldingRepository holdingRepository;
   @Mock
   RtacHoldingMappingService mappingService;
   @Mock
@@ -71,6 +76,78 @@ class HoldingsUpdateEventHandlerTest {
     Mockito.doThrow(new SQLException("DB error")).when(holdingBulkRepository).updateHoldingsDataFromKafkaHoldingsEvent(any(), any(), any());
 
     Assertions.assertThrowsExactly(RtacKafkaUpdateException.class, () -> handler.handle(event));
+  }
+
+  @Test
+  void holdingsUpdate_shouldMoveHierarchyWhenMovedIntoCachedInstance() throws SQLException, JsonProcessingException {
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    var targetInstanceId = UUID.randomUUID().toString();
+    newRecord.setInstanceId(targetInstanceId);
+    var mappedHolding = holdingMapped(TypeEnum.HOLDING, HOLDINGS_ID);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(mappingService.mapFrom(any(HoldingsRecord.class))).thenReturn(mappedHolding);
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(targetInstanceId))).thenReturn(1);
+    when(holdingBulkRepository.moveHoldingsHierarchyToInstance(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(targetInstanceId), HOLDINGS_ID)).thenReturn(1);
+
+    handler.handle(event);
+
+    verify(holdingBulkRepository).moveHoldingsHierarchyToInstance(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(targetInstanceId), HOLDINGS_ID);
+    verify(holdingBulkRepository).updateHoldingsDataFromKafkaHoldingsEvent(
+      UUID.fromString(targetInstanceId), UUID.fromString(HOLDINGS_ID), mappedHolding);
+    verify(holdingBulkRepository).updatePieceDataFromKafkaHoldingsEvent(
+      UUID.fromString(targetInstanceId), HOLDINGS_ID, mappedHolding);
+  }
+
+  @Test
+  void holdingsUpdate_shouldDeleteTargetInstanceWhenNothingMoved() throws SQLException, JsonProcessingException {
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    var targetInstanceId = UUID.randomUUID().toString();
+    newRecord.setInstanceId(targetInstanceId);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(targetInstanceId))).thenReturn(1);
+    when(holdingBulkRepository.moveHoldingsHierarchyToInstance(
+      UUID.fromString(INSTANCE_ID), UUID.fromString(targetInstanceId), HOLDINGS_ID)).thenReturn(0);
+
+    handler.handle(event);
+
+    verify(holdingRepository).deleteAllByIdInstanceId(UUID.fromString(targetInstanceId));
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updateHoldingsDataFromKafkaHoldingsEvent(any(), any(), any());
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updatePieceDataFromKafkaHoldingsEvent(any(), anyString(), any());
+  }
+
+  @Test
+  void holdingsUpdate_shouldDeleteHierarchyWhenMovedIntoNotCachedInstance() throws SQLException, JsonProcessingException {
+    var oldRecord = holdingsRecord();
+    var newRecord = holdingsRecord();
+    var targetInstanceId = UUID.randomUUID().toString();
+    newRecord.setInstanceId(targetInstanceId);
+    var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldRecord)._new(newRecord);
+
+    when(resourceEventUtil.getOldFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(oldRecord);
+    when(resourceEventUtil.getNewFromInventoryEvent(event, HoldingsRecord.class)).thenReturn(newRecord);
+    when(holdingRepository.countByIdInstanceId(UUID.fromString(targetInstanceId))).thenReturn(0);
+
+    handler.handle(event);
+
+    verify(holdingRepository).deleteAllByHoldingsId(HOLDINGS_ID);
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updateHoldingsDataFromKafkaHoldingsEvent(any(), any(), any());
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .updatePieceDataFromKafkaHoldingsEvent(any(), anyString(), any());
+    Mockito.verify(holdingBulkRepository, Mockito.never())
+      .moveHoldingsHierarchyToInstance(any(), any(), eq(HOLDINGS_ID));
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {
