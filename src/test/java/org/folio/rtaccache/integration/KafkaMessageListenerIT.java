@@ -29,6 +29,7 @@ import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
+import org.folio.rtaccache.domain.dto.RtacHoldingMaterialType;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
 import org.folio.spring.scope.FolioExecutionContextSetter;
@@ -83,6 +84,10 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_LIBRARY_EVENT_PATH = "__files/kafka-events/create-library-event.json";
   private static final String DELETE_LIBRARY_EVENT_PATH = "__files/kafka-events/delete-library-event.json";
   private static final String UPDATE_LIBRARY_EVENT_PATH = "__files/kafka-events/update-library-event.json";
+  private static final String CREATE_MATERIAL_TYPE_EVENT_PATH = "__files/kafka-events/create-material-type-event.json";
+  private static final String UPDATE_MATERIAL_TYPE_EVENT_PATH = "__files/kafka-events/update-material-type-event.json";
+  private static final String CREATE_LOAN_TYPE_EVENT_PATH = "__files/kafka-events/create-loan-type-event.json";
+  private static final String UPDATE_LOAN_TYPE_EVENT_PATH = "__files/kafka-events/update-loan-type-event.json";
   private static final String CREATE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/create-bound-with-event.json";
   private static final String DELETE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/delete-bound-with-event.json";
 
@@ -91,6 +96,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String OLD_LOCATION_ID = "1c54d084-4639-45dd-b9c9-4473df6bd28a";
   private static final String NEW_LOCATION_ID = "2d65e095-5750-56ee-ca60-5584eg7ce39b";
   private static final String LIBRARY_ID = "79f1cd00-09cc-4c9c-99c1-d8ad1b77d128";
+  private static final String MATERIAL_TYPE_ID = "1a54b431-2e4f-452d-9cae-9cee66c9a892";
   private static final String NEW_HOLDINGS_COPY_NUMBER = "Test";
   private static final String OLD_HOLDINGS_COPY_NUMBER = "Old copy number";
   private static final String NEW_NOTE_VALUE = "Test";
@@ -98,6 +104,11 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String NEW_STATUS = "Checked out";
   private static final String OLD_STATUS = "Available";
   private static final Date OLD_DUE_DATE = Date.from(Instant.parse("2026-03-18T16:28:32.811+00:00"));
+  private static final String OLD_LOAN_TYPE_NAME = "Can circulate";
+  private static final String NEW_LOAN_TYPE_NAME = "Can circulate updated";
+  private static final String UNCHANGED_LOAN_TYPE_NAME = "In-library use";
+  private static final String OLD_MATERIAL_TYPE_NAME = "book";
+  private static final String UPDATED_MATERIAL_TYPE_NAME = "book updated";
   private static final String NEW_MATERIAL_TYPE_NAME = "book";
   private static final String NEW_BARCODE = "1232323232";
   private static final String NEW_VOLUME = "(Test)";
@@ -557,6 +568,111 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(24)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldClearMaterialTypesCache_whenMaterialTypeCreateEventIsSent() throws JsonProcessingException {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      inventoryReferenceDataService.getMaterialTypesMap();
+      var event = loadInventoryResourceEvent(CREATE_MATERIAL_TYPE_EVENT_PATH);
+
+      // When
+      sendMaterialTypeKafkaMessage(event);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
+        assertThat(updatedCache).isEmpty();
+      });
+    });
+  }
+
+  @Test
+  @Order(25)
+  void shouldUpdateRtacHoldingMaterialTypeAndClearCache_whenMaterialTypeUpdateEventIsSent() throws JsonProcessingException {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+      holding.getRtacHolding().setMaterialType(new RtacHoldingMaterialType().id(MATERIAL_TYPE_ID).name(OLD_MATERIAL_TYPE_NAME));
+      holdingRepository.save(holding);
+      inventoryReferenceDataService.getMaterialTypesMap();
+      var event = loadInventoryResourceEvent(UPDATE_MATERIAL_TYPE_EVENT_PATH);
+
+      // When
+      sendMaterialTypeKafkaMessage(event);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var updatedHolding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+        assertThat(updatedHolding.getRtacHolding().getMaterialType().getName()).isEqualTo(UPDATED_MATERIAL_TYPE_NAME);
+        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
+        assertThat(updatedCache).isEmpty();
+      });
+    });
+  }
+
+  @Test
+  @Order(26)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldClearLoanTypesCache_whenLoanTypeCreateEventIsSent() throws JsonProcessingException {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      inventoryReferenceDataService.getLoanTypesMap();
+      var event = loadInventoryResourceEvent(CREATE_LOAN_TYPE_EVENT_PATH);
+
+      // When
+      sendLoanTypeKafkaMessage(event);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
+        assertThat(updatedCache).isEmpty();
+      });
+    });
+  }
+
+  @Test
+  @Order(27)
+  void shouldUpdateTemporaryAndPermanentLoanTypesAndClearCache_whenLoanTypeUpdateEventIsSent() throws JsonProcessingException {
+    withinTenant(TEST_TENANT, () -> {
+      // Given
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      createExistingRtacHoldingEntity(HOLDINGS_ID_2, TypeEnum.HOLDING);
+
+      var updatedTargetHolding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+      updatedTargetHolding.getRtacHolding().setTemporaryLoanType(OLD_LOAN_TYPE_NAME);
+      updatedTargetHolding.getRtacHolding().setPermanentLoanType(OLD_LOAN_TYPE_NAME);
+      holdingRepository.save(updatedTargetHolding);
+
+      var unchangedHolding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID_2)).orElseThrow();
+      unchangedHolding.getRtacHolding().setTemporaryLoanType(UNCHANGED_LOAN_TYPE_NAME);
+      unchangedHolding.getRtacHolding().setPermanentLoanType(UNCHANGED_LOAN_TYPE_NAME);
+      holdingRepository.save(unchangedHolding);
+
+      inventoryReferenceDataService.getLoanTypesMap();
+      var event = loadInventoryResourceEvent(UPDATE_LOAN_TYPE_EVENT_PATH);
+
+      // When
+      sendLoanTypeKafkaMessage(event);
+
+      // Then
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var targetHolding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+        assertThat(targetHolding.getRtacHolding().getTemporaryLoanType()).isEqualTo(NEW_LOAN_TYPE_NAME);
+        assertThat(targetHolding.getRtacHolding().getPermanentLoanType()).isEqualTo(NEW_LOAN_TYPE_NAME);
+
+        var sameHolding = holdingRepository.findByIdId(UUID.fromString(HOLDINGS_ID_2)).orElseThrow();
+        assertThat(sameHolding.getRtacHolding().getTemporaryLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
+        assertThat(sameHolding.getRtacHolding().getPermanentLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
+
+        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
+        assertThat(updatedCache).isEmpty();
+      });
+    });
+  }
+
+  @Test
+  @Order(28)
   void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() throws JsonProcessingException {
     withinTenant(TEST_TENANT, () -> {
       // Given
@@ -578,7 +694,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(25)
+  @Order(29)
   void shouldDeleteRtacHolding_withItemType_whenBoundWithDeleteEventIsSent() throws JsonProcessingException {
     withinTenant(TEST_TENANT, () -> {
       // Given
@@ -595,7 +711,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(26)
+  @Order(30)
   void shouldUpdateRtacHolding_whenInstanceUpdateEventIsSent_forMemberTenant() throws JsonProcessingException {
     withinTenant(TEST_TENANT, () -> {
       // Given
@@ -617,7 +733,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(27)
+  @Order(31)
   void shouldUpdateEcsRtacHoldings_whenInstanceUpdateEventIsSent_forCentralTenant() throws Exception {
     // Given
     setUpTenant(mockMvc, TEST_CENTRAL_TENANT);
@@ -636,7 +752,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(28)
+  @Order(32)
   void shouldMoveHoldingsHierarchyToCachedInstance_whenHoldingsInstanceIdChanged() {
     withinTenant(TEST_TENANT, () -> {
       // Given
@@ -662,7 +778,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Order(29)
+  @Order(33)
   void shouldMoveItemToAnotherHolding_whenItemHoldingChanged() {
     withinTenant(TEST_TENANT, () -> {
       // Given
@@ -825,6 +941,18 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private void sendLibraryKafkaMessage(InventoryResourceEvent event) {
     ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.LIBRARY_TOPIC,
       LIBRARY_ID, event);
+    inventoryKafkaTemplate.send(itemRecord);
+  }
+
+  private void sendMaterialTypeKafkaMessage(InventoryResourceEvent event) {
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.MATERIAL_TYPE_TOPIC,
+      MATERIAL_TYPE_ID, event);
+    inventoryKafkaTemplate.send(itemRecord);
+  }
+
+  private void sendLoanTypeKafkaMessage(InventoryResourceEvent event) {
+    ProducerRecord<String, InventoryResourceEvent> itemRecord = new ProducerRecord<>(TestConstant.LOAN_TYPE_TOPIC,
+      event.getEventId(), event);
     inventoryKafkaTemplate.send(itemRecord);
   }
 
