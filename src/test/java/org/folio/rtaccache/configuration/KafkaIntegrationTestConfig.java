@@ -6,7 +6,9 @@ import static org.folio.rtaccache.TestConstant.INSTANCE_TOPIC;
 import static org.folio.rtaccache.TestConstant.ITEM_TOPIC;
 import static org.folio.rtaccache.TestConstant.LIBRARY_TOPIC;
 import static org.folio.rtaccache.TestConstant.LOAN_TOPIC;
+import static org.folio.rtaccache.TestConstant.LOAN_TYPE_TOPIC;
 import static org.folio.rtaccache.TestConstant.LOCATION_TOPIC;
+import static org.folio.rtaccache.TestConstant.MATERIAL_TYPE_TOPIC;
 import static org.folio.rtaccache.TestConstant.PIECE_TOPIC;
 import static org.folio.rtaccache.TestConstant.REQUEST_TOPIC;
 
@@ -65,6 +67,18 @@ public class KafkaIntegrationTestConfig {
   @Bean
   public NewTopic libraryTopic() {
     return TopicBuilder.name(LIBRARY_TOPIC)
+      .build();
+  }
+
+  @Bean
+  public NewTopic materialTypeTopic() {
+    return TopicBuilder.name(MATERIAL_TYPE_TOPIC)
+      .build();
+  }
+
+  @Bean
+  public NewTopic loanTypeTopic() {
+    return TopicBuilder.name(LOAN_TYPE_TOPIC)
       .build();
   }
 

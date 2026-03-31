@@ -8,6 +8,8 @@
     "ITEM",
     "ITEM_BOUND_WITH",
     "LOCATION",
-    "LIBRARY"
+    "LIBRARY",
+    "MATERIAL_TYPE",
+    "LOAN_TYPE"
   ]
 }

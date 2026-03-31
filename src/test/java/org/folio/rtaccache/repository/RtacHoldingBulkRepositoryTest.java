@@ -14,12 +14,15 @@ import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
+import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
+import org.folio.rtaccache.domain.dto.MaterialType;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
+import org.folio.rtaccache.domain.dto.RtacHoldingMaterialType;
 import org.folio.spring.FolioExecutionContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +44,8 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   private static final String LOCATION_ID_2 = UUID.randomUUID().toString();
   private static final String LIBRARY_ID_1 = UUID.randomUUID().toString();
   private static final String LIBRARY_ID_2 = UUID.randomUUID().toString();
+  private static final String MATERIAL_TYPE_ID_1 = UUID.randomUUID().toString();
+  private static final String MATERIAL_TYPE_ID_2 = UUID.randomUUID().toString();
 
   @AfterEach
   void tearDown() {
@@ -168,6 +173,58 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     assertTrue(updatedForInstance.stream().allMatch(RtacHoldingEntity::isShared));
   }
 
+  @Test
+  void bulkUpdateMaterialTypeData_updatesEmbeddedMaterialType() throws SQLException, JsonProcessingException {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
+    var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
+    rtacHolding1.setMaterialType(getRtacHoldingMaterialType(MATERIAL_TYPE_ID_1, "Old Name"));
+    rtacHolding2.setMaterialType(getRtacHoldingMaterialType(MATERIAL_TYPE_ID_2, "Other Name"));
+    var holdings = List.of(
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now()),
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now())
+    );
+    rtacHoldingRepository.saveAll(holdings);
+
+    rtacHoldingBulkRepository.bulkUpdateMaterialTypeData(new MaterialType().id(MATERIAL_TYPE_ID_1).name("Updated Name"));
+
+    var retrieved = rtacHoldingRepository.findAll();
+    assertEquals(2, retrieved.size());
+    var updated = findByMaterialTypeId(retrieved, MATERIAL_TYPE_ID_1);
+    assertEquals("Updated Name", updated.getRtacHolding().getMaterialType().getName());
+    var unchanged = findByMaterialTypeId(retrieved, MATERIAL_TYPE_ID_2);
+    assertEquals("Other Name", unchanged.getRtacHolding().getMaterialType().getName());
+  }
+
+  @Test
+  void bulkUpdateLoanTypeData_updatesTemporaryAndPermanentLoanTypeNames() throws SQLException, JsonProcessingException {
+    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
+    var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
+    var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
+    rtacHolding1.setTemporaryLoanType("Old Loan Type");
+    rtacHolding1.setPermanentLoanType("Old Loan Type");
+    rtacHolding2.setTemporaryLoanType("Other Loan Type");
+    rtacHolding2.setPermanentLoanType("Other Loan Type");
+    var holdings = List.of(
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding1), false, rtacHolding1, Instant.now()),
+      new RtacHoldingEntity(RtacHoldingId.from(rtacHolding2), false, rtacHolding2, Instant.now())
+    );
+    rtacHoldingRepository.saveAll(holdings);
+
+    var oldLoanType = new LoanType().name("Old Loan Type");
+    var newLoanType = new LoanType().name("New Loan Type");
+    rtacHoldingBulkRepository.bulkUpdateLoanTypeData(oldLoanType, newLoanType);
+
+    var retrieved = rtacHoldingRepository.findAll();
+    assertEquals(2, retrieved.size());
+    var updated = findByRtacHoldingId(retrieved, ITEM_ID_1);
+    assertEquals("New Loan Type", updated.getRtacHolding().getTemporaryLoanType());
+    assertEquals("New Loan Type", updated.getRtacHolding().getPermanentLoanType());
+    var unchanged = findByRtacHoldingId(retrieved, ITEM_ID_2);
+    assertEquals("Other Loan Type", unchanged.getRtacHolding().getTemporaryLoanType());
+    assertEquals("Other Loan Type", unchanged.getRtacHolding().getPermanentLoanType());
+  }
+
   private RtacHolding getRtacHolding(String itemId1, String instanceId) {
     var rtacHolding1 = new RtacHolding();
     rtacHolding1.setId(itemId1);
@@ -190,6 +247,20 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
       .filter(h -> h.getRtacHolding()
         .getLibrary()
         .getId().equals(libraryId))
+      .findFirst()
+      .orElseThrow();
+  }
+
+  private RtacHoldingEntity findByMaterialTypeId(List<RtacHoldingEntity> retrieved, String materialTypeId) {
+    return retrieved.stream()
+      .filter(h -> h.getRtacHolding().getMaterialType().getId().equals(materialTypeId))
+      .findFirst()
+      .orElseThrow();
+  }
+
+  private RtacHoldingEntity findByRtacHoldingId(List<RtacHoldingEntity> retrieved, String rtacHoldingId) {
+    return retrieved.stream()
+      .filter(h -> h.getRtacHolding().getId().equals(rtacHoldingId))
       .findFirst()
       .orElseThrow();
   }
@@ -219,6 +290,12 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
     return new RtacHoldingLibrary()
       .id(id)
       .code(code)
+      .name(name);
+  }
+
+  private RtacHoldingMaterialType getRtacHoldingMaterialType(String id, String name) {
+    return new RtacHoldingMaterialType()
+      .id(id)
       .name(name);
   }
 

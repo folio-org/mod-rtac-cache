@@ -7,7 +7,9 @@ import static org.folio.rtaccache.domain.dto.InventoryEntityType.INSTANCE;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.ITEM_BOUND_WITH;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LIBRARY;
+import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOAN_TYPE;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOCATION;
+import static org.folio.rtaccache.domain.dto.InventoryEntityType.MATERIAL_TYPE;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +39,8 @@ public class KafkaMessageListener {
   private static final String PIECE_LISTENER_ID = "mod-rtac-cache-piece-listener";
   private static final String LOCATIONS_LISTENER_ID = "mod-rtac-cache-location-listener";
   private static final String LIBRARIES_LISTENER_ID = "mod-rtac-cache-library-listener";
+  private static final String MATERIAL_TYPES_LISTENER_ID = "mod-rtac-cache-material-type-listener";
+  private static final String LOAN_TYPES_LISTENER_ID = "mod-rtac-cache-loan-type-listener";
   private static final String BOUND_WITH_LISTENER_ID = "mod-rtac-cache-bound-with-listener";
   private static final String FOLIO_TENANT_ID_HEADER = "folio.tenantId";
 
@@ -169,6 +173,38 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LIBRARY)
+        .handle(resourceEvent);
+    } );
+  }
+
+  @KafkaListener(
+    id = MATERIAL_TYPES_LISTENER_ID,
+    containerFactory = "inventoryKafkaListenerContainerFactory",
+    groupId = "#{folioKafkaProperties.listener['material-type'].groupId}",
+    concurrency = "#{folioKafkaProperties.listener['material-type'].concurrency}",
+    topicPattern = "#{folioKafkaProperties.listener['material-type'].topicPattern}",
+    autoStartup = "false")
+  public void handleMaterialTypeRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    var tenantId = consumerRecord.value().getTenant();
+    executionService.executeAsyncSystemUserScoped(tenantId, () -> {
+      var resourceEvent = consumerRecord.value();
+      eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), MATERIAL_TYPE)
+        .handle(resourceEvent);
+    } );
+  }
+
+  @KafkaListener(
+    id = LOAN_TYPES_LISTENER_ID,
+    containerFactory = "inventoryKafkaListenerContainerFactory",
+    groupId = "#{folioKafkaProperties.listener['loan-type'].groupId}",
+    concurrency = "#{folioKafkaProperties.listener['loan-type'].concurrency}",
+    topicPattern = "#{folioKafkaProperties.listener['loan-type'].topicPattern}",
+    autoStartup = "false")
+  public void handleLoanTypeRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    var tenantId = consumerRecord.value().getTenant();
+    executionService.executeAsyncSystemUserScoped(tenantId, () -> {
+      var resourceEvent = consumerRecord.value();
+      eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LOAN_TYPE)
         .handle(resourceEvent);
     } );
   }

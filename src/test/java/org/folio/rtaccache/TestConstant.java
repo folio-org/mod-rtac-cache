@@ -10,6 +10,8 @@ public class TestConstant {
   public static final String ITEM_TOPIC = "test.ALL.inventory.item";
   public static final String LOCATION_TOPIC = "test.ALL.inventory.location";
   public static final String LIBRARY_TOPIC = "test.ALL.inventory.library";
+  public static final String MATERIAL_TYPE_TOPIC = "test.ALL.inventory.material-type";
+  public static final String LOAN_TYPE_TOPIC = "test.ALL.inventory.loan-type";
   public static final String LOAN_TOPIC = "test.ALL.circulation.loan";
   public static final String REQUEST_TOPIC = "test.ALL.circulation.request";
   public static final String PIECE_TOPIC = "test.Default.ALL.ACQ_PIECE_CHANGED";
