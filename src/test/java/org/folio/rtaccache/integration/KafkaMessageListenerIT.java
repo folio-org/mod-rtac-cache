@@ -246,7 +246,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(6)
-  void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() throws JsonProcessingException {
+  void shouldDeleteRtacHolding_whenHoldingsDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
@@ -264,7 +264,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(7)
-  void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() throws JsonProcessingException {
+  void shouldCreateRtacHolding_withItemType_whenItemCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
@@ -287,7 +287,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(8)
-  void shouldUpdateRtacHolding_withItemType_whenItemUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withItemType_whenItemUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -310,7 +310,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(10)
-  void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() throws JsonProcessingException {
+  void shouldDeleteRtacHolding_withItemType_whenItemDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -327,7 +327,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(11)
-  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanCreateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -345,7 +345,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(12)
-  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHoldingDueDate_withItemType_whenLoanUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -363,8 +363,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(13)
-  void shouldUpdateRtacHoldingRequestCount_withItemType_whenOpenRequestCreateEventIsSent()
-    throws JsonProcessingException {
+  void shouldUpdateRtacHoldingRequestCount_withItemType_whenOpenRequestCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -382,8 +381,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(14)
-  void shouldDecreaseRtacHoldingRequestCount_withItemType_whenClosedRequestUpdateEventIsSent()
-    throws JsonProcessingException {
+  void shouldDecreaseRtacHoldingRequestCount_withItemType_whenClosedRequestUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -401,7 +399,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(15)
-  void shouldCreateRtacHolding_withPieceType_whenPieceCreateEventIsSent() throws JsonProcessingException {
+  void shouldCreateRtacHolding_withPieceType_whenPieceCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
@@ -420,7 +418,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(16)
-  void shouldUpdateRtacHolding_withPieceType_whenPieceUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withPieceType_whenPieceUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
@@ -438,7 +436,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(17)
-  void shouldDeleteRtacHolding_withPieceType_whenPieceDeleteEventIsSent() throws JsonProcessingException {
+  void shouldDeleteRtacHolding_withPieceType_whenPieceDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
@@ -455,7 +453,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(18)
-  void shouldClearLocationsCache_whenLocationCreateEventIsSent() throws JsonProcessingException {
+  void shouldClearLocationsCache_whenLocationCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       //preload cache
@@ -473,7 +471,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(19)
-  void shouldUpdateRtacHolding_whenLocationUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_whenLocationUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -493,7 +491,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(20)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldClearLocationsCache_whenLocationDeleteEventIsSent() throws JsonProcessingException {
+  void shouldClearLocationsCache_whenLocationDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       //preload cache
@@ -512,7 +510,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(21)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldClearLibraryCache_whenLibraryCreateEventIsSent() throws JsonProcessingException {
+  void shouldClearLibraryCache_whenLibraryCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       //preload cache
@@ -530,7 +528,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(22)
-  void shouldUpdateRtacHolding_whenLibraryUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_whenLibraryUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -550,7 +548,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(23)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() throws JsonProcessingException {
+  void shouldClearLibraryCache_whenLibraryDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       //preload cache
@@ -569,7 +567,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(24)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldClearMaterialTypesCache_whenMaterialTypeCreateEventIsSent() throws JsonProcessingException {
+  void shouldClearMaterialTypesCache_whenMaterialTypeCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       inventoryReferenceDataService.getMaterialTypesMap();
@@ -588,7 +586,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(25)
-  void shouldUpdateRtacHoldingMaterialTypeAndClearCache_whenMaterialTypeUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHoldingMaterialTypeAndClearCache_whenMaterialTypeUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -614,7 +612,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(26)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldClearLoanTypesCache_whenLoanTypeCreateEventIsSent() throws JsonProcessingException {
+  void shouldClearLoanTypesCache_whenLoanTypeCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       inventoryReferenceDataService.getLoanTypesMap();
@@ -633,7 +631,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(27)
-  void shouldUpdateTemporaryAndPermanentLoanTypesAndClearCache_whenLoanTypeUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateTemporaryAndPermanentLoanTypesAndClearCache_whenLoanTypeUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -673,7 +671,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(28)
-  void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() throws JsonProcessingException {
+  void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -695,7 +693,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(29)
-  void shouldDeleteRtacHolding_withItemType_whenBoundWithDeleteEventIsSent() throws JsonProcessingException {
+  void shouldDeleteRtacHolding_withItemType_whenBoundWithDeleteEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM, true);
@@ -712,7 +710,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(30)
-  void shouldUpdateRtacHolding_whenInstanceUpdateEventIsSent_forMemberTenant() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_whenInstanceUpdateEventIsSent_forMemberTenant() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);

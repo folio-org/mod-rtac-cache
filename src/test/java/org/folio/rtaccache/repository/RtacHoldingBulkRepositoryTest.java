@@ -174,7 +174,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateMaterialTypeData_updatesEmbeddedMaterialType() throws SQLException, JsonProcessingException {
+  void bulkUpdateMaterialTypeData_updatesEmbeddedMaterialType() throws SQLException {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
     var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
@@ -197,7 +197,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateLoanTypeData_updatesTemporaryAndPermanentLoanTypeNames() throws SQLException, JsonProcessingException {
+  void bulkUpdateLoanTypeData_updatesTemporaryAndPermanentLoanTypeNames() throws SQLException {
     when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
     var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
     var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
