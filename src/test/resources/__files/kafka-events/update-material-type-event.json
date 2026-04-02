@@ -1,0 +1,17 @@
+{
+  "old": {
+    "id": "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+    "name": "book",
+    "source": "consortium"
+  },
+  "new": {
+    "id": "1a54b431-2e4f-452d-9cae-9cee66c9a892",
+    "name": "book updated",
+    "source": "consortium"
+  },
+  "type": "UPDATE",
+  "tenant": "testTenant",
+  "eventId": "2fbc3ab5-6ff3-4d82-816b-6c687727f166",
+  "eventTs": 1764745002000
+}
+

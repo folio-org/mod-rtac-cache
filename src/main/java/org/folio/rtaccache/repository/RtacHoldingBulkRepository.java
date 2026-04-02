@@ -13,8 +13,10 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.dto.Instance;
+import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
+import org.folio.rtaccache.domain.dto.MaterialType;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
@@ -68,6 +70,34 @@ public class RtacHoldingBulkRepository {
       to_jsonb(?::text[])
     )
     WHERE instance_id = ?::uuid
+  """;
+
+  private static final String MATERIAL_TYPE_DATA_UPDATE_SQL = """
+    UPDATE rtac_holding
+    SET rtac_holding_json = jsonb_set(
+      rtac_holding_json,
+      '{materialType,name}',
+      to_jsonb(?::text)
+    )
+    WHERE rtac_holding_json->'materialType'->>'id' = ?
+  """;
+
+  private static final String LOAN_TYPE_DATA_UPDATE_SQL = """
+    UPDATE rtac_holding
+    SET rtac_holding_json = rtac_holding_json || jsonb_build_object(
+      'temporaryLoanType',
+      CASE
+        WHEN rtac_holding_json->>'temporaryLoanType' = ? THEN ?
+        ELSE rtac_holding_json->>'temporaryLoanType'
+      END,
+      'permanentLoanType',
+      CASE
+        WHEN rtac_holding_json->>'permanentLoanType' = ? THEN ?
+        ELSE rtac_holding_json->>'permanentLoanType'
+      END
+    )
+    WHERE rtac_holding_json->>'temporaryLoanType' = ?
+      OR rtac_holding_json->>'permanentLoanType' = ?
   """;
 
   private static final String MARK_AS_SHARED_SQL = """
@@ -243,6 +273,28 @@ public class RtacHoldingBulkRepository {
       ps.setString(1, library.getName());
       ps.setString(2, library.getCode());
       ps.setString(3, library.getId());
+      ps.executeUpdate();
+    }
+  }
+
+  public void bulkUpdateMaterialTypeData(MaterialType materialType) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+      PreparedStatement ps = connection.prepareStatement(MATERIAL_TYPE_DATA_UPDATE_SQL)) {
+      ps.setString(1, materialType.getName());
+      ps.setString(2, materialType.getId());
+      ps.executeUpdate();
+    }
+  }
+
+  public void bulkUpdateLoanTypeData(LoanType oldLoanType, LoanType newLoanType) throws SQLException {
+    try (Connection connection = dataSource.getConnection();
+      PreparedStatement ps = connection.prepareStatement(LOAN_TYPE_DATA_UPDATE_SQL)) {
+      ps.setString(1, oldLoanType.getName());
+      ps.setString(2, newLoanType.getName());
+      ps.setString(3, oldLoanType.getName());
+      ps.setString(4, newLoanType.getName());
+      ps.setString(5, oldLoanType.getName());
+      ps.setString(6, oldLoanType.getName());
       ps.executeUpdate();
     }
   }

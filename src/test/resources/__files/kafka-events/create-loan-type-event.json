@@ -1,0 +1,12 @@
+{
+  "new": {
+    "id": "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "name": "Can circulate",
+    "source": "consortium"
+  },
+  "type": "CREATE",
+  "tenant": "testTenant",
+  "eventId": "5b62af75-a312-437a-8b36-7113218035f8",
+  "eventTs": 1764745003000
+}
+

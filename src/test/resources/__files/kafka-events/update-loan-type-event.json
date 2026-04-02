@@ -1,0 +1,17 @@
+{
+  "old": {
+    "id": "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "name": "Can circulate",
+    "source": "consortium"
+  },
+  "new": {
+    "id": "2b94c631-fca9-4892-a730-03ee529ffe27",
+    "name": "Can circulate updated",
+    "source": "consortium"
+  },
+  "type": "UPDATE",
+  "tenant": "testTenant",
+  "eventId": "a95d5921-5ea3-4de3-95f2-d665126fc97d",
+  "eventTs": 1764745004000
+}
+

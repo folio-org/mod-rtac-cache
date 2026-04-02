@@ -86,6 +86,14 @@ folio:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.library}
         group-id: ${folio.environment}-mod-rtac-cache-library-group
+      material-type:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.material-type}
+        group-id: ${folio.environment}-mod-rtac-cache-material-type-group
+      loan-type:
+        concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
+        topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.loan-type}
+        group-id: ${folio.environment}-mod-rtac-cache-loan-type-group
       bound-with:
         concurrency: ${KAFKA_EVENTS_CONCURRENCY:2}
         topic-pattern: ${KAFKA_EVENTS_CONSUMER_PATTERN:${folio.environment}\.ALL\.inventory\.bound-with}

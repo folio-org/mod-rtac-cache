@@ -57,6 +57,14 @@ folio:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.inventory\.library
         group-id: ${folio.environment}-mod-rtac-cache-library-group
+      material-type:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.material-type
+        group-id: ${folio.environment}-mod-rtac-cache-material-type-group
+      loan-type:
+        concurrency: 1
+        topic-pattern: ${folio.environment}\.ALL\.inventory\.loan-type
+        group-id: ${folio.environment}-mod-rtac-cache-loan-type-group
       bound-with:
         concurrency: 1
         topic-pattern: ${folio.environment}\.ALL\.inventory\.bound-with
