@@ -11,11 +11,13 @@ import org.folio.rtaccache.TestUtil;
 import org.folio.rtaccache.client.OrdersClient;
 import org.folio.rtaccache.domain.dto.Piece;
 import org.folio.rtaccache.domain.dto.PieceCollection;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,6 +25,9 @@ class OrdersServiceTest {
 
   @Mock
   private OrdersClient ordersClient;
+
+  @Spy
+  private QueryParametersUtil queryParametersUtil = new QueryParametersUtil();
 
   @InjectMocks
   private OrdersService ordersService;

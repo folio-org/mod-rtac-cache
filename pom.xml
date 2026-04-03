@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.4</version>
+    <version>4.0.3</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
+
   <groupId>org.folio</groupId>
   <artifactId>mod-rtac-cache</artifactId>
   <name>mod-rtac-cache</name>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.1.0-SNAPSHOT</version>
   <description>Provides real-time availability information for FOLIO inventory instances, items and holdings.
   </description>
   <packaging>jar</packaging>
@@ -34,18 +36,16 @@
     <argLine />
 
     <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
-    <spring-kafka.version>3.2.6</spring-kafka.version>
 
     <!-- runtime dependencies -->
-    <folio-spring-support.version>9.0.1</folio-spring-support.version>
-    <folio-service-tools.version>5.0.1</folio-service-tools.version>
-    <openapi-generator.version>7.12.0</openapi-generator.version>
-    <mapstruct.version>1.6.3</mapstruct.version>
-    <feign-httpclient.version>13.5</feign-httpclient.version>
+    <folio-spring-support.version>10.0.0-RC1</folio-spring-support.version>
+    <folio-service-tools.version>6.0.0-SNAPSHOT</folio-service-tools.version>
+    <openapi-generator.version>7.20.0</openapi-generator.version>
 
     <!-- test dependencies -->
+    <wiremock-standalone.version>3.13.2</wiremock-standalone.version>
+    <testcontainers.extensions.version>1.21.4</testcontainers.extensions.version>
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
-    <spring-cloud-contract-wiremock.version>4.1.5</spring-cloud-contract-wiremock.version>
   </properties>
 
   <dependencies>
@@ -53,7 +53,18 @@
       <groupId>org.folio</groupId>
       <artifactId>folio-spring-base</artifactId>
       <version>${folio-spring-support.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk18on</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-spring-system-user</artifactId>
@@ -64,73 +75,70 @@
       <artifactId>folio-service-tools-spring-dev</artifactId>
       <version>${folio-service-tools.version}</version>
     </dependency>
-    <dependency>
-      <groupId>io.github.openfeign</groupId>
-      <artifactId>feign-java11</artifactId>
-      <version>${feign-httpclient.version}</version>
-    </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
+      <artifactId>spring-boot-starter-web</artifactId>
       <exclusions>
         <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-logging</artifactId>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-to-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-to-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
-      <version>${spring-kafka.version}</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-cache</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
-      <dependency>
+
+    <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.module</groupId>
-      <artifactId>jackson-module-jaxb-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jdk8</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <optional>true</optional>
     </dependency>
-
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.mapstruct</groupId>
-      <artifactId>mapstruct</artifactId>
-      <version>${mapstruct.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.mapstruct</groupId>
-      <artifactId>mapstruct-processor</artifactId>
-      <version>${mapstruct.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Test dependencies -->
@@ -144,38 +152,61 @@
           <artifactId>junit-vintage-engine</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-logging</artifactId>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-to-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>ch.qos.logback</groupId>
+          <artifactId>logback-classic</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka-test</artifactId>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-to-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-webmvc-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>kafka</artifactId>
-      <version>${testcontainers.version}</version>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock-standalone</artifactId>
+      <version>${wiremock-standalone.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.extensions.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-contract-wiremock</artifactId>
-      <version>${spring-cloud-contract-wiremock.version}</version>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${testcontainers.extensions.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>kafka</artifactId>
+      <version>${testcontainers.extensions.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
-
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -280,7 +311,9 @@
                 <java8>true</java8>
                 <dateLibrary>java</dateLibrary>
                 <interfaceOnly>true</interfaceOnly>
-                <useSpringBoot3>true</useSpringBoot3>
+                <useSpringBoot4>true</useSpringBoot4>
+                <useJackson3>true</useJackson3>
+                <openApiNullable>false</openApiNullable>
                 <useTags>true</useTags>
                 <useUUIDs>true</useUUIDs>
               </configOptions>
@@ -294,12 +327,48 @@
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+          <!-- Non-ECS tests run in the default fork -->
           <includes>
-            <include>**/*IT.java</include>
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
+          <excludes>
+            <exclude>**/*EcsIT.java</exclude>
+          </excludes>
         </configuration>
+        <executions>
+          <!-- Execution 1: non-ECS integration tests in their own fork -->
+          <execution>
+            <id>non-ecs-it</id>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+              <forkCount>1</forkCount>
+              <reuseForks>false</reuseForks>
+              <includes>
+                <include>**/*IT.java</include>
+              </includes>
+              <excludes>
+                <exclude>**/*EcsIT.java</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+          <!-- Execution 2: ECS integration tests in a separate, isolated fork -->
+          <execution>
+            <id>ecs-it</id>
+            <goals><goal>test</goal></goals>
+            <configuration>
+              <useSystemClassLoader>false</useSystemClassLoader>
+              <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+              <forkCount>1</forkCount>
+              <reuseForks>false</reuseForks>
+              <includes>
+                <include>**/*EcsIT.java</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>

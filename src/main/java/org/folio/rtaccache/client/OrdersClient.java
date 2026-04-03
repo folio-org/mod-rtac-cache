@@ -1,14 +1,14 @@
 package org.folio.rtaccache.client;
 
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
+import java.util.Map;
 import org.folio.rtaccache.domain.dto.PieceCollection;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
 
-@FeignClient("orders")
+@HttpExchange
 public interface OrdersClient {
 
-  @GetMapping("/orders-storage/pieces")
-  PieceCollection getPieces(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("orders-storage/pieces")
+  PieceCollection getPieces(@RequestParam Map<String, String> queryParametersMap);
 }

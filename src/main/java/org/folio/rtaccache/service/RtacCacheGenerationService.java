@@ -20,6 +20,7 @@ import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,6 +42,7 @@ public class RtacCacheGenerationService {
   private final ConsortiaService consortiaService;
   private final SystemUserScopedExecutionService systemUserExecutionService;
   private final FolioExecutionContext folioExecutionContext;
+  private final QueryParametersUtil queryParametersUtil;
   private static final Integer HOLDINGS_BATCH_SIZE = 50;
   private static final Integer ITEMS_BATCH_SIZE = 500;
   private static final Integer BOUND_WITH_BATCH_SIZE = 500;
@@ -115,14 +117,15 @@ public class RtacCacheGenerationService {
     var futures = new ArrayList<CompletableFuture<Void>>();
     while (totalBoundWithParts != 0 && boundWithPartOffset < totalBoundWithParts) {
       var boundWithPartsCql = getByHoldingsIdCql(holdings.getId());
-      var boundWithPartsRequest = new FolioCqlRequest(boundWithPartsCql, ITEMS_BATCH_SIZE, boundWithPartOffset);
+      var boundWithPartsRequest = queryParametersUtil.toMap(boundWithPartsCql, ITEMS_BATCH_SIZE, boundWithPartOffset);
       futures.add(processBondWithItemBatch(instance, holdings, boundWithPartsRequest));
       boundWithPartOffset += BOUND_WITH_BATCH_SIZE;
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
   }
 
-  private CompletableFuture<Void> processBondWithItemBatch(Instance instance, HoldingsRecord holdings, FolioCqlRequest boundWithPartsRequest) {
+  private CompletableFuture<Void> processBondWithItemBatch(Instance instance, HoldingsRecord holdings,
+    Map<String, String> boundWithPartsRequest) {
     return CompletableFuture.supplyAsync(() -> {
       var boundWithPartsResponse = inventoryClient.getBoundWithParts(boundWithPartsRequest);
       log.info("Fetched {} bound-with parts for holding id: {}", boundWithPartsResponse.getTotalRecords(), holdings.getId());
@@ -203,7 +206,7 @@ public class RtacCacheGenerationService {
 
   private Instance getInstanceById(String instanceId) {
     var cql = "id==" + instanceId;
-    var request = new FolioCqlRequest(cql, 1, 0);
+    var request = queryParametersUtil.toMap(cql, 1, 0);
     var response = inventoryClient.getInstances(request);
     if (response.getTotalRecords() == 0) {
       return null;
@@ -268,7 +271,7 @@ public class RtacCacheGenerationService {
 
   private int getBoundWithTotal(HoldingsRecord holdings) {
     var getByHoldingsIdCql = getByHoldingsIdCql(holdings.getId());
-    var request = new FolioCqlRequest(getByHoldingsIdCql, 0, 0);
+    var request = queryParametersUtil.toMap(getByHoldingsIdCql, 0, 0);
     var response = inventoryClient.getBoundWithParts(request);
     return response.getTotalRecords();
   }

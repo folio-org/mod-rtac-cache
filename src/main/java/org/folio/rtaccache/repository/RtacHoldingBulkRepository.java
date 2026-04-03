@@ -1,7 +1,5 @@
 package org.folio.rtaccache.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -20,6 +18,7 @@ import org.folio.rtaccache.domain.dto.MaterialType;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -234,7 +233,7 @@ public class RtacHoldingBulkRepository {
   private final ObjectMapper objectMapper;
   private static final int BATCH_SIZE = 200;
 
-  public void bulkUpsert(List<RtacHoldingEntity> holdings) throws SQLException, JsonProcessingException {
+  public void bulkUpsert(List<RtacHoldingEntity> holdings) throws SQLException {
     try (Connection connection = dataSource.getConnection();
       PreparedStatement ps = connection.prepareStatement(BULK_UPSERT_SQL)) {
 
@@ -334,7 +333,7 @@ public class RtacHoldingBulkRepository {
   }
 
   public void updateItemDataFromKafkaItemEvent(UUID itemId, RtacHolding rtacHolding)
-    throws SQLException, JsonProcessingException {
+    throws SQLException {
     var connection = DataSourceUtils.getConnection(dataSource);
     try (PreparedStatement ps = connection.prepareStatement(ITEM_KAFKA_UPDATE_SQL)) {
       ps.setString(1, rtacHolding.getBarcode());
@@ -380,7 +379,7 @@ public class RtacHoldingBulkRepository {
   }
 
   public void updateHoldingsDataFromKafkaHoldingsEvent(UUID instanceId, UUID holdingsId, RtacHolding rtacHolding)
-    throws SQLException, JsonProcessingException {
+    throws SQLException {
     var connection = DataSourceUtils.getConnection(dataSource);
     try (PreparedStatement ps = connection.prepareStatement(HOLDINGS_KAFKA_UPDATE_SQL)) {
       ps.setString(1, rtacHolding.getCallNumber());
@@ -402,7 +401,7 @@ public class RtacHoldingBulkRepository {
   }
 
   public void updatePieceDataFromKafkaHoldingsEvent(UUID instanceId, String holdingsId, RtacHolding rtacHolding)
-    throws SQLException, JsonProcessingException {
+    throws SQLException {
     var connection = DataSourceUtils.getConnection(dataSource);
     try (PreparedStatement ps = connection.prepareStatement(HOLDINGS_PIECES_KAFKA_UPDATE_SQL)) {
       ps.setString(1, rtacHolding.getCallNumber());

@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import org.folio.rtaccache.client.ConsortiaClient;
-import org.folio.rtaccache.client.UsersClient;
+import org.folio.rtaccache.client.UserClient;
 import org.folio.rtaccache.domain.dto.ConsortiaTenants;
 import org.folio.rtaccache.domain.dto.ConsortiaTenantsTenantsInner;
 import org.folio.rtaccache.domain.dto.UserTenants;
@@ -25,7 +25,7 @@ class ConsortiaServiceTest {
   @Mock
   private ConsortiaClient consortiaClient;
   @Mock
-  private UsersClient usersClient;
+  private UserClient userClient;
   @Mock
   private FolioExecutionContext folioExecutionContext;
 
@@ -39,7 +39,7 @@ class ConsortiaServiceTest {
       .userTenants(List.of(new UserTenantsUserTenantsInner().centralTenantId(centralTenantId)));
 
     when(folioExecutionContext.getTenantId()).thenReturn(centralTenantId);
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.isCentralTenant();
 
@@ -54,7 +54,7 @@ class ConsortiaServiceTest {
       .userTenants(List.of(new UserTenantsUserTenantsInner().centralTenantId(centralTenantId)));
 
     when(folioExecutionContext.getTenantId()).thenReturn(memberTenantId);
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.isCentralTenant();
 
@@ -64,7 +64,7 @@ class ConsortiaServiceTest {
   @Test
   void isCentralTenant_shouldReturnFalse_whenNoUserTenants() {
     var userTenants = new UserTenants().totalRecords(0);
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.isCentralTenant();
 
@@ -81,7 +81,7 @@ class ConsortiaServiceTest {
     var consortiaTenants = new ConsortiaTenants().tenants(
       List.of(new ConsortiaTenantsTenantsInner().id(tenantId1), new ConsortiaTenantsTenantsInner().id(tenantId2)));
 
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
     when(consortiaClient.getConsortiaTenants(consortiumId, ConsortiaService.CONSORTIA_TENANTS_LIMIT))
       .thenReturn(consortiaTenants);
 
@@ -93,7 +93,7 @@ class ConsortiaServiceTest {
   @Test
   void getConsortiaTenants_shouldReturnEmptyList_whenNoUserTenants() {
     var userTenants = new UserTenants().totalRecords(0);
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.getConsortiaTenants();
 
@@ -107,7 +107,7 @@ class ConsortiaServiceTest {
       .userTenants(List.of(new UserTenantsUserTenantsInner().consortiumId(consortiumId)));
     var consortiaTenants = new ConsortiaTenants().tenants(Collections.emptyList());
 
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
     when(consortiaClient.getConsortiaTenants(consortiumId, ConsortiaService.CONSORTIA_TENANTS_LIMIT))
       .thenReturn(consortiaTenants);
 
@@ -125,7 +125,7 @@ class ConsortiaServiceTest {
         .consortiumId(consortiumId)
         .centralTenantId(centralTenantId)));
 
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.getCentralTenantId();
 
@@ -135,7 +135,7 @@ class ConsortiaServiceTest {
   @Test
   void getCentralTenantId_shouldReturnEmpty_whenNoUserTenants() {
     var userTenants = new UserTenants().totalRecords(0);
-    when(usersClient.getUserTenants()).thenReturn(userTenants);
+    when(userClient.getUserTenants()).thenReturn(userTenants);
 
     var result = consortiaService.getCentralTenantId();
 

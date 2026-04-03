@@ -1,15 +1,14 @@
 server:
   port: 8081
+
 spring:
   application:
     name: mod-rtac-cache
+  main:
+    allow-bean-definition-overriding: true
   threads:
     virtual:
       enabled: true
-  cloud:
-    openfeign:
-      okhttp:
-        enabled: true
   datasource:
     username: ${DB_USERNAME:folio_admin}
     password: ${DB_PASSWORD:folio_admin}
@@ -55,6 +54,7 @@ spring:
       key-store-location: ${KAFKA_SSL_KEYSTORE_LOCATION:}
       trust-store-password: ${KAFKA_SSL_TRUSTSTORE_PASSWORD:}
       trust-store-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
+
 folio:
   environment: ${ENV:folio}
   okapiUrl: ${OKAPI_URL:http://localhost:8082}
@@ -115,11 +115,15 @@ folio:
     username: ${SYSTEM_USER_USERNAME:mod-rtac-cache}
     password: ${SYSTEM_USER_PASSWORD}
     lastname: System
+  exchange:
+    enabled: true
+
 rtac:
   cache:
     invalidation:
       cron: ${RTAC_CACHE_INVALIDATION_CRON:0 0 2 * * ?}
       retention-days: ${RTAC_CACHE_RETENTION_DAYS:2}
+
 management:
   endpoints:
     web:

@@ -33,9 +33,7 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
 
   @AfterEach
   void tearDown() {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
-      repository.deleteAll();
-    }
+    withinTenant(TestConstant.TEST_TENANT, repository::deleteAll);
   }
 
 
@@ -48,7 +46,7 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
     // Given
     // Instance A has 1 expired and 2 recent holdings
     // Instance B has all recent holdings
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       bulkRepository.bulkUpsert(List.of(
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(10, ChronoUnit.DAYS)),
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(3, ChronoUnit.DAYS)),
@@ -61,17 +59,17 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
       ));
 
       assertThat(repository.count()).isEqualTo(5);
-    }
+    });
 
     // When
     service.invalidateOldHoldingEntries();
 
     // Then - only instance B holdings remain
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       assertThat(repository.count()).isEqualTo(2);
       assertThat(repository.countByIdInstanceId(instanceA)).isEqualTo(0);
       assertThat(repository.countByIdInstanceId(instanceB)).isEqualTo(2);
-    }
+    });
   }
 
   @Test
@@ -82,7 +80,7 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
 
     // Given
     // Both instances have all recent holdings
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       bulkRepository.bulkUpsert(List.of(
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(3, ChronoUnit.DAYS)),
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(2, ChronoUnit.DAYS))
@@ -94,17 +92,17 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
       ));
 
       assertThat(repository.count()).isEqualTo(4);
-    }
+    });
 
     // When
     service.invalidateOldHoldingEntries();
 
     // Then - nothing was deleted
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       assertThat(repository.count()).isEqualTo(4);
       assertThat(repository.countByIdInstanceId(instanceA)).isEqualTo(2);
       assertThat(repository.countByIdInstanceId(instanceB)).isEqualTo(2);
-    }
+    });
   }
 
   @Test
@@ -118,7 +116,7 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
     // Instance A has 1 expired + 1 recent
     // Instance B has all recent holdings
     // Instance C has 1 expired + 2 recent
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       bulkRepository.bulkUpsert(List.of(
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(10, ChronoUnit.DAYS)),
         createHolding(instanceA, UUID.randomUUID(), Instant.now().minus(2, ChronoUnit.DAYS))
@@ -136,18 +134,32 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
       ));
 
       assertThat(repository.count()).isEqualTo(7);
-    }
+    });
 
     // When
     service.invalidateOldHoldingEntries();
 
     // Then - only instance B holdings remain
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(TestConstant.TEST_TENANT))) {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
       assertThat(repository.count()).isEqualTo(2);
       assertThat(repository.countByIdInstanceId(instanceA)).isEqualTo(0);
       assertThat(repository.countByIdInstanceId(instanceB)).isEqualTo(2);
       assertThat(repository.countByIdInstanceId(instanceC)).isEqualTo(0);
+    });
+  }
+
+  private void withinTenant(String tenant, ThrowingRunnable action) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
+      action.run();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  @FunctionalInterface
+  private interface ThrowingRunnable {
+
+    void run() throws Exception;
   }
 
   private RtacHoldingEntity createHolding(UUID instanceId, UUID holdingId, Instant createdAt) {

@@ -463,8 +463,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("locationsMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("locations_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -501,8 +502,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("locationsMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("locations_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -520,8 +522,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("libraryMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("library_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -558,8 +561,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("libraryMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("library_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -578,8 +582,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("materialTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("materialTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -603,8 +608,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var updatedHolding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
         assertThat(updatedHolding.getRtacHolding().getMaterialType().getName()).isEqualTo(UPDATED_MATERIAL_TYPE_NAME);
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("materialTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("materialTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -623,8 +629,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("loanTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("loanTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -663,8 +670,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(sameHolding.getRtacHolding().getTemporaryLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
         assertThat(sameHolding.getRtacHolding().getPermanentLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
 
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("loanTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("loanTypes_" + TEST_TENANT)).isNull();
       });
     });
   }

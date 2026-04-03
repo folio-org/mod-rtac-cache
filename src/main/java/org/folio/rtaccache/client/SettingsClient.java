@@ -1,14 +1,14 @@
 package org.folio.rtaccache.client;
 
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
+import java.util.Map;
 import org.folio.rtaccache.domain.dto.Settings;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
 
-@FeignClient("settings")
+@HttpExchange
 public interface SettingsClient {
 
-  @GetMapping("/settings/entries")
-  Settings getSettings(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("settings/entries")
+  Settings getSettings(@RequestParam Map<String, String> queryParametersMap);
 }

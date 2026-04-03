@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.ConsortiaClient;
-import org.folio.rtaccache.client.UsersClient;
+import org.folio.rtaccache.client.UserClient;
 import org.folio.rtaccache.domain.dto.ConsortiaTenantsTenantsInner;
 import org.folio.spring.FolioExecutionContext;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class ConsortiaService {
 
   private final ConsortiaClient consortiaClient;
-  private final UsersClient usersClient;
+  private final UserClient userClient;
   private final FolioExecutionContext folioExecutionContext;
   public static final String IS_CENTRAL_TENANT_CACHE = "isCentralTenantIdCache";
   public static final String CENTRAL_TENANT_CACHE = "centralTenantIdCache";
@@ -25,7 +25,7 @@ public class ConsortiaService {
 
   @Cacheable(value = IS_CENTRAL_TENANT_CACHE, key = "@folioExecutionContext.getTenantId()")
   public boolean isCentralTenant() {
-    var userTenants = usersClient.getUserTenants();
+    var userTenants = userClient.getUserTenants();
     if (userTenants.getTotalRecords() == 0) {
       return false;
     }
@@ -34,7 +34,7 @@ public class ConsortiaService {
 
   @Cacheable(value = CONSORTIA_TENANTS_CACHE, key = "@folioExecutionContext.getTenantId()")
   public List<String> getConsortiaTenants() {
-    var userTenants = usersClient.getUserTenants();
+    var userTenants = userClient.getUserTenants();
     if (userTenants.getTotalRecords() == 0) {
       return Collections.emptyList();
     }
@@ -47,7 +47,7 @@ public class ConsortiaService {
 
   @Cacheable(value = CENTRAL_TENANT_CACHE, key = "@folioExecutionContext.getTenantId()")
   public Optional<String> getCentralTenantId() {
-    var userTenants = usersClient.getUserTenants();
+    var userTenants = userClient.getUserTenants();
     if (userTenants.getTotalRecords() == 0) {
       return Optional.empty();
     }
