@@ -56,8 +56,7 @@ class ItemUpdateEventHandlerTest {
       .thenReturn(holdingMapped(TypeEnum.ITEM, ITEM_ID));
     handler.handle(event);
 
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), holdingMapped(TypeEnum.ITEM, ITEM_ID));
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), holdingMapped(TypeEnum.ITEM, ITEM_ID));
   }
 
   @Test
@@ -90,8 +89,7 @@ class ItemUpdateEventHandlerTest {
     handler.handle(event);
 
     verify(holdingRepository).moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding);
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), mappedItemHolding);
     verify(rtacHoldingRepository, never()).deleteAllByIdInstanceId(any());
   }
 
@@ -110,8 +108,7 @@ class ItemUpdateEventHandlerTest {
 
     handler.handle(event);
 
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), mappedItemHolding);
   }
 
   @Test
@@ -134,8 +131,7 @@ class ItemUpdateEventHandlerTest {
     handler.handle(event);
 
     verify(rtacHoldingRepository).deleteByIdId(UUID.fromString(ITEM_ID));
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), mappedItemHolding);
   }
 
   @Test
@@ -167,8 +163,7 @@ class ItemUpdateEventHandlerTest {
     handler.handle(event);
 
     verify(holdingRepository).moveItemToAnotherHolding(UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), targetHolding);
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(INSTANCE_ID), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), mappedItemHolding);
     verify(rtacHoldingRepository, never()).deleteAllByIdInstanceId(any());
   }
 
@@ -201,8 +196,7 @@ class ItemUpdateEventHandlerTest {
     handler.handle(event);
 
     verify(rtacHoldingRepository).deleteAllByIdInstanceId(UUID.fromString(newInstanceId));
-    verify(holdingRepository).updateItemDataFromKafkaItemEvent(
-      UUID.fromString(newInstanceId), UUID.fromString(ITEM_ID), mappedItemHolding);
+    verify(holdingRepository).updateItemDataFromKafkaItemEvent(UUID.fromString(ITEM_ID), mappedItemHolding);
   }
 
   private RtacHolding holdingMapped(TypeEnum type, String id) {

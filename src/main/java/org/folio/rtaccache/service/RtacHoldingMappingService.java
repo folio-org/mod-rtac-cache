@@ -171,6 +171,8 @@ public class RtacHoldingMappingService {
     newRtacHolding.setMaterialType(itemRtacHolding.getMaterialType());
     newRtacHolding.setTemporaryLoanType(itemRtacHolding.getTemporaryLoanType());
     newRtacHolding.setPermanentLoanType(itemRtacHolding.getPermanentLoanType());
+    newRtacHolding.setDueDate(itemRtacHolding.getDueDate());
+    newRtacHolding.setTotalHoldRequests(itemRtacHolding.getTotalHoldRequests());
     newRtacHolding.setHoldingsStatements(holdingsRtacHolding.getHoldingsStatements());
     newRtacHolding.setHoldingsStatementsForIndexes(holdingsRtacHolding.getHoldingsStatementsForIndexes());
     newRtacHolding.setHoldingsStatementsForSupplements(holdingsRtacHolding.getHoldingsStatementsForSupplements());

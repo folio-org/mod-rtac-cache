@@ -37,7 +37,7 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
     var oldItem = resourceEventUtil.getOldFromInventoryEvent(resourceEvent, KafkaItem.class);
     var item = resourceEventUtil.getNewFromInventoryEvent(resourceEvent, KafkaItem.class);
     if (item.getId() == null || item.getInstanceId() == null) {
-      log.warn("Skipping item update event due to missing required identifiers, item: {}", item);
+      log.warn("Skipping item update event due to missing required identifiers, item: {}", item.getId());
       return;
     }
     log.info("Handling item update event for item with id: {}", item.getId());
@@ -48,8 +48,7 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
 
     var rtacHoldingUpdate = rtacHoldingMappingService.mapForUpdateItemFrom(item);
     try {
-      holdingRepository.updateItemDataFromKafkaItemEvent(UUID.fromString(item.getInstanceId()),
-        UUID.fromString(item.getId()),
+      holdingRepository.updateItemDataFromKafkaItemEvent(UUID.fromString(item.getId()),
         rtacHoldingUpdate);
     } catch (SQLException e) {
       log.error("Error during updating RTAC holdings with item data by item id: {}", item.getId(), e);
