@@ -156,7 +156,7 @@ public class RtacHoldingBulkRepository {
       'materialType', ?::jsonb,
       'temporaryLoanType', ?::text,
       'permanentLoanType', ?::text )
-    WHERE instance_id = ?::uuid AND type = 'ITEM'
+    WHERE type = 'ITEM'
     AND id = ?::uuid
   """;
 
@@ -333,7 +333,7 @@ public class RtacHoldingBulkRepository {
     }
   }
 
-  public void updateItemDataFromKafkaItemEvent(UUID instanceId, UUID itemId, RtacHolding rtacHolding)
+  public void updateItemDataFromKafkaItemEvent(UUID itemId, RtacHolding rtacHolding)
     throws SQLException, JsonProcessingException {
     var connection = DataSourceUtils.getConnection(dataSource);
     try (PreparedStatement ps = connection.prepareStatement(ITEM_KAFKA_UPDATE_SQL)) {
@@ -349,8 +349,7 @@ public class RtacHoldingBulkRepository {
       ps.setString(10, objectMapper.writeValueAsString(rtacHolding.getMaterialType()));
       ps.setString(11, rtacHolding.getTemporaryLoanType());
       ps.setString(12, rtacHolding.getPermanentLoanType());
-      ps.setObject(13, instanceId);
-      ps.setObject(14, itemId);
+      ps.setObject(13, itemId);
       ps.executeUpdate();
     } finally {
       DataSourceUtils.releaseConnection(connection, dataSource);
