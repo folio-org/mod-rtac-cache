@@ -327,14 +327,11 @@
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
-          <!-- Non-ECS tests run in the default fork -->
+          <!-- Non-integration tests run in the default fork -->
           <includes>
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
-          <excludes>
-            <exclude>**/*EcsIT.java</exclude>
-          </excludes>
         </configuration>
         <executions>
           <!-- Execution 1: non-ECS integration tests in their own fork -->
