@@ -19,6 +19,7 @@ import org.folio.rtaccache.domain.dto.Loans;
 import org.folio.rtaccache.domain.dto.Request;
 import org.folio.rtaccache.domain.dto.Request.StatusEnum;
 import org.folio.rtaccache.domain.dto.Requests;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -35,6 +36,8 @@ class CirculationServiceTest {
   private CirculationClient circulationClient;
   @Spy
   private AsyncTaskExecutor asyncTaskExecutor = new VirtualThreadTaskExecutor();
+  @Spy
+  private QueryParametersUtil queryParametersUtil = new QueryParametersUtil();
   @InjectMocks
   private CirculationService circulationService;
 

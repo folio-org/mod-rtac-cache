@@ -1,18 +1,18 @@
 package org.folio.rtaccache.client;
 
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
+import java.util.Map;
 import org.folio.rtaccache.domain.dto.Loans;
 import org.folio.rtaccache.domain.dto.Requests;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
 
-@FeignClient(value = "circulation")
+@HttpExchange
 public interface CirculationClient {
 
-  @GetMapping("/loan-storage/loans")
-  Loans getLoans(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("loan-storage/loans")
+  Loans getLoans(@RequestParam Map<String, String> queryParametersMap);
 
-  @GetMapping("/circulation/requests")
-  Requests getRequests(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("circulation/requests")
+  Requests getRequests(@RequestParam Map<String, String> queryParametersMap);
 }

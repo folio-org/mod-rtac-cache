@@ -1,8 +1,5 @@
 package org.folio.rtaccache.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +14,6 @@ import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.domain.dto.StatusSummary;
-import org.folio.rtaccache.domain.exception.RtacDataProcessingException;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.repository.RtacSummaryProjection;
 import org.folio.rtaccache.util.EcsUtil;
@@ -29,6 +25,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -84,15 +82,11 @@ public class RtacHoldingStorageService {
         var summary = new RtacHoldingsSummary();
         summary.setInstanceId(id.toString());
         summary.setHasVolumes(projection.hasVolumes());
-        try {
-          List<StatusSummary> statusSummaries = objectMapper.readValue(projection.statusSummariesJson(), new TypeReference<>() {});
-          summary.setStatusSummaries(statusSummaries);
-          if (projection.instanceFormatIds() != null) {
-            List<String> instanceFormatIds = objectMapper.readValue(projection.instanceFormatIds(), new TypeReference<>() {});
-            summary.setInstanceFormatIds(instanceFormatIds.stream().filter(Objects::nonNull).toList());
-          }
-        } catch (JsonProcessingException e) {
-          throw new RtacDataProcessingException(String.format("Failed to parse json for instanceId %s", id), e);
+        List<StatusSummary> statusSummaries = objectMapper.readValue(projection.statusSummariesJson(), new TypeReference<>() {});
+        summary.setStatusSummaries(statusSummaries);
+        if (projection.instanceFormatIds() != null) {
+          List<String> instanceFormatIds = objectMapper.readValue(projection.instanceFormatIds(), new TypeReference<>() {});
+          summary.setInstanceFormatIds(instanceFormatIds.stream().filter(Objects::nonNull).toList());
         }
         holdings.add(summary);
       } else {

@@ -1,28 +1,18 @@
-server:
-  port: 8081
 spring:
   application:
     name: mod-rtac-cache
-  threads:
-    virtual:
-      enabled: true
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-  liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/changelog-master.xml
   jpa:
     show-sql: true
-    hibernate:
-      ddl-auto: none
   kafka:
     consumer:
       auto-offset-reset: earliest
       group-id: test-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: '*'
     producer:
@@ -31,7 +21,7 @@ spring:
 
 folio:
   environment: test
-  okapi-url: http://localhost:9130
+#  okapi-url: http://localhost:9130
   system-user:
     enabled: false
     username: test-user

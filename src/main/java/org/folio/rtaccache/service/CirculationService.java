@@ -17,8 +17,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.CirculationClient;
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.Request;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -30,6 +30,7 @@ public class CirculationService {
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
   private final CirculationClient circulationClient;
+  private final QueryParametersUtil queryParametersUtil;
   private static final Integer MAX_RECORDS = 1000;
   private static final Integer MAX_IDS_FOR_CQL = 50;
 
@@ -58,11 +59,11 @@ public class CirculationService {
     }, taskExecutor);
   }
 
-  private FolioCqlRequest getLoansBatchRequest(List<String> itemIds) {
+  private Map<String, String> getLoansBatchRequest(List<String> itemIds) {
     var cql = String.format("itemId==(%s) AND status.name==open", itemIds.stream()
       .map(id -> "\"" + id + "\"")
       .collect(Collectors.joining(" OR ")));
-    return new FolioCqlRequest(cql, MAX_RECORDS, 0);
+    return queryParametersUtil.toMap(cql, MAX_RECORDS, 0);
   }
 
   public Map<String, Long> getHoldRequestsCountForItems(List<String> itemIds) {
@@ -91,11 +92,11 @@ public class CirculationService {
     }, taskExecutor);
   }
 
-  private FolioCqlRequest getHoldsBatchRequest(List<String> itemIds) {
+  private Map<String, String> getHoldsBatchRequest(List<String> itemIds) {
     var cql = String.format("itemId==(%s)", itemIds.stream()
       .map(id -> "\"" + id + "\"")
       .collect(Collectors.joining(" OR ")));
-    return new FolioCqlRequest(cql, MAX_RECORDS, 0);
+    return queryParametersUtil.toMap(cql, MAX_RECORDS, 0);
   }
 
   private boolean isOpenStatus(Request itemRequest) {

@@ -241,7 +241,8 @@ public class RtacHoldingMappingService {
     var location = inventoryReferenceDataService.getLocationsMap().get(locationId);
     var rtacHoldingLibrary = new RtacHoldingLibrary();
     if (location != null) {
-      var library = inventoryReferenceDataService.getLibraryMap().get(location.getLibraryId());
+      var libraryMap = inventoryReferenceDataService.getLibraryMap();
+      var library = libraryMap.get(location.getLibraryId());
       if (library != null) {
         rtacHoldingLibrary.setId(library.getId());
         rtacHoldingLibrary.setCode(library.getCode());

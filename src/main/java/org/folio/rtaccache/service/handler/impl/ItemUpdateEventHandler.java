@@ -1,6 +1,5 @@
 package org.folio.rtaccache.service.handler.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.UUID;
@@ -52,9 +51,6 @@ public class ItemUpdateEventHandler implements InventoryEventHandler {
         rtacHoldingUpdate);
     } catch (SQLException e) {
       log.error("Error during updating RTAC holdings with item data by item id: {}", item.getId(), e);
-      throw new RtacKafkaUpdateException(e);
-    } catch (JsonProcessingException e) {
-      log.error("Error during mapping item data to JSON for item with id: {}", item.getId(), e);
       throw new RtacKafkaUpdateException(e);
     }
   }

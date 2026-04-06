@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -463,8 +462,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("locationsMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("locations_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -501,8 +501,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLocationKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("locationsMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("locationsMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("locations_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -520,8 +521,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("libraryMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("library_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -558,8 +560,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendLibraryKafkaMessage(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap) cacheManager.getCache("libraryMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("libraryMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("library_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -578,8 +581,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("materialTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("materialTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -603,8 +607,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
         var updatedHolding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
         assertThat(updatedHolding.getRtacHolding().getMaterialType().getName()).isEqualTo(UPDATED_MATERIAL_TYPE_NAME);
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("materialTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("materialTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("materialTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -623,8 +628,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("loanTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("loanTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -663,8 +669,9 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(sameHolding.getRtacHolding().getTemporaryLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
         assertThat(sameHolding.getRtacHolding().getPermanentLoanType()).isEqualTo(UNCHANGED_LOAN_TYPE_NAME);
 
-        var updatedCache = ((ConcurrentHashMap<?, ?>) cacheManager.getCache("loanTypesMap").getNativeCache());
-        assertThat(updatedCache).isEmpty();
+        var updatedCache = cacheManager.getCache("loanTypesMap");
+        assertThat(updatedCache).isNotNull();
+        assertThat(updatedCache.get("loanTypes_" + TEST_TENANT)).isNull();
       });
     });
   }
@@ -824,20 +831,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     }));
   }
 
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
-  }
-
   private void createExistingRtacHoldingEntity(String id, TypeEnum type) {
     createExistingRtacHoldingEntity(id, type, false);
   }
@@ -974,5 +967,4 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     var boundWithRecord = new ProducerRecord<>(TestConstant.BOUND_WITH_TOPIC, ITEM_ID, event);
     inventoryKafkaTemplate.send(boundWithRecord);
   }
-
 }

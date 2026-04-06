@@ -1,25 +1,18 @@
 package org.folio.rtaccache;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.jayway.jsonpath.JsonPath;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.mockito.ArgumentMatcher;
+import tools.jackson.databind.ObjectMapper;
 
 public class TestUtil {
 
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-      .setSerializationInclusion(Include.NON_NULL)
-      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-      .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   public static String readFileContentFromResources(String path) {
     try {
@@ -42,7 +35,7 @@ public class TestUtil {
     return OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(value);
   }
 
-  public static ArgumentMatcher<FolioCqlRequest> queryContains(String str) {
-    return arg -> arg != null && arg.getQuery().contains(str);
+  public static ArgumentMatcher<Map<String, String>> queryContains(String str) {
+    return arg -> arg != null && arg.get("query") != null && arg.get("query").contains(str);
   }
 }

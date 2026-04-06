@@ -9,12 +9,12 @@ import static org.folio.rtaccache.constant.RtacCacheConstant.MATERIAL_TYPES_CACH
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.client.InventoryClient;
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingsNoteType;
 import org.folio.rtaccache.domain.dto.LoanType;
 import org.folio.rtaccache.domain.dto.Location;
 import org.folio.rtaccache.domain.dto.Loclib;
 import org.folio.rtaccache.domain.dto.MaterialType;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +23,14 @@ import org.springframework.stereotype.Service;
 public class InventoryReferenceDataService {
 
   private final InventoryClient inventoryClient;
+  private final QueryParametersUtil queryParametersUtil;
 
   @Cacheable(value = LOCATIONS_CACHE_NAME,
     key = "'locations'.concat('_').concat(@folioExecutionContext.getTenantId())",
     unless = "#result == null || #result.isEmpty()")
   public Map<String, Location> getLocationsMap() {
-    return inventoryClient.getLocations(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
+    var queryParametersMap = queryParametersUtil.toMap(null, Integer.MAX_VALUE, 0);
+    return inventoryClient.getLocations(queryParametersMap)
       .getLocations()
       .stream()
       .collect(
@@ -43,7 +45,8 @@ public class InventoryReferenceDataService {
     key = "'library'.concat('_').concat(@folioExecutionContext.getTenantId())",
     unless = "#result == null || #result.isEmpty()")
   public Map<String, Loclib> getLibraryMap() {
-    return inventoryClient.getLibraries(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
+    var queryParametersMap = queryParametersUtil.toMap(null, Integer.MAX_VALUE, 0);
+    return inventoryClient.getLibraries(queryParametersMap)
       .getLoclibs()
       .stream()
       .collect(
@@ -58,7 +61,8 @@ public class InventoryReferenceDataService {
     key = "'materialTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
     unless = "#result == null || #result.isEmpty()")
   public Map<String, MaterialType> getMaterialTypesMap() {
-    return inventoryClient.getMaterialTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
+    var queryParametersMap = queryParametersUtil.toMap(null, Integer.MAX_VALUE, 0);
+    return inventoryClient.getMaterialTypes(queryParametersMap)
       .getMtypes()
       .stream()
       .collect(
@@ -73,7 +77,8 @@ public class InventoryReferenceDataService {
     key = "'loanTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
     unless = "#result == null || #result.isEmpty()")
   public Map<String, LoanType> getLoanTypesMap() {
-    return inventoryClient.getLoanTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
+    var queryParametersMap = queryParametersUtil.toMap(null, Integer.MAX_VALUE, 0);
+    return inventoryClient.getLoanTypes(queryParametersMap)
       .getLoantypes()
       .stream()
       .collect(
@@ -88,7 +93,8 @@ public class InventoryReferenceDataService {
     key = "'holdingsNotesTypes'.concat('_').concat(@folioExecutionContext.getTenantId())",
     unless = "#result == null || #result.isEmpty()")
   public Map<String, HoldingsNoteType> getHoldingsNoteTypesMap() {
-    return inventoryClient.getHoldingsNoteTypes(new FolioCqlRequest(null, Integer.MAX_VALUE, 0))
+    var queryParametersMap = queryParametersUtil.toMap(null, Integer.MAX_VALUE, 0);
+    return inventoryClient.getHoldingsNoteTypes(queryParametersMap)
       .getHoldingsNoteTypes()
       .stream()
       .collect(

@@ -1,5 +1,6 @@
 package org.folio.rtaccache.client;
 
+import java.util.Map;
 import org.folio.rtaccache.domain.dto.BoundWithParts;
 import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingRecords;
@@ -10,39 +11,39 @@ import org.folio.rtaccache.domain.dto.LoanTypes;
 import org.folio.rtaccache.domain.dto.Locations;
 import org.folio.rtaccache.domain.dto.Loclibs;
 import org.folio.rtaccache.domain.dto.MaterialTypes;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.cloud.openfeign.SpringQueryMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
+import org.springframework.web.service.annotation.PostExchange;
 
-@FeignClient(value = "inventory")
+@HttpExchange
 public interface InventoryClient {
 
-  @GetMapping("/instance-storage/instances")
-  Instances getInstances(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("instance-storage/instances")
+  Instances getInstances(@RequestParam Map<String, String> queryParametersMap);
 
-  @PostMapping("/holdings-storage/holdings/retrieve")
+  @PostExchange("holdings-storage/holdings/retrieve")
   HoldingRecords getHoldings(@RequestBody FolioCqlRequest request);
 
-  @PostMapping("/item-storage/items/retrieve")
+  @PostExchange("item-storage/items/retrieve")
   Items getItems(@RequestBody FolioCqlRequest request);
 
-  @GetMapping("/inventory-storage/bound-with-parts")
-  BoundWithParts getBoundWithParts(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("inventory-storage/bound-with-parts")
+  BoundWithParts getBoundWithParts(@RequestParam Map<String, String> queryParametersMap);
 
-  @GetMapping("/locations")
-  Locations getLocations(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("locations")
+  Locations getLocations(@RequestParam Map<String,String> queryParametersMap);
 
-  @GetMapping("/location-units/libraries")
-  Loclibs getLibraries(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("location-units/libraries")
+  Loclibs getLibraries(@RequestParam Map<String,String> queryParametersMap);
 
-  @GetMapping("/holdings-note-types")
-  HoldingsNoteTypes getHoldingsNoteTypes(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("holdings-note-types")
+  HoldingsNoteTypes getHoldingsNoteTypes(@RequestParam Map<String, String> queryParametersMap);
 
-  @GetMapping("/loan-types")
-  LoanTypes getLoanTypes(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("loan-types")
+  LoanTypes getLoanTypes(@RequestParam Map<String, String> queryParametersMap);
 
-  @GetMapping("/material-types")
-  MaterialTypes getMaterialTypes(@SpringQueryMap FolioCqlRequest request);
+  @GetExchange("material-types")
+  MaterialTypes getMaterialTypes(@RequestParam Map<String, String> queryParametersMap);
 }

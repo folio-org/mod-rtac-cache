@@ -3,7 +3,7 @@ package org.folio.rtaccache.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import org.folio.rtaccache.client.InventoryClient;
-import org.folio.rtaccache.domain.dto.FolioCqlRequest;
 import org.folio.rtaccache.domain.dto.HoldingsNoteType;
 import org.folio.rtaccache.domain.dto.HoldingsNoteTypes;
 import org.folio.rtaccache.domain.dto.LoanType;
@@ -22,11 +21,13 @@ import org.folio.rtaccache.domain.dto.Loclib;
 import org.folio.rtaccache.domain.dto.Loclibs;
 import org.folio.rtaccache.domain.dto.MaterialType;
 import org.folio.rtaccache.domain.dto.MaterialTypes;
+import org.folio.rtaccache.util.QueryParametersUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +35,8 @@ class InventoryReferenceDataServiceTest {
 
   @Mock
   InventoryClient inventoryClient;
+  @Spy
+  QueryParametersUtil queryParametersUtil = new QueryParametersUtil();
 
   @InjectMocks
   InventoryReferenceDataService service;
@@ -44,14 +47,14 @@ class InventoryReferenceDataServiceTest {
     Location l2 = new Location("Name2", "C2", "I2", "CA2", "L2", UUID.randomUUID()).id("loc2");
     Locations wrapper = new Locations(Arrays.asList(l1, l2), 2);
 
-    when(inventoryClient.getLocations(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getLocations(any(Map.class))).thenReturn(wrapper);
 
     Map<String, Location> map = service.getLocationsMap();
 
     assertEquals(2, map.size());
     assertSame(l1, map.get("loc1"));
     assertSame(l2, map.get("loc2"));
-    verify(inventoryClient).getLocations(ArgumentMatchers.any(FolioCqlRequest.class));
+    verify(inventoryClient).getLocations(ArgumentMatchers.any(Map.class));
   }
 
   @Test
@@ -60,7 +63,7 @@ class InventoryReferenceDataServiceTest {
     Loclib lib2 = new Loclib("Lib2", "LB2", "CA2").id("lib2");
     Loclibs wrapper = new Loclibs(Arrays.asList(lib1, lib2), 2);
 
-    when(inventoryClient.getLibraries(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getLibraries(any(Map.class))).thenReturn(wrapper);
 
     Map<String, Loclib> map = service.getLibraryMap();
 
@@ -75,7 +78,7 @@ class InventoryReferenceDataServiceTest {
     MaterialType m2 = new MaterialType("Mat2").id("mt2");
     MaterialTypes wrapper = new MaterialTypes(Arrays.asList(m1, m2), 2);
 
-    when(inventoryClient.getMaterialTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getMaterialTypes(any(Map.class))).thenReturn(wrapper);
 
     Map<String, MaterialType> map = service.getMaterialTypesMap();
 
@@ -90,7 +93,7 @@ class InventoryReferenceDataServiceTest {
     LoanType lt2 = new LoanType("Loan2").id("lt2");
     LoanTypes wrapper = new LoanTypes(Arrays.asList(lt1, lt2), 2);
 
-    when(inventoryClient.getLoanTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getLoanTypes(any(Map.class))).thenReturn(wrapper);
 
     Map<String, LoanType> map = service.getLoanTypesMap();
 
@@ -105,7 +108,7 @@ class InventoryReferenceDataServiceTest {
     HoldingsNoteType h2 = new HoldingsNoteType("Note2", "local").id("hn2");
     HoldingsNoteTypes wrapper = new HoldingsNoteTypes(Arrays.asList(h1, h2), 2);
 
-    when(inventoryClient.getHoldingsNoteTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getHoldingsNoteTypes(any(Map.class))).thenReturn(wrapper);
 
     Map<String, HoldingsNoteType> map = service.getHoldingsNoteTypesMap();
 
@@ -120,7 +123,7 @@ class InventoryReferenceDataServiceTest {
     LoanType lt2 = new LoanType("Loan2").id("dup"); // duplicate id
     LoanTypes wrapper = new LoanTypes(Arrays.asList(lt1, lt2), 2);
 
-    when(inventoryClient.getLoanTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
+    when(inventoryClient.getLoanTypes(any(Map.class))).thenReturn(wrapper);
 
     assertThrows(IllegalStateException.class, () -> service.getLoanTypesMap());
   }
