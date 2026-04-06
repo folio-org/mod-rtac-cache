@@ -2,6 +2,7 @@ package org.folio.rtaccache.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -107,13 +108,13 @@ class InventoryReferenceDataServiceTest {
     HoldingsNoteType h2 = new HoldingsNoteType("Note2", "local").id("hn2");
     HoldingsNoteTypes wrapper = new HoldingsNoteTypes(Arrays.asList(h1, h2), 2);
 
-//    when(inventoryClient.getHoldingsNoteTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
-//
-//    Map<String, HoldingsNoteType> map = service.getHoldingsNoteTypesMap();
-//
-//    assertEquals(2, map.size());
-//    assertSame(h1, map.get("hn1"));
-//    assertSame(h2, map.get("hn2"));
+    when(inventoryClient.getHoldingsNoteTypes(any(Map.class))).thenReturn(wrapper);
+
+    Map<String, HoldingsNoteType> map = service.getHoldingsNoteTypesMap();
+
+    assertEquals(2, map.size());
+    assertSame(h1, map.get("hn1"));
+    assertSame(h2, map.get("hn2"));
   }
 
   @Test
@@ -122,8 +123,8 @@ class InventoryReferenceDataServiceTest {
     LoanType lt2 = new LoanType("Loan2").id("dup"); // duplicate id
     LoanTypes wrapper = new LoanTypes(Arrays.asList(lt1, lt2), 2);
 
-//    when(inventoryClient.getLoanTypes(any(FolioCqlRequest.class))).thenReturn(wrapper);
-//
-//    assertThrows(IllegalStateException.class, () -> service.getLoanTypesMap());
+    when(inventoryClient.getLoanTypes(any(Map.class))).thenReturn(wrapper);
+
+    assertThrows(IllegalStateException.class, () -> service.getLoanTypesMap());
   }
 }

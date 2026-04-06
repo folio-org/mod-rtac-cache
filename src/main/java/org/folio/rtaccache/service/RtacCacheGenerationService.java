@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.folio.rtaccache.client.InventoryClient;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
@@ -281,7 +281,7 @@ public class RtacCacheGenerationService {
   }
 
   private boolean isItemBoundWithHoldings(Item item, HoldingsRecord holdings) {
-    return !StringUtils.equals(item.getHoldingsRecordId(), holdings.getId());
+    return !Strings.CS.equals(item.getHoldingsRecordId(), holdings.getId());
   }
 
 }

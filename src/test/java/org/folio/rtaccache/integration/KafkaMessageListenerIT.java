@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
@@ -832,20 +831,6 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     }));
   }
 
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
-  }
-
   private void createExistingRtacHoldingEntity(String id, TypeEnum type) {
     createExistingRtacHoldingEntity(id, type, false);
   }
@@ -982,5 +967,4 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     var boundWithRecord = new ProducerRecord<>(TestConstant.BOUND_WITH_TOPIC, ITEM_ID, event);
     inventoryKafkaTemplate.send(boundWithRecord);
   }
-
 }

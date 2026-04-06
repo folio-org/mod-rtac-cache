@@ -14,7 +14,6 @@ import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,20 +145,6 @@ class RtacCacheInvalidationServiceIT extends BaseIntegrationTest {
       assertThat(repository.countByIdInstanceId(instanceB)).isEqualTo(2);
       assertThat(repository.countByIdInstanceId(instanceC)).isEqualTo(0);
     });
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
   }
 
   private RtacHoldingEntity createHolding(UUID instanceId, UUID holdingId, Instant createdAt) {

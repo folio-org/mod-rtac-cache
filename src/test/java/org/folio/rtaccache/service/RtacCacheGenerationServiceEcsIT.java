@@ -9,7 +9,6 @@ import java.util.UUID;
 import org.folio.rtaccache.BaseEcsIntegrationTest;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,19 +44,4 @@ class RtacCacheGenerationServiceEcsIT extends BaseEcsIntegrationTest {
       assertEquals(CENTRAL_PIECE_ID, centralPiece.get().getRtacHolding().getId());
     });
   }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
-  }
-
 }

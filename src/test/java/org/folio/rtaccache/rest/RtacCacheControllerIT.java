@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import io.swagger.annotations.Authorization;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +24,6 @@ import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -455,19 +453,5 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
         .andExpect(status().isNoContent());
 
     withinTenant(TEST_TENANT, () -> assertThat(rtacHoldingRepository.count()).isZero());
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
   }
 }

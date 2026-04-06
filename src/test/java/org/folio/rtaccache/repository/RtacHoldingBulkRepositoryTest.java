@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +20,6 @@ import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldingMaterialType;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +47,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpsert_insertsRecords() throws SQLException, JsonProcessingException {
+  void bulkUpsert_insertsRecords() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
       var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
@@ -68,7 +65,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpsert_updatesRecords() throws SQLException, JsonProcessingException {
+  void bulkUpsert_updatesRecords() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
       var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
@@ -90,7 +87,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateLocationData_updatesEmbeddedLocation() throws SQLException, JsonProcessingException {
+  void bulkUpdateLocationData_updatesEmbeddedLocation() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var loc1 = getRtacHoldingLocation(LOCATION_ID_1, "OLD_CODE", "Old Name");
       var loc2 = getRtacHoldingLocation(LOCATION_ID_2, "OTHER_CODE", "Other Name");
@@ -119,7 +116,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateLibraryData_updatesEmbeddedLibrary() throws SQLException, JsonProcessingException {
+  void bulkUpdateLibraryData_updatesEmbeddedLibrary() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var lib1 = getRtacHoldingLibrary(LIBRARY_ID_1, "OLD_CODE", "Old Name");
       var lib2 = getRtacHoldingLibrary(LIBRARY_ID_2, "OTHER_CODE", "Other Name");
@@ -150,7 +147,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkMarkHoldingsAsSharedByInstanceId_marksMatchingInstanceShared() throws SQLException {
+  void bulkMarkHoldingsAsSharedByInstanceId_marksMatchingInstanceShared() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var instanceIdToMark = UUID.randomUUID();
 
@@ -175,7 +172,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateMaterialTypeData_updatesEmbeddedMaterialType() throws SQLException {
+  void bulkUpdateMaterialTypeData_updatesEmbeddedMaterialType() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
       var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
@@ -199,7 +196,7 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
   }
 
   @Test
-  void bulkUpdateLoanTypeData_updatesTemporaryAndPermanentLoanTypeNames() throws SQLException {
+  void bulkUpdateLoanTypeData_updatesTemporaryAndPermanentLoanTypeNames() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var rtacHolding1 = getRtacHolding(ITEM_ID_1, INSTANCE_ID);
       var rtacHolding2 = getRtacHolding(ITEM_ID_2, INSTANCE_ID);
@@ -226,20 +223,6 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
       assertEquals("Other Loan Type", unchanged.getRtacHolding().getTemporaryLoanType());
       assertEquals("Other Loan Type", unchanged.getRtacHolding().getPermanentLoanType());
     });
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
   }
 
   private RtacHolding getRtacHolding(String itemId1, String instanceId) {
@@ -315,62 +298,4 @@ class RtacHoldingBulkRepositoryTest extends BaseIntegrationTest {
       .id(id)
       .name(name);
   }
-
-//  @Test
-//  void testBulkUpdateLocationData_performance() throws SQLException, JsonProcessingException {
-//    when(folioExecutionContext.getTenantId()).thenReturn(TestConstant.TEST_TENANT);
-//
-//    // Prepare test data
-//    String locationId = UUID.randomUUID().toString();
-//    String locationCode = "TEST_CODE";
-//    String locationName = "Test Location";
-//
-//    var location = new RtacHoldingLocation();
-//    location.setId(locationId);
-//    location.setCode(locationCode);
-//    location.setName(locationName);
-//
-//    List<RtacHoldingEntity> holdings = IntStream.range(0, 10000000)
-//      .parallel()
-//      .mapToObj(i -> {
-//        var rtacHolding = new RtacHolding();
-//        rtacHolding.setId(UUID.randomUUID().toString());
-//        rtacHolding.setType(TypeEnum.ITEM);
-//        rtacHolding.setInstanceId(UUID.randomUUID().toString());
-//        rtacHolding.setStatus("Available");
-//        rtacHolding.setLocation(location);
-//
-//        return new RtacHoldingEntity(
-//          RtacHoldingId.from(rtacHolding),
-//          rtacHolding,
-//          Instant.now()
-//        );
-//      })
-//      .collect(Collectors.toList());
-//
-//    System.out.println("Holdings list prepared.");
-//
-//    // Insert test data
-//    rtacHoldingBulkRepository.bulkUpsert(holdings);
-//
-//    System.out.println("Records created");
-//
-////    // Verify data was inserted
-////    assertEquals(1, rtacHoldingRepository.count());
-//
-//    // Create updated location
-//    var updatedLocation = new Location();
-//    updatedLocation.setId(locationId);
-//    updatedLocation.setCode("UPDATED_CODE");
-//    updatedLocation.setName("Updated Location Name");
-//
-//    // Measure performance
-//    long startTime = System.currentTimeMillis();
-//    rtacHoldingBulkRepository.bulkUpdateLocationData(updatedLocation);
-//    long endTime = System.currentTimeMillis();
-//    long duration = endTime - startTime;
-//
-//    // Log performance metrics
-//    System.out.println("Bulk update of records took: " + duration + " ms");
-//  }
 }

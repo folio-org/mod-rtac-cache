@@ -23,7 +23,6 @@ import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacHoldingsSummary;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.data.OffsetRequest;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -394,34 +393,6 @@ class RtacHoldingStorageServiceTest extends BaseIntegrationTest {
     int count = withinTenantWithResult(tenant1, () -> rtacHoldingRepository.countByIdInstanceId(schemas, instanceId, false));
 
     assertThat(count).isEqualTo(5);
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private <T> T withinTenantWithResult(String tenant, ThrowingSupplier<T> action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      return action.get();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
-  }
-
-  @FunctionalInterface
-  private interface ThrowingSupplier<T> {
-
-    T get() throws Exception;
   }
 
   private void setUpTenant(String tenantId) throws Exception {

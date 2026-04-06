@@ -15,7 +15,6 @@ import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.folio.spring.data.OffsetRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -240,19 +239,5 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
       Assertions.assertNotNull(found.getLibrary());
       assertThat(found.getLibrary().getName()).isEqualTo("lib1");
     });
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
   }
 }

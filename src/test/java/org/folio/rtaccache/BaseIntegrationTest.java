@@ -18,6 +18,7 @@ import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
 import org.folio.spring.config.properties.FolioEnvironment;
 import org.folio.spring.integration.XOkapiHeaders;
+import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.folio.tenant.domain.dto.Parameter;
 import org.folio.tenant.domain.dto.TenantAttributes;
 import org.junit.jupiter.api.AfterAll;
@@ -113,5 +114,32 @@ public abstract class BaseIntegrationTest {
     return new DefaultFolioExecutionContext(folioModuleMetadata, headersMap);
   }
 
+  protected void withinTenant(String tenant, ThrowingRunnable action) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
+      action.run();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  protected <T> T withinTenantWithResult(String tenant, ThrowingSupplier<T> action) {
+    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
+      return action.get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @FunctionalInterface
+  public interface ThrowingRunnable {
+
+    void run() throws Exception;
+  }
+
+  @FunctionalInterface
+  public interface ThrowingSupplier<T> {
+
+    T get() throws Exception;
+  }
 
 }

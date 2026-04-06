@@ -19,7 +19,6 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLibrary;
 import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -98,20 +97,6 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
         .param("query", "test")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
       .andExpect(status().isBadRequest());
-  }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
   }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {

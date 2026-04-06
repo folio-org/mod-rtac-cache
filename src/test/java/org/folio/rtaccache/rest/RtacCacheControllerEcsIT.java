@@ -21,7 +21,6 @@ import org.folio.rtaccache.domain.dto.RtacHoldings;
 import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
 import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,19 +121,4 @@ class RtacCacheControllerEcsIT extends BaseEcsIntegrationTest {
     assertThat(rtacHoldings.getHoldings()).hasSize(1);
     assertThat(rtacHoldings.getHoldings().getFirst().getVolume()).isEqualTo("vol1");
   }
-
-  private void withinTenant(String tenant, ThrowingRunnable action) {
-    try (var ignored = new FolioExecutionContextSetter(folioExecutionContext(tenant))) {
-      action.run();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @FunctionalInterface
-  private interface ThrowingRunnable {
-
-    void run() throws Exception;
-  }
-
 }
