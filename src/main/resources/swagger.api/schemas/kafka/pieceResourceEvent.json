@@ -8,6 +8,7 @@
       "type": "string"
     },
     "action": {
+      "description": "Action performed on the piece",
       "$ref": "pieceEventAction.json"
     },
     "pieceId": {
@@ -29,6 +30,7 @@
       "type": "string"
     },
     "pieceSnapshot": {
+      "description": "Snapshot of the piece at the time of the event",
       "$ref": "../orders/piece.json"
     }
   },

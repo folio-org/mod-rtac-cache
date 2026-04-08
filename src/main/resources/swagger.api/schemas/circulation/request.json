@@ -27,18 +27,23 @@
       "type": "string"
     },
     "requesterId": {
+      "description": "UUID of the patron who placed the request",
       "$ref": "../uuid.json"
     },
     "proxyUserId": {
+      "description": "UUID of the proxy user acting on behalf of the requester",
       "$ref": "../uuid.json"
     },
     "instanceId": {
+      "description": "UUID of the instance associated with this request",
       "$ref": "../uuid.json"
     },
     "holdingsRecordId": {
+      "description": "UUID of the holdings record associated with this request",
       "$ref": "../uuid.json"
     },
     "itemId": {
+      "description": "UUID of the item associated with this request",
       "$ref": "../uuid.json"
     },
     "status": {
@@ -56,9 +61,11 @@
       ]
     },
     "cancellationReasonId": {
+      "description": "UUID of the cancellation reason",
       "$ref": "../uuid.json"
     },
     "cancelledByUserId": {
+      "description": "UUID of the user who cancelled the request",
       "$ref": "../uuid.json"
     },
     "cancellationAdditionalInformation": {
@@ -95,6 +102,7 @@
                 "description": "Resource identifier value"
               },
               "identifierTypeId": {
+                "description": "UUID of the identifier type",
                 "$ref": "../uuid.json"
               }
             },
@@ -144,6 +152,7 @@
           "readonly": true
         },
         "patronGroupId": {
+          "description": "UUID of the patron group",
           "$ref": "../uuid.json"
         },
         "patronGroup": {
@@ -153,6 +162,7 @@
           "readonly": true,
           "properties": {
             "id": {
+              "description": "UUID of the patron group record",
               "$ref": "../uuid.json"
             },
             "group": {
@@ -196,6 +206,7 @@
           "readonly": true
         },
         "patronGroupId": {
+          "description": "UUID of the patron group",
           "$ref": "../uuid.json"
         },
         "patronGroup": {
@@ -205,6 +216,7 @@
           "additionalProperties": false,
           "properties": {
             "id": {
+              "description": "UUID of the patron group record",
               "$ref": "../uuid.json"
             },
             "group": {
@@ -228,6 +240,7 @@
       "enum": ["Hold Shelf", "Delivery"]
     },
     "deliveryAddressTypeId": {
+      "description": "UUID of the delivery address type",
       "$ref": "../uuid.json"
     },
     "deliveryAddress": {
@@ -266,6 +279,7 @@
           "readonly": true
         },
         "addressTypeId": {
+          "description": "UUID of the delivery address type",
           "$ref": "../uuid.json"
         }
       },
@@ -282,6 +296,7 @@
       "format": "date-time"
     },
     "pickupServicePointId": {
+      "description": "UUID of the pickup service point",
       "$ref": "../uuid.json"
     },
     "pickupServicePoint": {

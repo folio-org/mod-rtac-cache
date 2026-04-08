@@ -8,12 +8,15 @@
       "$ref": "../uuid.json"
     },
     "instanceId" : {
+      "description": "UUID of the instance",
       "$ref": "../uuid.json"
     },
     "holdingsRecordId": {
+      "description": "UUID of the holdings record that is part of the bound-with",
       "$ref": "../uuid.json"
     },
     "itemId" : {
+      "description": "UUID of the bound-with item",
       "$ref": "../uuid.json"
     },
     "metadata": {
