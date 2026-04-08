@@ -197,13 +197,13 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entity1, entity2, entity3)));
 
     // Sort by effectiveShelvingOrder descending (default direction for effectiveShelvingOrder when omitted)
-    var resultAsc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder")
+    var resultDefault = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldingsAsc = new ObjectMapper().readValue(resultAsc.getResponse().getContentAsString(), RtacHoldings.class);
-    assertThat(rtacHoldingsAsc.getHoldings()).extracting(RtacHolding::getEffectiveShelvingOrder).containsExactly("C", "B", "A");
+    var rtacHoldingsDefault = new ObjectMapper().readValue(resultDefault.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldingsDefault.getHoldings()).extracting(RtacHolding::getEffectiveShelvingOrder).containsExactly("C", "B", "A");
 
     // Sort by libraryName descending
     var resultDesc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=libraryName,desc")
@@ -294,7 +294,7 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     var entity5 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding5, Instant.now());
     var entity6 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding6, Instant.now());
 
-    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entity1, entity2, entity3, entity4, entity5, entity6)));
+    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entity6, entity2, entity4, entity1, entity5, entity3)));
 
     var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
