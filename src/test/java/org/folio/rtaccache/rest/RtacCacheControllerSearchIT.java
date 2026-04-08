@@ -124,9 +124,12 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
 
     var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings())
-      .extracting(RtacHolding::getEffectiveShelvingOrder,
-                  RtacHolding::getStatus,
-       h -> h.getLibrary().getName(), h -> h.getLocation().getName())
+      .extracting(
+         RtacHolding::getEffectiveShelvingOrder,
+         RtacHolding::getStatus,
+        h -> h.getLibrary().getName(),
+        h -> h.getLocation().getName()
+      )
       .containsExactly(
         tuple("B", "Available", "Lib A", "Loc 1"),
         tuple("B", "Available", "Lib B", "Loc 2"),
