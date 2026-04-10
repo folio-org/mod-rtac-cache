@@ -8,6 +8,7 @@
       "$ref": "../uuid.json"
     },
     "userId": {
+      "description": "UUID of the patron (user) who has borrowed the item",
       "$ref": "../uuid.json"
     },
     "borrower": {
@@ -49,12 +50,15 @@
       "additionalProperties": false
     },
     "proxyUserId": {
+      "description": "UUID of the proxy user acting on behalf of the patron",
       "$ref": "../uuid.json"
     },
     "itemId": {
+      "description": "UUID of the item associated with this loan",
       "$ref": "../uuid.json"
     },
     "loanPolicyId": {
+      "description": "UUID of the loan policy applied to this loan",
       "$ref": "../uuid.json"
     },
     "loanPolicy": {
@@ -70,6 +74,7 @@
       }
     },
     "overdueFinePolicyId": {
+      "description": "UUID of the overdue fine policy applied to this loan",
       "$ref": "../uuid.json"
     },
     "overdueFinePolicy": {
@@ -85,6 +90,7 @@
       }
     },
     "lostItemPolicyId": {
+      "description": "UUID of the lost item policy applied to this loan",
       "$ref": "../uuid.json"
     },
     "lostItemPolicy": {
@@ -100,6 +106,7 @@
       }
     },
     "itemEffectiveLocationIdAtCheckOut": {
+      "description": "UUID of the item's effective location at the time of checkout",
       "$ref": "../uuid.json"
     },
     "status": {
@@ -160,15 +167,19 @@
       "readonly": true
     },
     "checkoutServicePointId": {
+      "description": "UUID of the checkout service point",
       "$ref": "../uuid.json"
     },
     "checkinServicePointId": {
+      "description": "UUID of the check-in service point",
       "$ref": "../uuid.json"
     },
     "checkoutServicePoint": {
+      "description": "Checkout service point information",
       "$ref": "servicePoint.json"
     },
     "checkinServicePoint": {
+      "description": "Check-in service point information",
       "$ref": "servicePoint.json"
     },
     "patronGroupAtCheckout": {

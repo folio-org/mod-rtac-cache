@@ -1,5 +1,6 @@
 {
   "type": "object",
+  "description": "A holdings record returned from a consortium holdings search",
   "properties": {
     "id": {
       "description": "Holdings ID",

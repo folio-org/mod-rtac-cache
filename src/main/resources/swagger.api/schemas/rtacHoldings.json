@@ -4,6 +4,7 @@
   "description": "Collection of holdings",
   "properties": {
     "instanceId": {
+      "description": "UUID of the instance",
       "$ref": "uuid.json"
     },
     "holdings": {

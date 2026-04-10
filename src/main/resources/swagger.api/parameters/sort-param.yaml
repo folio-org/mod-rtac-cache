@@ -3,7 +3,8 @@ in: query
 description: |
   A list of sort criteria in the format: `property,(asc|desc)`.
   Supported properties are: effectiveShelvingOrder, libraryName, locationName, status.
-  The default sort order is effectiveShelvingOrder, libraryName, locationName, status (ascending).
+  If the direction is omitted for a property, the default direction is `desc` for effectiveShelvingOrder and `asc` for other properties.
+  The default sort order is effectiveShelvingOrder (descending), status (ascending), libraryName (ascending), locationName (ascending).
 schema:
   type: array
   items:

@@ -4,12 +4,14 @@
   "type": "object",
   "properties": {
     "holdings": {
+      "description": "Holdings search results",
       "type": "array",
       "items": {
         "$ref": "consortiumHolding.json"
       }
     },
     "totalRecords": {
+      "description": "Total number of records available",
       "type": "integer"
     }
   },

@@ -134,7 +134,12 @@ public class RtacCacheController implements RtacApi {
   private Pageable buildPageable(Integer offset, Integer limit, List<String> sort) {
     Sort sortOrder;
     if (sort == null || sort.isEmpty()) {
-      sortOrder = Sort.by(Sort.Direction.ASC, "effectiveShelvingOrder", "status", "locationName");
+      sortOrder = Sort.by(
+        Sort.Order.desc("effectiveShelvingOrder"),
+        Sort.Order.asc("status"),
+        Sort.Order.asc("libraryName"),
+        Sort.Order.asc("locationName")
+      );
     } else {
       String sortString = String.join(",", sort);
       List<String> parts = new ArrayList<>(Arrays.asList(sortString.split(",")));
@@ -146,7 +151,7 @@ public class RtacCacheController implements RtacApi {
       List<Sort.Order> orders = new ArrayList<>();
       while (!parts.isEmpty()) {
         String property = parts.removeFirst();
-        var direction = Sort.Direction.ASC;
+        var direction = getDefaultSortDirection(property);
         if (!parts.isEmpty()) {
           var optDirection = Sort.Direction.fromOptionalString(parts.getFirst());
           if (optDirection.isPresent()) {
@@ -159,5 +164,9 @@ public class RtacCacheController implements RtacApi {
       sortOrder = Sort.by(orders);
     }
     return PageRequest.of(offset / limit, limit, sortOrder);
+  }
+
+  private Sort.Direction getDefaultSortDirection(String property) {
+    return "effectiveShelvingOrder".equals(property) ? Sort.Direction.DESC : Sort.Direction.ASC;
   }
 }

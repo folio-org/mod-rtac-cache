@@ -196,14 +196,14 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
 
     withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entity1, entity2, entity3)));
 
-    // Sort by effectiveShelvingOrder ascending
-    var resultAsc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder")
+    // Sort by effectiveShelvingOrder descending (default direction for effectiveShelvingOrder when omitted)
+    var resultDefault = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=effectiveShelvingOrder")
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldingsAsc = new ObjectMapper().readValue(resultAsc.getResponse().getContentAsString(), RtacHoldings.class);
-    assertThat(rtacHoldingsAsc.getHoldings()).extracting(RtacHolding::getEffectiveShelvingOrder).containsExactly("A", "B", "C");
+    var rtacHoldingsDefault = new ObjectMapper().readValue(resultDefault.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldingsDefault.getHoldings()).extracting(RtacHolding::getEffectiveShelvingOrder).containsExactly("C", "B", "A");
 
     // Sort by libraryName descending
     var resultDesc = mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=libraryName,desc")
@@ -251,17 +251,50 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   void holdingsByInstanceId_defaultSort() throws Exception {
     var instanceId = UUID.randomUUID();
 
-    var rtacHoldingD =  new RtacHolding().effectiveShelvingOrder("A").status("Available").location(new RtacHoldingLocation().name("X"));
-    var rtacHoldingE = new RtacHolding().effectiveShelvingOrder("A").status("Available").location(new RtacHoldingLocation().name("M"));
-    var rtacHoldingF = new RtacHolding().effectiveShelvingOrder("A").status("Checked out").location(new RtacHoldingLocation().name("A"));
-    var rtacHoldingG = new RtacHolding().effectiveShelvingOrder("B").status("Available").location(new RtacHoldingLocation().name("A"));
+    var holding1 = new RtacHolding()
+      .effectiveShelvingOrder("A")
+      .status("Available")
+      .library(new RtacHoldingLibrary().name("Lib A"))
+      .location(new RtacHoldingLocation().name("Loc A"));
 
-    var entityD = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingD, Instant.now());
-    var entityE = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingE, Instant.now());
-    var entityF = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingF, Instant.now());
-    var entityG = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHoldingG, Instant.now());
+    var holding2 = new RtacHolding()
+      .effectiveShelvingOrder("B")
+      .status("Available")
+      .library(new RtacHoldingLibrary().name("Lib B"))
+      .location(new RtacHoldingLocation().name("Loc 2"));
 
-    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entityD, entityE, entityF, entityG)));
+    var holding3 = new RtacHolding()
+      .effectiveShelvingOrder("B")
+      .status("Available")
+      .library(new RtacHoldingLibrary().name("Lib A"))
+      .location(new RtacHoldingLocation().name("Loc 1"));
+
+    var holding4 = new RtacHolding()
+      .effectiveShelvingOrder("A")
+      .status("Available")
+      .library(new RtacHoldingLibrary().name("Lib A"))
+      .location(new RtacHoldingLocation().name("Loc Z"));
+
+    var holding5 = new RtacHolding()
+      .effectiveShelvingOrder("A")
+      .status("Available")
+      .library(new RtacHoldingLibrary().name("Lib B"))
+      .location(new RtacHoldingLocation().name("Loc X"));
+
+    var holding6 = new RtacHolding()
+      .effectiveShelvingOrder("A")
+      .status("Checked out")
+      .library(new RtacHoldingLibrary().name("Lib A"))
+      .location(new RtacHoldingLocation().name("Loc C"));
+
+    var entity1 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding1, Instant.now());
+    var entity2 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding2, Instant.now());
+    var entity3 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding3, Instant.now());
+    var entity4 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding4, Instant.now());
+    var entity5 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding5, Instant.now());
+    var entity6 = new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, holding6, Instant.now());
+
+    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(List.of(entity6, entity2, entity4, entity1, entity5, entity3)));
 
     var result = mockMvc.perform(get("/rtac-cache/" + instanceId)
         .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
@@ -271,14 +304,19 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
     var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings())
       .extracting(RtacHolding::getEffectiveShelvingOrder, RtacHolding::getStatus, h -> {
+        Assertions.assertNotNull(h.getLibrary());
+        return h.getLibrary().getName();
+      }, h -> {
         Assertions.assertNotNull(h.getLocation());
         return h.getLocation().getName();
       })
       .containsExactly(
-        tuple("A", "Available", "M"),
-        tuple("A", "Available", "X"),
-        tuple("A", "Checked out", "A"),
-        tuple("B", "Available", "A")
+        tuple("B", "Available", "Lib A", "Loc 1"),
+        tuple("B", "Available", "Lib B", "Loc 2"),
+        tuple("A", "Available", "Lib A", "Loc A"),
+        tuple("A", "Available", "Lib A", "Loc Z"),
+        tuple("A", "Available", "Lib B", "Loc X"),
+        tuple("A", "Checked out", "Lib A", "Loc C")
       );
   }
 

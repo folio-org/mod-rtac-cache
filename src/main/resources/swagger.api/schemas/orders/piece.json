@@ -17,24 +17,31 @@
       "type": "string"
     },
     "format": {
+      "description": "Format of the piece",
       "$ref": "pieceFormat.json"
     },
     "itemId": {
+      "description": "UUID of the inventory item associated with this piece",
       "$ref": "../uuid.json"
     },
     "bindItemId": {
+      "description": "UUID of the bound-with item associated with this piece",
       "$ref": "../uuid.json"
     },
     "locationId": {
+      "description": "UUID of the location associated with this piece",
       "$ref": "../uuid.json"
     },
     "poLineId": {
+      "description": "UUID of the purchase order line associated with this piece",
       "$ref": "../uuid.json"
     },
     "titleId": {
+      "description": "UUID of the title associated with this piece",
       "$ref": "../uuid.json"
     },
     "holdingId": {
+      "description": "UUID of the holdings record associated with this piece",
       "$ref": "../uuid.json"
     },
     "receivingTenantId": {

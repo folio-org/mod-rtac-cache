@@ -1,6 +1,7 @@
 package org.folio.rtaccache.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.folio.rtaccache.TestConstant.EMPTY_INSTANCE_ID;
 import static org.folio.rtaccache.TestConstant.TEST_TENANT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -9,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -99,12 +101,57 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest());
   }
 
+  @Test
+  void searchRtacCacheHoldings_defaultSort() throws Exception {
+    var instanceId = UUID.randomUUID();
+
+    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(
+      List.of(
+        createRtacHoldingEntity(instanceId, "v1", "c1", "Loc A", "Lib A", "Available", "A"),
+        createRtacHoldingEntity(instanceId, "v2", "c2", "Loc 2", "Lib B", "Available", "B"),
+        createRtacHoldingEntity(instanceId, "v3", "c3", "Loc 1", "Lib A", "Available", "B"),
+        createRtacHoldingEntity(instanceId, "v4", "c4", "Loc Z", "Lib A", "Available", "A"),
+        createRtacHoldingEntity(instanceId, "v5", "c5", "Loc X", "Lib B", "Available", "A"),
+        createRtacHoldingEntity(instanceId, "v6", "c6", "Loc C", "Lib A", "Checked out", "A")
+      )
+    ));
+
+    var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", instanceId)
+        .param("query", " ")
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    assertThat(rtacHoldings.getHoldings())
+      .extracting(
+         RtacHolding::getEffectiveShelvingOrder,
+         RtacHolding::getStatus,
+        h -> h.getLibrary().getName(),
+        h -> h.getLocation().getName()
+      )
+      .containsExactly(
+        tuple("B", "Available", "Lib A", "Loc 1"),
+        tuple("B", "Available", "Lib B", "Loc 2"),
+        tuple("A", "Available", "Lib A", "Loc A"),
+        tuple("A", "Available", "Lib A", "Loc Z"),
+        tuple("A", "Available", "Lib B", "Loc X"),
+        tuple("A", "Checked out", "Lib A", "Loc C")
+      );
+  }
+
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {
+    return createRtacHoldingEntity(instanceId, volume, callNumber, locationName, libraryName, status, null);
+  }
+
+  private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName,
+                                                    String libraryName, String status, String effectiveShelvingOrder) {
     final var rtacHolding = new RtacHolding()
       .instanceId(instanceId.toString())
       .status(status)
       .volume(volume)
       .callNumber(callNumber)
+      .effectiveShelvingOrder(effectiveShelvingOrder)
       .location(new RtacHoldingLocation().name(locationName))
       .library(new RtacHoldingLibrary().name(libraryName));
     return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, UUID.randomUUID()), false, rtacHolding, Instant.now());

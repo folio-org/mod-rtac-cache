@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Consortia Tenants",
   "type": "object",
+  "description": "List of tenants in a consortia",
   "properties": {
     "tenants": {
       "type": "array",
@@ -9,25 +10,27 @@
       "items": {
         "type": "object",
         "properties": {
-          "id": { "type": "string" },
+          "id": { "type": "string", "description": "Tenant identifier" },
           "code": {
+            "description": "Short tenant code",
             "type": "string",
             "minLength": 2,
             "maxLength": 5,
             "pattern": "^[a-zA-Z0-9]*$"
           },
           "name": {
+            "description": "Tenant name",
             "type": "string",
             "minLength": 2,
             "maxLength": 150
           },
-          "isCentral": { "type": "boolean" },
-          "isDeleted": { "type": "boolean" }
+          "isCentral": { "type": "boolean", "description": "Whether the tenant is the central tenant" },
+          "isDeleted": { "type": "boolean", "description": "Whether the tenant is marked as deleted" }
         },
         "required": ["id", "code", "name", "isCentral"]
       }
     },
-    "totalRecords": { "type": "integer" }
+    "totalRecords": { "type": "integer", "description": "Total number of tenant records" }
   },
   "required": ["tenants", "totalRecords"]
 }
