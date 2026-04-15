@@ -76,7 +76,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), HOLDINGS)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -91,7 +91,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), ITEM)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -106,7 +106,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getCirculationHandler(resourceEvent.getType(), LOAN)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -121,7 +121,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getCirculationHandler(resourceEvent.getType(), REQUEST)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -142,7 +142,7 @@ public class KafkaMessageListener {
     }
     executionService.executeAsyncSystemUserScoped(tenantId, () ->
       eventHandlerFactory.getPieceEventHandler(resourceEvent.getAction())
-      .handle(resourceEvent));
+      .ifPresent(handler -> handler.handle(resourceEvent)));
   }
 
   @KafkaListener(
@@ -157,7 +157,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LOCATION)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -173,7 +173,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LIBRARY)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -189,7 +189,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), MATERIAL_TYPE)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -205,7 +205,7 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), LOAN_TYPE)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
@@ -220,13 +220,13 @@ public class KafkaMessageListener {
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
       eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), ITEM_BOUND_WITH)
-        .handle(resourceEvent);
+        .ifPresent(handler -> handler.handle(resourceEvent));
     } );
   }
 
   private void handleInstanceEventForCurrentTenant(InventoryResourceEvent resourceEvent) {
     eventHandlerFactory.getInventoryHandler(resourceEvent.getType(), INSTANCE)
-      .handle(resourceEvent);
+      .ifPresent(handler -> handler.handle(resourceEvent));
   }
 
   private void handleInstanceEventForConsortiaTenants(String currentTenantId,

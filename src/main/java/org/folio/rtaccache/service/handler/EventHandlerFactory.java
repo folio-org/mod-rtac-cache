@@ -1,6 +1,7 @@
 package org.folio.rtaccache.service.handler;
 
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtaccache.domain.dto.CirculationEntityType;
 import org.folio.rtaccache.domain.dto.CirculationEventType;
@@ -18,27 +19,26 @@ public class EventHandlerFactory {
   private final List<PieceEventHandler> pieceEventHandlers;
 
 
-  public InventoryEventHandler getInventoryHandler(InventoryEventType eventType, InventoryEntityType entityType) {
+  public Optional<InventoryEventHandler> getInventoryHandler(InventoryEventType eventType,
+                                                              InventoryEntityType entityType) {
     return inventoryEventHandlers.stream()
       .filter(handler -> handler.getEntityType().equals(entityType))
       .filter(handler -> handler.getEventType().equals(eventType))
-      .findFirst()
-      .orElseThrow(() -> new IllegalStateException("No InventoryEventHandler with type " + entityType + " found"));
+      .findFirst();
   }
 
-  public CirculationEventHandler getCirculationHandler(CirculationEventType eventType, CirculationEntityType entityType) {
+  public Optional<CirculationEventHandler> getCirculationHandler(CirculationEventType eventType,
+                                                                 CirculationEntityType entityType) {
     return circulationEventHandlers.stream()
       .filter(handler -> handler.getEntityType().equals(entityType))
       .filter(handler -> handler.getEventType().equals(eventType))
-      .findFirst()
-      .orElseThrow(() -> new IllegalStateException("No CirculationEventHandler with type " + entityType + " found"));
+      .findFirst();
   }
 
-  public PieceEventHandler getPieceEventHandler(PieceEventAction eventType) {
+  public Optional<PieceEventHandler> getPieceEventHandler(PieceEventAction eventType) {
     return pieceEventHandlers.stream()
       .filter(handler -> handler.getEventType().equals(eventType))
-      .findFirst()
-      .orElseThrow(() -> new IllegalStateException("No PieceEventHandler found for event action: " + eventType));
+      .findFirst();
   }
 
 }
