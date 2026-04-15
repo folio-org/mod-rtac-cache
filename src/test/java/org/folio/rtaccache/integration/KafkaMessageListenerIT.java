@@ -41,6 +41,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -678,7 +679,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(28)
-  void shouldCreateRtacHolding_withItemType_whenBoundWithCreateEventIsSent() {
+  void shouldClearCache_whenBoundWithCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -688,12 +689,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
       sendBoundWithEvent(event);
       // Then
       await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
-        var rtacHoldingId = new RtacHoldingId(UUID.fromString(INSTANCE_ID_2), TypeEnum.ITEM, UUID.fromString(ITEM_ID));
-        var holding = holdingRepository.findById(rtacHoldingId);
-        assertThat(holding).isPresent();
-        assertThat(holding.get().getRtacHolding().getId()).isEqualTo(ITEM_ID);
-        assertThat(holding.get().getRtacHolding().getInstanceFormatIds().getFirst()).isEqualTo(INSTANCE_FORMAT_ID);
-        assertThat(holding.get().getRtacHolding().getIsBoundWith()).isEqualTo(true);
+        var holdings = holdingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_2), Pageable.ofSize(10));
+        assertThat(holdings).isEmpty();
       });
     });
   }
