@@ -118,19 +118,19 @@
   "requires": [
     {
       "id": "item-storage",
-      "version": "10.2 11.1"
-    },
-    {
-      "id": "holdings-storage",
-      "version": "8.0"
-    },
-    {
-      "id": "instance-storage",
       "version": "11.2"
     },
     {
+      "id": "holdings-storage",
+      "version": "8.2"
+    },
+    {
+      "id": "instance-storage",
+      "version": "11.3"
+    },
+    {
       "id": "loan-types",
-      "version": "2.3"
+      "version": "2.4"
     },
     {
       "id": "material-types",
@@ -138,11 +138,11 @@
     },
     {
       "id": "location-units",
-      "version": "2.0"
+      "version": "2.1"
     },
     {
       "id": "locations",
-      "version": "3.1"
+      "version": "3.2"
     },
     {
       "id": "holdings-note-types",
@@ -150,11 +150,11 @@
     },
     {
       "id": "loan-storage",
-      "version": "7.1 7.3"
+      "version": "7.4"
     },
     {
       "id": "circulation",
-      "version": "14.2 14.6"
+      "version": "14.7"
     },
     {
       "id": "orders-storage.pieces",
@@ -166,7 +166,7 @@
     },
     {
       "id": "settings",
-      "version": "1.1 1.2"
+      "version": "1.2"
     },
     {
       "id": "bound-with-parts-storage",
