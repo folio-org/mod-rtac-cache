@@ -21,12 +21,4 @@ public interface RtacHoldingRepositoryCustom {
    * @return A page of matching RtacHoldingEntity records.
    */
   Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, boolean onlyShared, Pageable pageable);
-
-  /**
-   * Fetches a page and total count using a single query (COUNT(*) OVER()) to avoid invoking
-   * rtac_holdings_multi_tenant(...) twice (data query + count query).
-   *
-   * <p>Intended for high-latency central/ECS reads.</p>
-   */
-  Page<RtacHoldingEntity> findAllByIdInstanceIdSingleQuery(String schemas, UUID instanceId, boolean onlyShared, Pageable pageable);
 }

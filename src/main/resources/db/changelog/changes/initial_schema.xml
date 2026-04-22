@@ -139,65 +139,6 @@
     </rollback>
   </changeSet>
 
-  <changeSet id="add-rtac-holding-default-sort-index" author="codex" runInTransaction="false">
-    <preConditions onFail="MARK_RAN">
-      <not>
-        <indexExists indexName="idx_rtac_holding_default_sort" tableName="rtac_holding"/>
-      </not>
-    </preConditions>
-    <comment>Speed up default GET /rtac-cache/{id} ordering (instance_id + JSON sort keys)</comment>
-    <sql>
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_rtac_holding_default_sort
-      ON rtac_holding (
-        instance_id,
-        (rtac_holding_json->>'effectiveShelvingOrder') DESC,
-        (rtac_holding_json->>'status') ASC,
-        (rtac_holding_json->'library'->>'name') ASC,
-        (rtac_holding_json->'location'->>'name') ASC
-      );
-    </sql>
-    <rollback>
-      <sql>DROP INDEX CONCURRENTLY IF EXISTS idx_rtac_holding_default_sort;</sql>
-    </rollback>
-  </changeSet>
-
-  <changeSet id="add-rtac-holding-sort-columns-004" author="codex" runInTransaction="false">
-    <comment>Add STORED generated columns + index for default sorting (avoids per-row JSON extraction)</comment>
-    <sql>
-      ALTER TABLE rtac_holding
-        ADD COLUMN IF NOT EXISTS effective_shelving_order text
-          GENERATED ALWAYS AS ((rtac_holding_json->>'effectiveShelvingOrder')) STORED;
-      ALTER TABLE rtac_holding
-        ADD COLUMN IF NOT EXISTS status_name text
-          GENERATED ALWAYS AS ((rtac_holding_json->>'status')) STORED;
-      ALTER TABLE rtac_holding
-        ADD COLUMN IF NOT EXISTS library_name text
-          GENERATED ALWAYS AS ((rtac_holding_json->'library'->>'name')) STORED;
-      ALTER TABLE rtac_holding
-        ADD COLUMN IF NOT EXISTS location_name text
-          GENERATED ALWAYS AS ((rtac_holding_json->'location'->>'name')) STORED;
-
-      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_rtac_holding_default_sort_cols
-      ON rtac_holding (
-        instance_id,
-        effective_shelving_order DESC,
-        status_name ASC,
-        library_name ASC,
-        location_name ASC
-      );
-
-      -- Replace the JSON-expression index with the generated-column index to reduce write overhead.
-      DROP INDEX CONCURRENTLY IF EXISTS idx_rtac_holding_default_sort;
-    </sql>
-    <rollback>
-      <sql>DROP INDEX CONCURRENTLY IF EXISTS idx_rtac_holding_default_sort_cols;</sql>
-      <sql>ALTER TABLE rtac_holding DROP COLUMN IF EXISTS location_name;</sql>
-      <sql>ALTER TABLE rtac_holding DROP COLUMN IF EXISTS library_name;</sql>
-      <sql>ALTER TABLE rtac_holding DROP COLUMN IF EXISTS status_name;</sql>
-      <sql>ALTER TABLE rtac_holding DROP COLUMN IF EXISTS effective_shelving_order;</sql>
-    </rollback>
-  </changeSet>
-
   <changeSet id="update-rtac-holdings-multi-tenant-function-002" author="Ivan_Zhunkivskyi">
     <validCheckSum>1:any</validCheckSum>
     <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
