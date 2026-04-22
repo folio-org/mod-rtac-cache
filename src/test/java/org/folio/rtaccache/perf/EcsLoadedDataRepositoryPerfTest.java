@@ -92,16 +92,34 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
 
     withinTenant(TestConstant.TEST_CENTRAL_TENANT, () -> {
       // Warm-up
-      rtacHoldingRepository.findAllByIdInstanceId(schemasParam, instanceId, true, pageable)
+      rtacHoldingRepository.findAllByIdInstanceIdSingleQuery(schemasParam, instanceId, true, pageable)
         .getContent();
 
       long minMs = measureMinMs(5, () -> rtacHoldingRepository
-        .findAllByIdInstanceId(schemasParam, instanceId, true, pageable)
+        .findAllByIdInstanceIdSingleQuery(schemasParam, instanceId, true, pageable)
         .getContent());
 
-      log.info("RTAC PERF GET pageQuery minMs={}", minMs);
+      log.info("RTAC PERF GET pageQuery (defaultSort=jsonKeys) minMs={}", minMs);
 
       assertOptionalMaxMs("perf.maxGetMs", minMs);
+    });
+  }
+
+  @Test
+  void perf_getRtacCacheHoldingsById_pageQuery_cheapSort() {
+    // Control experiment: same page query but with an index-friendly deterministic sort.
+    var pageable = PageRequest.of(0, 100, Sort.by(Sort.Order.asc("type"), Sort.Order.asc("id")));
+
+    withinTenant(TestConstant.TEST_CENTRAL_TENANT, () -> {
+      // Warm-up
+      rtacHoldingRepository.findAllByIdInstanceIdSingleQuery(schemasParam, instanceId, true, pageable)
+        .getContent();
+
+      long minMs = measureMinMs(5, () -> rtacHoldingRepository
+        .findAllByIdInstanceIdSingleQuery(schemasParam, instanceId, true, pageable)
+        .getContent());
+
+      log.info("RTAC PERF GET pageQuery (cheapSort=type,id) minMs={}", minMs);
     });
   }
 

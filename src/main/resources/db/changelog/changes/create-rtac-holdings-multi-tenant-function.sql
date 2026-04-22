@@ -12,7 +12,10 @@ BEGIN
     -- Build a UNION ALL query across all tenant schemas
     union_query := (
         SELECT string_agg(
-            format('SELECT * FROM %I.rtac_holding', schema_name),
+            format(
+              'SELECT * FROM %I.rtac_holding h WHERE h.instance_id = ANY($1) AND ($2 IS NOT TRUE OR h.shared = TRUE)',
+              schema_name
+            ),
             ' UNION ALL '
         )
         FROM unnest(string_to_array(schemas_str, ',')) AS schema_name
@@ -24,28 +27,34 @@ BEGIN
     END IF;
 
     RETURN QUERY EXECUTE
-        'WITH all_tenants AS (' || union_query || ')
-         SELECT *
+        'WITH all_tenants AS MATERIALIZED (' || union_query || '),
+         holding_suppression AS (
+           SELECT
+             instance_id,
+             id AS holding_id,
+             COALESCE((rtac_holding_json->>''suppressFromDiscovery'')::boolean, FALSE) AS is_suppressed
+           FROM all_tenants
+           WHERE type = ''HOLDING''
+         ),
+         instance_item_presence AS (
+           SELECT
+             instance_id,
+             bool_or(type = ''ITEM'') AS has_item
+           FROM all_tenants
+           GROUP BY instance_id
+         )
+         SELECT h.*
          FROM all_tenants h
-         WHERE h.instance_id = ANY($1)
-           AND (COALESCE(
-           (select (hi.rtac_holding_json ->> ''suppressFromDiscovery'')::boolean from all_tenants hi where hi.instance_id = h.instance_id AND hi.type = ''HOLDING'' AND hi.id = (h.rtac_holding_json ->> ''holdingsId'')::uuid LIMIT 1),
-           FALSE) = FALSE AND
-           COALESCE((h.rtac_holding_json ->> ''suppressFromDiscovery'')::boolean,
-           FALSE) = FALSE)
-           AND ($2 IS NOT TRUE OR h.shared = TRUE)
+         LEFT JOIN holding_suppression hs
+           ON hs.instance_id = h.instance_id
+          AND hs.holding_id = (h.rtac_holding_json->>''holdingsId'')::uuid
+         JOIN instance_item_presence ip
+           ON ip.instance_id = h.instance_id
+         WHERE COALESCE((h.rtac_holding_json->>''suppressFromDiscovery'')::boolean, FALSE) = FALSE
+           AND COALESCE(hs.is_suppressed, FALSE) = FALSE
            AND (
-             h.type = ''PIECE''
-             OR h.type = ''ITEM''
-             OR (
-               h.type = ''HOLDING''
-               AND NOT EXISTS (
-                 SELECT 1
-                 FROM all_tenants hi
-                 WHERE hi.instance_id = h.instance_id
-                   AND hi.type = ''ITEM''
-               )
-             )
+             h.type IN (''PIECE'', ''ITEM'')
+             OR (h.type = ''HOLDING'' AND ip.has_item IS NOT TRUE)
            )'
     USING instance_ids, only_shared;
 END;

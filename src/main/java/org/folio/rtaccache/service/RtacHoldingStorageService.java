@@ -59,7 +59,7 @@ public class RtacHoldingStorageService {
     if (!lazyLoadExceptions.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to lazy load RTAC holdings for instanceId: " + instanceId, lazyLoadExceptions.get(0));
     }
-    return rtacHoldingRepository.findAllByIdInstanceId(schema, instanceId, isCentral, pageable)
+    return rtacHoldingRepository.findAllByIdInstanceIdSingleQuery(schema, instanceId, isCentral, pageable)
       .map(RtacHoldingEntity::getRtacHolding);
   }
 
