@@ -3,9 +3,14 @@ package org.folio.rtaccache.perf;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import org.folio.rtaccache.BaseEcsIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
@@ -23,6 +28,9 @@ import org.springframework.test.web.servlet.MockMvc;
 class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
 
   private static final Logger log = LoggerFactory.getLogger(EcsLoadedDataRepositoryPerfTest.class);
+  private static final Pattern WORK_MEM_PATTERN = Pattern.compile("^\\d+\\s*(B|kB|MB|GB)?$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern TEMP_READ_PATTERN = Pattern.compile("\\btemp read=(\\d+)\\b");
+  private static final Pattern TEMP_WRITTEN_PATTERN = Pattern.compile("\\btemp written=(\\d+)\\b");
 
   @Autowired
   private javax.sql.DataSource dataSource;
@@ -101,6 +109,12 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
       log.info("RTAC PERF GET pageQuery (defaultSort=jsonKeys) minMs={}", minMs);
 
       assertOptionalMaxMs("perf.maxGetMs", minMs);
+
+      if (getBooleanProperty("perf.explain", false)) {
+        try (Connection connection = dataSource.getConnection()) {
+          explainGetDefaultSort(connection, 100);
+        }
+      }
     });
   }
 
@@ -119,7 +133,153 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
       log.info("RTAC PERF BATCH summaryQuery minMs={}", minMs);
 
       assertOptionalMaxMs("perf.maxBatchMs", minMs);
+
+      if (getBooleanProperty("perf.explain", false)) {
+        try (Connection connection = dataSource.getConnection()) {
+          explainBatchSummary(connection);
+        }
+      }
     });
+  }
+
+  private void explainGetDefaultSort(Connection connection, int limit) throws Exception {
+    applyExplainSessionSettings(connection);
+    String sql = """
+      EXPLAIN (ANALYZE, BUFFERS)
+      WITH FilteredHoldings AS (
+        SELECT * FROM rtac_holdings_multi_tenant(?, ARRAY[?]::uuid[], ?)
+      )
+      SELECT
+        *,
+        rtac_holding_json->>'effectiveShelvingOrder' AS effectiveShelvingOrder,
+        rtac_holding_json->'library'->>'name' AS libraryName,
+        rtac_holding_json->'location'->>'name' AS locationName,
+        rtac_holding_json->>'status' AS status
+      FROM FilteredHoldings
+      ORDER BY effectiveShelvingOrder desc, status asc, libraryName asc, locationName asc
+      FETCH FIRST ? ROWS ONLY
+      """;
+
+    log.info("RTAC PERF EXPLAIN GET (defaultSort=jsonKeys) begin");
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+      ps.setString(1, schemasParam);
+      ps.setObject(2, instanceId);
+      ps.setBoolean(3, true);
+      ps.setInt(4, limit);
+      ExplainTempIoStats stats = logExplainRows(ps);
+      log.info("RTAC PERF EXPLAIN SUMMARY GET tempReadBlocks={} tempWrittenBlocks={}", stats.tempReadBlocks, stats.tempWrittenBlocks);
+    }
+    log.info("RTAC PERF EXPLAIN GET (defaultSort=jsonKeys) end");
+  }
+
+  private void explainBatchSummary(Connection connection) throws Exception {
+    applyExplainSessionSettings(connection);
+    String sql = """
+      EXPLAIN (ANALYZE, BUFFERS)
+      WITH Filtered AS (
+        SELECT * FROM rtac_holdings_multi_tenant(?, ARRAY[?]::uuid[], ?)
+      ),
+      LocationStatusCounts AS (
+        SELECT
+          h_inner.instance_id,
+          (h_inner.rtac_holding_json->'library'->>'id') AS libraryId,
+          (h_inner.rtac_holding_json->'location'->>'id') AS locationId,
+          (h_inner.rtac_holding_json->'location'->>'code') AS locationCode,
+          (h_inner.rtac_holding_json->>'type') AS type,
+          (h_inner.rtac_holding_json->>'status') AS status,
+          COUNT(*) AS statusCount
+        FROM
+          Filtered h_inner
+        GROUP BY
+          h_inner.instance_id,
+          (h_inner.rtac_holding_json->'library'->>'id'),
+          (h_inner.rtac_holding_json->'location'->>'id'),
+          (h_inner.rtac_holding_json->'location'->>'code'),
+          (h_inner.rtac_holding_json->>'type'),
+          (h_inner.rtac_holding_json->>'status')
+      )
+      SELECT
+        h.instance_id AS instanceId,
+        bool_or(h.rtac_holding_json->>'volume' IS NOT NULL AND h.rtac_holding_json->>'volume' != '') AS hasVolumes,
+        (SELECT h_if.rtac_holding_json->>'instanceFormatIds' FROM Filtered h_if WHERE h_if.instance_id = h.instance_id LIMIT 1) AS instanceFormatIds,
+        (
+          SELECT
+            json_agg(
+              json_build_object(
+                'libraryId', lsc.libraryId,
+                'locationId', lsc.locationId,
+                'locationCode', lsc.locationCode,
+                'status', lsc.status,
+                'statusCount', lsc.statusCount,
+                'type', lsc.type
+              )
+            )
+          FROM
+            LocationStatusCounts lsc
+          WHERE
+            lsc.instance_id = h.instance_id
+        ) AS locationStatusJson
+      FROM
+        Filtered h
+      GROUP BY
+        h.instance_id
+      """;
+
+    log.info("RTAC PERF EXPLAIN BATCH begin");
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+      ps.setString(1, schemasParam);
+      ps.setObject(2, instanceId);
+      ps.setBoolean(3, true);
+      ExplainTempIoStats stats = logExplainRows(ps);
+      log.info("RTAC PERF EXPLAIN SUMMARY BATCH tempReadBlocks={} tempWrittenBlocks={}", stats.tempReadBlocks, stats.tempWrittenBlocks);
+    }
+    log.info("RTAC PERF EXPLAIN BATCH end");
+  }
+
+  private ExplainTempIoStats logExplainRows(PreparedStatement ps) throws Exception {
+    long tempReadBlocks = 0;
+    long tempWrittenBlocks = 0;
+    try (ResultSet rs = ps.executeQuery()) {
+      while (rs.next()) {
+        // EXPLAIN returns one text column named "QUERY PLAN"
+        String row = rs.getString(1);
+        log.info("RTAC PERF EXPLAIN {}", row);
+
+        // Prefer a simple "max observed" across nodes; the top node usually has query totals.
+        Long read = extractLong(TEMP_READ_PATTERN, row);
+        if (read != null) {
+          tempReadBlocks = Math.max(tempReadBlocks, read);
+        }
+        Long written = extractLong(TEMP_WRITTEN_PATTERN, row);
+        if (written != null) {
+          tempWrittenBlocks = Math.max(tempWrittenBlocks, written);
+        }
+      }
+    }
+    return new ExplainTempIoStats(tempReadBlocks, tempWrittenBlocks);
+  }
+
+  private static void applyExplainSessionSettings(Connection connection) throws Exception {
+    String workMem = getStringProperty("perf.explainWorkMem");
+    if (workMem == null) {
+      return;
+    }
+    String normalized = workMem.trim().replaceAll("\\s+", "");
+    if (!WORK_MEM_PATTERN.matcher(normalized).matches()) {
+      throw new IllegalArgumentException("Invalid perf.explainWorkMem value: " + workMem);
+    }
+    try (Statement statement = connection.createStatement()) {
+      statement.execute("SET work_mem = '" + normalized + "'");
+    }
+    log.info("RTAC PERF EXPLAIN setting work_mem={}", normalized);
+  }
+
+  private static Long extractLong(Pattern pattern, String text) {
+    Matcher matcher = pattern.matcher(text);
+    if (!matcher.find()) {
+      return null;
+    }
+    return Long.parseLong(matcher.group(1));
   }
 
   private static long measureMinMs(int iterations, Runnable action) {
@@ -146,4 +306,19 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
     String value = System.getProperty(propertyName);
     return (value == null || value.isBlank()) ? defaultValue : Integer.parseInt(value);
   }
+
+  private static boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+    String value = System.getProperty(propertyName);
+    if (value == null || value.isBlank()) {
+      return defaultValue;
+    }
+    return Boolean.parseBoolean(value);
+  }
+
+  private static String getStringProperty(String propertyName) {
+    String value = System.getProperty(propertyName);
+    return (value == null || value.isBlank()) ? null : value;
+  }
+
+  private record ExplainTempIoStats(long tempReadBlocks, long tempWrittenBlocks) { }
 }
