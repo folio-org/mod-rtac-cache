@@ -34,6 +34,7 @@
       src/main/java/org/folio/rtaccache/RtacCacheApplication.java
     </sonar.exclusions>
     <argLine />
+    <skipNonPerfTests>false</skipNonPerfTests>
 
     <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 
@@ -327,11 +328,16 @@
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+          <skipTests>${skipNonPerfTests}</skipTests>
           <!-- Non-integration tests run in the default fork -->
           <includes>
             <include>**/*Test.java</include>
             <include>**/*Tests.java</include>
           </includes>
+          <excludes>
+            <exclude>**/*PerfTest.java</exclude>
+            <exclude>**/*PerfTests.java</exclude>
+          </excludes>
         </configuration>
         <executions>
           <!-- Execution 1: non-ECS integration tests in their own fork -->
@@ -415,6 +421,41 @@
 
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>perf</id>
+      <properties>
+        <!-- Skip normal unit + integration test executions when running perf lane -->
+        <skipNonPerfTests>true</skipNonPerfTests>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>perf</id>
+                <goals><goal>test</goal></goals>
+                <configuration>
+                  <skipTests>false</skipTests>
+                  <useSystemClassLoader>false</useSystemClassLoader>
+                  <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+                  <forkCount>1</forkCount>
+                  <reuseForks>false</reuseForks>
+                  <includes>
+                    <include>**/*PerfTest.java</include>
+                    <include>**/*PerfTests.java</include>
+                  </includes>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <repositories>
     <repository>
