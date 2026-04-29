@@ -48,6 +48,7 @@ public abstract class BaseIntegrationTest {
   protected static final WireMockServer WIRE_MOCK = new WireMockServer(
     options()
       .dynamicPort()
+      .http2PlainDisabled(true)
       .templatingEnabled(true)
       .globalTemplating(false));
 
