@@ -1,0 +1,5 @@
+{
+    "sonarCloudOrganization": "folio-org",
+    "projectKey": "org.folio:mod-rtac-cache",
+    "region": "EU"
+}
