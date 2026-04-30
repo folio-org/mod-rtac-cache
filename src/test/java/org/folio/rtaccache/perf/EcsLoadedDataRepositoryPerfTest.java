@@ -119,6 +119,39 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
   }
 
   @Test
+  void perf_searchRtacCacheHoldings_query() {
+    var pageable = PageRequest.of(0, 100,
+      Sort.by(
+        Sort.Order.desc("effectiveShelvingOrder"),
+        Sort.Order.asc("status"),
+        Sort.Order.asc("libraryName"),
+        Sort.Order.asc("locationName")
+      )
+    );
+
+    withinTenant(TestConstant.TEST_CENTRAL_TENANT, () -> {
+      // Warm-up
+      var warmup = rtacHoldingRepository.search(schemasParam, instanceId, "Library", null, true, pageable)
+        .getContent();
+      assertThat(warmup).isNotEmpty();
+
+      long minMs = measureMinMs(5, () -> rtacHoldingRepository
+        .search(schemasParam, instanceId, "Library", null, true, pageable)
+        .getContent());
+
+      log.info("RTAC PERF SEARCH query (defaultSort=jsonKeys) minMs={}", minMs);
+
+      assertOptionalMaxMs("perf.maxSearchMs", minMs);
+
+      if (getBooleanProperty("perf.explain", false)) {
+        try (Connection connection = dataSource.getConnection()) {
+          explainSearchDefaultSort(connection, "Library", 100);
+        }
+      }
+    });
+  }
+
+  @Test
   void perf_postRtacCacheBatch_holdingsSummaryQuery() {
     UUID[] instanceIds = {instanceId};
 
@@ -170,6 +203,36 @@ class EcsLoadedDataRepositoryPerfTest extends BaseEcsIntegrationTest {
       log.info("RTAC PERF EXPLAIN SUMMARY GET tempReadBlocks={} tempWrittenBlocks={}", stats.tempReadBlocks, stats.tempWrittenBlocks);
     }
     log.info("RTAC PERF EXPLAIN GET (defaultSort=jsonKeys) end");
+  }
+
+  private void explainSearchDefaultSort(Connection connection, String query, int limit) throws Exception {
+    applyExplainSessionSettings(connection);
+    String sql = """
+      EXPLAIN (ANALYZE, BUFFERS)
+      WITH Filtered AS (
+        SELECT * FROM rtac_holdings_multi_tenant(?, ARRAY[?]::uuid[], ?)
+      )
+      SELECT *
+      FROM Filtered h
+      WHERE rtac_holding_search_text(h.rtac_holding_json) ILIKE ?
+      ORDER BY h.rtac_holding_json->>'effectiveShelvingOrder' desc,
+        h.rtac_holding_json->>'status' asc,
+        h.rtac_holding_json->'library'->>'name' asc,
+        h.rtac_holding_json->'location'->>'name' asc
+      FETCH FIRST ? ROWS ONLY
+      """;
+
+    log.info("RTAC PERF EXPLAIN SEARCH (defaultSort=jsonKeys) begin");
+    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+      ps.setString(1, schemasParam);
+      ps.setObject(2, instanceId);
+      ps.setBoolean(3, true);
+      ps.setString(4, "%" + query + "%");
+      ps.setInt(5, limit);
+      ExplainTempIoStats stats = logExplainRows(ps);
+      log.info("RTAC PERF EXPLAIN SUMMARY SEARCH tempReadBlocks={} tempWrittenBlocks={}", stats.tempReadBlocks, stats.tempWrittenBlocks);
+    }
+    log.info("RTAC PERF EXPLAIN SEARCH (defaultSort=jsonKeys) end");
   }
 
   private void explainBatchSummary(Connection connection) throws Exception {

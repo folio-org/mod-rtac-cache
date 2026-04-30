@@ -36,14 +36,10 @@ Run:
 ```shell
 mvn -Pperf test
 ```
-
-Notes:
-- Requires Docker (Testcontainers).
-
 Optional knobs:
 - `-Dperf.itemsTotal=10000`
 - `-Dperf.instanceId=11111111-1111-1111-1111-111111111111`
-- `-Dperf.maxGetMs=...` / `-Dperf.maxBatchMs=...` (turn perf measurements into assertions)
+- `-Dperf.maxGetMs=...` / `-Dperf.maxSearchMs=...` / `-Dperf.maxBatchMs=...` (turn perf measurements into assertions)
 
 ### Running mod-rtac-cache
 

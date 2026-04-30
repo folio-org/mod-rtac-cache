@@ -84,8 +84,6 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
   private String toSqlOrder(Sort.Order order) {
     String property = switch (order.getProperty()) {
       case "id" -> "h.id";
-      case "type" -> "h.type";
-      case "instanceId" -> "h.instance_id";
       case "libraryName" -> "h.rtac_holding_json->'library'->>'name'";
       case "locationName" -> "h.rtac_holding_json->'location'->>'name'";
       case "effectiveShelvingOrder" -> "h.rtac_holding_json->>'effectiveShelvingOrder'";
