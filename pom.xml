@@ -35,12 +35,12 @@
     </sonar.exclusions>
     <argLine />
 
-    <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
+    <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
 
     <!-- runtime dependencies -->
     <folio-spring-support.version>10.0.0</folio-spring-support.version>
     <folio-service-tools.version>6.0.0</folio-service-tools.version>
-    <openapi-generator.version>7.20.0</openapi-generator.version>
+    <openapi-generator.version>7.22.0</openapi-generator.version>
 
     <!-- test dependencies -->
     <wiremock-standalone.version>3.13.2</wiremock-standalone.version>
