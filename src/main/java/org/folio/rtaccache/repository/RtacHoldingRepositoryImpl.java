@@ -20,9 +20,12 @@ import org.springframework.data.domain.Sort;
 public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   private static final Pattern SPLIT_PATTERN = Pattern.compile("\\s+");
-  private static final String FILTER_CTE =
-    "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)) ";
-  private static final String FROM_FILTERED = "FROM Filtered h ";
+  private static final String FILTERED_HOLDINGS_CTE = """
+    WITH Filtered AS (
+      SELECT *
+      FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)
+    )
+    """;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -54,13 +57,22 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
     var session = entityManager.unwrap(Session.class);
 
-    String countSql = FILTER_CTE + " SELECT count(h.id) " + FROM_FILTERED + whereSql;
+    String countSql = FILTERED_HOLDINGS_CTE + """
+      SELECT count(*)
+      FROM Filtered h
+      %s
+      """.formatted(whereSql);
     NativeQuery<Long> countQuery = session.createNativeQuery(countSql, Long.class);
     params.forEach(countQuery::setParameter);
     long total = countQuery.getSingleResult();
 
     String orderByClause = toOrderByClause(pageable.getSort());
-    String dataSql = FILTER_CTE + " SELECT * " + FROM_FILTERED + whereSql + orderByClause;
+    String dataSql = FILTERED_HOLDINGS_CTE + """
+      SELECT *
+      FROM Filtered h
+      %s
+      %s
+      """.formatted(whereSql, orderByClause);
     NativeQuery<RtacHoldingEntity> dataQuery = session.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
