@@ -2,7 +2,6 @@ package org.folio.rtaccache.repository;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +10,8 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.hibernate.Session;
+import org.hibernate.query.NativeQuery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -19,12 +20,17 @@ import org.springframework.data.domain.Sort;
 public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   private static final Pattern SPLIT_PATTERN = Pattern.compile("\\s+");
+  private static final String FILTERED_HOLDINGS_CTE = """
+    WITH Filtered AS (
+      SELECT *
+      FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)
+    )
+    """;
 
   @PersistenceContext
   private EntityManager entityManager;
 
   @Override
-  @SuppressWarnings("unchecked") // Ok to suppress because RtacHoldingEntity is passed to createNativeQuery
   public Page<RtacHoldingEntity> search(String schemas, UUID instanceId, String query, Boolean available, boolean onlyShared, Pageable pageable) {
     var params = new HashMap<String, Object>();
     params.put("schemas", schemas);
@@ -48,19 +54,26 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
     }
 
     String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
-    String fromClause = "FROM Filtered h ";
-    String filterCte = "WITH Filtered AS (SELECT * FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)) ";
 
-    // Create and execute count query
-    String countSql = filterCte + " SELECT count(h.id) " + fromClause + whereSql;
-    Query countQuery = entityManager.createNativeQuery(countSql);
+    var session = entityManager.unwrap(Session.class);
+
+    String countSql = FILTERED_HOLDINGS_CTE + """
+      SELECT count(*)
+      FROM Filtered h
+      %s
+      """.formatted(whereSql);
+    NativeQuery<Long> countQuery = session.createNativeQuery(countSql, Long.class);
     params.forEach(countQuery::setParameter);
-    long total = ((Number) countQuery.getSingleResult()).longValue();
+    long total = countQuery.getSingleResult();
 
-    // Create and execute data query
     String orderByClause = toOrderByClause(pageable.getSort());
-    String dataSql = filterCte + " SELECT * " + fromClause + whereSql + orderByClause;
-    Query dataQuery = entityManager.createNativeQuery(dataSql, RtacHoldingEntity.class);
+    String dataSql = FILTERED_HOLDINGS_CTE + """
+      SELECT *
+      FROM Filtered h
+      %s
+      %s
+      """.formatted(whereSql, orderByClause);
+    NativeQuery<RtacHoldingEntity> dataQuery = session.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
     dataQuery.setMaxResults(pageable.getPageSize());
@@ -87,7 +100,8 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
       case "locationName" -> "h.rtac_holding_json->'location'->>'name'";
       case "effectiveShelvingOrder" -> "h.rtac_holding_json->>'effectiveShelvingOrder'";
       case "status" -> "h.rtac_holding_json->>'status'";
-      default -> order.getProperty(); // Fallback for safety, though should not be used for JSON properties
+      case "id" -> "h.id";
+      default -> throw new IllegalArgumentException("Unsupported sort property: " + order.getProperty());
     };
     return property + " " + order.getDirection();
   }

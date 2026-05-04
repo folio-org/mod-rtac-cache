@@ -3,6 +3,7 @@ package org.folio.rtaccache.rest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.rtac.rest.resource.RtacApi;
@@ -27,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,6 +36,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class RtacCacheController implements RtacApi {
 
   private static final Logger log = LoggerFactory.getLogger(RtacCacheController.class);
+  private static final Set<String> SUPPORTED_SORT_PROPERTIES = Set.of(
+    "effectiveShelvingOrder",
+    "libraryName",
+    "locationName",
+    "status"
+  );
 
   private final RtacHoldingStorageService rtacHoldingStorageService;
   private final RtacCachePreWarmingService rtacCachePreWarmingService;
@@ -145,12 +153,13 @@ public class RtacCacheController implements RtacApi {
       List<String> parts = new ArrayList<>(Arrays.asList(sortString.split(",")));
 
       if (parts.stream().anyMatch(String::isBlank)) {
-        throw new IllegalArgumentException("Sort criteria cannot be blank");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sort criteria cannot be blank");
       }
 
       List<Sort.Order> orders = new ArrayList<>();
       while (!parts.isEmpty()) {
         String property = parts.removeFirst();
+        validateSortProperty(property);
         var direction = getDefaultSortDirection(property);
         if (!parts.isEmpty()) {
           var optDirection = Sort.Direction.fromOptionalString(parts.getFirst());
@@ -164,6 +173,12 @@ public class RtacCacheController implements RtacApi {
       sortOrder = Sort.by(orders);
     }
     return PageRequest.of(offset / limit, limit, sortOrder);
+  }
+
+  private void validateSortProperty(String property) {
+    if (!SUPPORTED_SORT_PROPERTIES.contains(property)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported sort property: " + property);
+    }
   }
 
   private Sort.Direction getDefaultSortDirection(String property) {
