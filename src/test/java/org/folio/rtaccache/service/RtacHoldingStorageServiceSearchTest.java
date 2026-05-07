@@ -97,6 +97,23 @@ class RtacHoldingStorageServiceSearchTest extends BaseIntegrationTest {
   }
 
   @Test
+  void testSearchRtacHoldings_withoutSorting() {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
+      var instanceId = UUID.randomUUID();
+
+      rtacHoldingRepository.save(createRtacHoldingEntity(instanceId, "vol", "call", "loc", "lib", "Available",
+        TypeEnum.ITEM));
+
+      Page<RtacHolding> page = rtacHoldingStorageService.searchRtacHoldings(instanceId, "vol call", null,
+        PageRequest.of(0, 10));
+
+      assertThat(page.getTotalElements()).isEqualTo(1);
+      assertThat(page.getContent()).hasSize(1);
+      assertThat(page.getContent().getFirst().getInstanceId()).isEqualTo(instanceId.toString());
+    });
+  }
+
+  @Test
   void testSearchRtacHoldings() {
     withinTenant(TestConstant.TEST_TENANT, () -> {
       var instanceId1 = UUID.randomUUID();

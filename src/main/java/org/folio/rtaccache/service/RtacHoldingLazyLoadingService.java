@@ -5,9 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.folio.rtaccache.client.SearchClient;
@@ -21,6 +24,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -41,6 +45,12 @@ public class RtacHoldingLazyLoadingService {
         var future = rtacCacheGenerationService.generateRtacCache(instanceId.toString());
         future.join();
       } catch (Exception ex) {
+        Throwable rootCause = unwrapCompletionException(ex);
+        if (isNotFound(rootCause)) {
+          log.warn("Instance {} not found during RTAC cache generation; skipping.", instanceId);
+          rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
+          return;
+        }
         log.error("RTAC cache generation failed for instanceId: {}", instanceId, ex);
         rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -123,9 +133,32 @@ public class RtacHoldingLazyLoadingService {
           future.join();
           return null; // Should not happen
         } catch (Exception e) {
-          return future.exceptionNow();
+          // Prefer the thrown exception (it has the useful status/response info),
+          // not just future.exceptionNow() which is often a generic CompletionException.
+          return unwrapCompletionException(e);
         }
       })
+      .filter(Objects::nonNull)
+      // Missing instances should surface as "not found" errors at the API layer, not as 500s from lazy load.
+      .filter(ex -> !isNotFound(ex))
       .toList();
   }
- }
+
+  private static Throwable unwrapCompletionException(Throwable throwable) {
+    Throwable current = throwable;
+    while ((current instanceof CompletionException || current instanceof ExecutionException) && current.getCause() != null) {
+      current = current.getCause();
+    }
+    return current;
+  }
+
+  private static boolean isNotFound(Throwable throwable) {
+    if (throwable instanceof ResponseStatusException rse) {
+      return rse.getStatusCode() == HttpStatus.NOT_FOUND;
+    }
+    if (throwable instanceof RestClientResponseException rcre) {
+      return rcre.getStatusCode().value() == HttpStatus.NOT_FOUND.value();
+    }
+    return false;
+  }
+}
