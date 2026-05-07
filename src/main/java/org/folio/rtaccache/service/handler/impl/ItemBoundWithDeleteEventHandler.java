@@ -36,7 +36,7 @@ public class ItemBoundWithDeleteEventHandler implements InventoryEventHandler {
     holdingRepository.findById(rtacHoldingId).ifPresent(existingItemEntity -> {
       var itemRtacHolding = existingItemEntity.getRtacHolding();
       log.info("Found RTAC holding id for BoundWith item: {}", itemRtacHolding.getId());
-      if (itemRtacHolding.getIsBoundWith()) {
+      if (Boolean.TRUE.equals(itemRtacHolding.getIsBoundWith())) {
         log.info("Deleting RTAC holding for BoundWith item with id: {}", rtacHoldingId);
         holdingRepository.deleteById(rtacHoldingId);
       }
