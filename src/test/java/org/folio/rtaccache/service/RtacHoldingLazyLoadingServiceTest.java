@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import org.folio.rtaccache.client.SearchClient;
 import org.folio.rtaccache.domain.RtacBatchCountProjection;
 import org.folio.rtaccache.domain.dto.ConsortiumHolding;
@@ -28,6 +30,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -91,6 +95,18 @@ class RtacHoldingLazyLoadingServiceTest {
   }
 
   @Test
+  void lazyLoadRtacHoldings_shouldSkipAndDeletePartialCache_whenInstanceIsNotFound() {
+    var instanceId = UUID.randomUUID();
+    when(rtacHoldingRepository.countByIdInstanceId(instanceId)).thenReturn(0);
+    when(rtacCacheGenerationService.generateRtacCache(instanceId.toString()))
+      .thenReturn(CompletableFuture.failedFuture(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found")));
+
+    service.lazyLoadRtacHoldings(instanceId);
+
+    verify(rtacHoldingRepository).deleteAllByIdInstanceId(instanceId);
+  }
+
+  @Test
   void lazyLoadRtacHoldings_shouldThrowException_whenCacheGenerationFails() {
     var instanceId = UUID.randomUUID();
     when(rtacHoldingRepository.countByIdInstanceId(instanceId)).thenReturn(0);
@@ -99,6 +115,34 @@ class RtacHoldingLazyLoadingServiceTest {
 
     assertThrows(ResponseStatusException.class, () -> service.lazyLoadRtacHoldings(instanceId));
 
+    verify(rtacHoldingRepository).deleteAllByIdInstanceId(instanceId);
+  }
+
+  @Test
+  void lazyLoadRtacHoldings_shouldThrowException_whenCacheGenerationFailsWithNonNotFoundStatus() {
+    var instanceId = UUID.randomUUID();
+    when(rtacHoldingRepository.countByIdInstanceId(instanceId)).thenReturn(0);
+    when(rtacCacheGenerationService.generateRtacCache(instanceId.toString()))
+      .thenReturn(CompletableFuture.failedFuture(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad request")));
+
+    var exception = assertThrows(ResponseStatusException.class, () -> service.lazyLoadRtacHoldings(instanceId));
+
+    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    verify(rtacHoldingRepository).deleteAllByIdInstanceId(instanceId);
+  }
+
+  @Test
+  void lazyLoadRtacHoldings_shouldUnwrapExecutionException_whenCacheGenerationFails() {
+    var instanceId = UUID.randomUUID();
+    when(rtacHoldingRepository.countByIdInstanceId(instanceId)).thenReturn(0);
+    when(rtacCacheGenerationService.generateRtacCache(instanceId.toString()))
+      .thenAnswer(invocation -> {
+        throw new ExecutionException(new RuntimeException("Generation failed"));
+      });
+
+    var exception = assertThrows(ResponseStatusException.class, () -> service.lazyLoadRtacHoldings(instanceId));
+
+    assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     verify(rtacHoldingRepository).deleteAllByIdInstanceId(instanceId);
   }
 
@@ -158,6 +202,37 @@ class RtacHoldingLazyLoadingServiceTest {
 
     assertThat(exceptions).hasSize(1);
     assertThat(exceptions.get(0)).isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  void lazyLoadRtacHoldingsForList_shouldIgnoreNotFoundExceptions() {
+    var instanceId1 = UUID.randomUUID();
+    var instanceId2 = UUID.randomUUID();
+    var instanceIds = List.of(instanceId1, instanceId2);
+    var responseStatusFuture = CompletableFuture.<Void>failedFuture(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
+    var restClientFuture = CompletableFuture.<Void>failedFuture(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    doReturn(responseStatusFuture, restClientFuture).when(taskExecutor).submitCompletable(any(Runnable.class));
+
+    var exceptions = service.lazyLoadRtacHoldings(instanceIds);
+
+    assertThat(exceptions).isEmpty();
+  }
+
+  @Test
+  void lazyLoadRtacHoldingsForList_shouldReturnRestClientExceptions_whenStatusIsNotNotFound() {
+    var instanceId = UUID.randomUUID();
+    var instanceIds = List.of(instanceId);
+    var badRequest = new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+    var failedFuture = CompletableFuture.<Void>failedFuture(badRequest);
+
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    doReturn(failedFuture).when(taskExecutor).submitCompletable(any(Runnable.class));
+
+    var exceptions = service.lazyLoadRtacHoldings(instanceIds);
+
+    assertThat(exceptions).containsExactly(badRequest);
   }
 
   @Test
