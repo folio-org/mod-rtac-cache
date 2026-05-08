@@ -28,6 +28,19 @@ Compile with
 mvn clean install
 ```
 
+## Perf tests (opt-in)
+
+This repo includes a small perf-only test lane (excluded from normal `mvn test` / `mvn verify`) to iterate on RTAC read-path performance locally.
+
+Run:
+```shell
+mvn -Pperf test
+```
+Optional knobs:
+- `-Dperf.itemsTotal=10000`
+- `-Dperf.instanceId=11111111-1111-1111-1111-111111111111`
+- `-Dperf.maxGetMs=...` / `-Dperf.maxSearchMs=...` / `-Dperf.maxBatchMs=...` (turn perf measurements into assertions)
+
 ### Running mod-rtac-cache
 
 Run locally on listening port 8081 (default listening port):
@@ -80,4 +93,3 @@ requires and provides, the permissions, and the additional module metadata.
 | `SYSTEM_USER_PASSWORD` | *(none)*                | System password (required when enabled) |
 | `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?`           | Cache invalidation schedule |
 | `RTAC_CACHE_RETENTION_DAYS` | `2`                     | Cache retention days |
-

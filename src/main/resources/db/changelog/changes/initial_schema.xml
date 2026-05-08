@@ -167,4 +167,12 @@
       </sql>
     </rollback>
   </changeSet>
+
+  <changeSet id="update-rtac-holdings-multi-tenant-function-004" author="Steve Ellis">
+    <validCheckSum>1:any</validCheckSum>
+    <sqlFile path="db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql" splitStatements="false"/>
+    <rollback>
+      <sqlFile path="db/changelog/changes/rollback-rtac-holdings-multi-tenant-function-004.sql" splitStatements="false"/>
+    </rollback>
+  </changeSet>
 </databaseChangeLog>
