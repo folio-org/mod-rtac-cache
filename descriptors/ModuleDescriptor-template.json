@@ -266,6 +266,176 @@
       ]
     }
   },
+  "env": [
+    {
+      "name": "JAVA_OPTIONS",
+      "value": "-XX:MaxRAMPercentage=66.0",
+      "required": false,
+      "description": "JVM options passed to the Java process. The default reserves 66% of container memory for the heap."
+    },
+    {
+      "name": "DB_HOST",
+      "value": "postgres",
+      "required": false,
+      "description": "PostgreSQL host used by the Spring datasource JDBC URL."
+    },
+    {
+      "name": "DB_PORT",
+      "value": "5432",
+      "required": false,
+      "description": "PostgreSQL port used by the Spring datasource JDBC URL."
+    },
+    {
+      "name": "DB_USERNAME",
+      "value": "folio_admin",
+      "required": false,
+      "description": "PostgreSQL username used by the module datasource."
+    },
+    {
+      "name": "DB_PASSWORD",
+      "value": "folio_admin",
+      "required": false,
+      "description": "Password for DB_USERNAME."
+    },
+    {
+      "name": "DB_DATABASE",
+      "value": "okapi_modules",
+      "required": false,
+      "description": "PostgreSQL database name used by the module datasource."
+    },
+    {
+      "name": "DB_QUERYTIMEOUT",
+      "value": "60000",
+      "required": false,
+      "description": "PostgreSQL statement timeout in milliseconds applied to Hikari connections by folio-spring-base when set."
+    },
+    {
+      "name": "DB_CHARSET",
+      "value": "UTF-8",
+      "required": false,
+      "description": "PostgreSQL connection character encoding applied to Hikari connections by folio-spring-base."
+    },
+    {
+      "name": "DB_MAXPOOLSIZE",
+      "value": "5",
+      "required": false,
+      "description": "Legacy FOLIO maximum database pool-size setting kept for descriptor compatibility; this Spring runtime uses DB_MAXSHAREDPOOLSIZE for Hikari maximum pool size."
+    },
+    {
+      "name": "KAFKA_HOST",
+      "value": "localhost",
+      "required": false,
+      "description": "Kafka broker host used to build spring.kafka.bootstrap-servers."
+    },
+    {
+      "name": "KAFKA_PORT",
+      "value": "9092",
+      "required": false,
+      "description": "Kafka broker port used to build spring.kafka.bootstrap-servers."
+    },
+    {
+      "name": "MAX_POLL_RECORDS",
+      "value": "50",
+      "required": false,
+      "description": "Maximum number of Kafka records returned in a single consumer poll."
+    },
+    {
+      "name": "KAFKA_SECURITY_PROTOCOL",
+      "value": "PLAINTEXT",
+      "required": false,
+      "description": "Kafka client security protocol; common values are PLAINTEXT, SSL, SASL_PLAINTEXT, and SASL_SSL."
+    },
+    {
+      "name": "KAFKA_SSL_KEYSTORE_PASSWORD",
+      "value": "",
+      "required": false,
+      "description": "Password for the Kafka SSL key store when SSL client authentication is configured."
+    },
+    {
+      "name": "KAFKA_SSL_KEYSTORE_LOCATION",
+      "value": "",
+      "required": false,
+      "description": "Filesystem path to the Kafka SSL key store when SSL client authentication is configured."
+    },
+    {
+      "name": "KAFKA_SSL_TRUSTSTORE_PASSWORD",
+      "value": "",
+      "required": false,
+      "description": "Password for the Kafka SSL trust store when SSL is configured."
+    },
+    {
+      "name": "KAFKA_SSL_TRUSTSTORE_LOCATION",
+      "value": "",
+      "required": false,
+      "description": "Filesystem path to the Kafka SSL trust store when SSL is configured."
+    },
+    {
+      "name": "ENV",
+      "value": "folio",
+      "required": false,
+      "description": "FOLIO environment name used as the Kafka topic and consumer-group prefix."
+    },
+    {
+      "name": "OKAPI_URL",
+      "value": "http://localhost:8081",
+      "required": false,
+      "description": "Okapi base URL used for outbound FOLIO service calls and system-user requests."
+    },
+    {
+      "name": "KAFKA_RETRY_INTERVAL_MS",
+      "value": "2000",
+      "required": false,
+      "description": "Interval in milliseconds between Kafka message delivery retry attempts."
+    },
+    {
+      "name": "KAFKA_RETRY_DELIVERY_ATTEMPTS",
+      "value": "6",
+      "required": false,
+      "description": "Maximum number of Kafka message delivery attempts before retry handling is exhausted."
+    },
+    {
+      "name": "KAFKA_EVENTS_CONCURRENCY",
+      "value": "2",
+      "required": false,
+      "description": "Number of concurrent consumers configured for each RTAC cache Kafka listener."
+    },
+    {
+      "name": "KAFKA_EVENTS_CONSUMER_PATTERN",
+      "value": "",
+      "required": false,
+      "description": "Optional topic-pattern override for all RTAC cache Kafka listeners. Leave empty to use the per-entity default patterns based on ENV."
+    },
+    {
+      "name": "SYSTEM_USER_ENABLED",
+      "value": "false",
+      "required": false,
+      "description": "Allows event processors to get a token for downstream module calls."
+    },
+    {
+      "name": "SYSTEM_USER_USERNAME",
+      "value": "mod-rtac-cache",
+      "required": false,
+      "description": "Username for the module system user."
+    },
+    {
+      "name": "SYSTEM_USER_PASSWORD",
+      "value": "",
+      "required": false,
+      "description": "Password for the module system user. Required when SYSTEM_USER_ENABLED is true."
+    },
+    {
+      "name": "RTAC_CACHE_INVALIDATION_CRON",
+      "value": "0 0 2 * * ?",
+      "required": false,
+      "description": "Spring cron expression for the scheduled purge of stale rtac_holding cache rows."
+    },
+    {
+      "name": "RTAC_CACHE_RETENTION_DAYS",
+      "value": "2",
+      "required": false,
+      "description": "Number of days to retain cached RTAC holdings before the scheduled invalidation job deletes them."
+    }
+  ],
   "launchDescriptor": {
     "dockerImage": "@artifactId@:@version@",
     "dockerPull": false,
