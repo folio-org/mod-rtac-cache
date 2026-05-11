@@ -20,12 +20,6 @@ import org.springframework.data.domain.Sort;
 public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   private static final Pattern SPLIT_PATTERN = Pattern.compile("\\s+");
-  private static final String FILTERED_HOLDINGS_CTE = """
-    WITH Filtered AS (
-      SELECT *
-      FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared)
-    )
-    """;
 
   @PersistenceContext
   private EntityManager entityManager;
@@ -53,26 +47,27 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
       whereClause.add("cast(h.rtac_holding_json ->> 'status' as text) = 'Available'");
     }
 
+    String fromSql = "FROM rtac_holdings_multi_tenant(:schemas, :instanceIds, :onlyShared) h";
     String whereSql = whereClause.isEmpty() ? "" : "WHERE " + String.join(" AND ", whereClause);
+    String orderByClause = toOrderByClause(pageable.getSort());
+    String countSql = """
+      SELECT count(*)
+      %s
+      %s
+      """.formatted(fromSql, whereSql);
+    String dataSql = """
+      SELECT *
+      %s
+      %s
+      %s
+      """.formatted(fromSql, whereSql, orderByClause);
 
     var session = entityManager.unwrap(Session.class);
 
-    String countSql = FILTERED_HOLDINGS_CTE + """
-      SELECT count(*)
-      FROM Filtered h
-      %s
-      """.formatted(whereSql);
     NativeQuery<Long> countQuery = session.createNativeQuery(countSql, Long.class);
     params.forEach(countQuery::setParameter);
     long total = countQuery.getSingleResult();
 
-    String orderByClause = toOrderByClause(pageable.getSort());
-    String dataSql = FILTERED_HOLDINGS_CTE + """
-      SELECT *
-      FROM Filtered h
-      %s
-      %s
-      """.formatted(whereSql, orderByClause);
     NativeQuery<RtacHoldingEntity> dataQuery = session.createNativeQuery(dataSql, RtacHoldingEntity.class);
     params.forEach(dataQuery::setParameter);
     dataQuery.setFirstResult((int) pageable.getOffset());
@@ -96,7 +91,6 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
 
   private String toSqlOrder(Sort.Order order) {
     String property = switch (order.getProperty()) {
-      case "id" -> "h.id";
       case "libraryName" -> "h.rtac_holding_json->'library'->>'name'";
       case "locationName" -> "h.rtac_holding_json->'location'->>'name'";
       case "effectiveShelvingOrder" -> "h.rtac_holding_json->>'effectiveShelvingOrder'";
