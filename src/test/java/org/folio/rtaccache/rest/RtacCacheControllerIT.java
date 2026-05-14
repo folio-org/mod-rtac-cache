@@ -248,6 +248,15 @@ class RtacCacheControllerIT extends BaseIntegrationTest {
   }
 
   @Test
+  void holdingsByInstanceId_withUnsupportedSort_shouldReturnBadRequest() throws Exception {
+    var instanceId = UUID.randomUUID();
+
+    mockMvc.perform(get("/rtac-cache/" + instanceId + "?sort=id")
+        .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+      .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void holdingsByInstanceId_defaultSort() throws Exception {
     var instanceId = UUID.randomUUID();
 
