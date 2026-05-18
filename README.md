@@ -48,7 +48,7 @@ Run locally on listening port 8081 (default listening port):
 Using Docker to run the local stand-alone instance:
 
 ```shell
-DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD=folio_admin \
+DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD='<password-if-required>' \
    java -Dserver.port=8081 -jar target/mod-rtac-cache-*.jar
 ```
 
@@ -70,7 +70,7 @@ requires and provides, the permissions, and the additional module metadata.
 | Variable | Default                 | Purpose |
 |---|-------------------------|---|
 | `DB_USERNAME` | `folio_admin`           | DB username |
-| `DB_PASSWORD` | `folio_admin`           | DB password |
+| `DB_PASSWORD` | *(empty)*                | DB password, if required |
 | `DB_HOST` | `localhost`             | Postgres host |
 | `DB_PORT` | `5432`                  | Postgres port |
 | `DB_DATABASE` | `db`                    | Postgres database name |
@@ -83,13 +83,13 @@ requires and provides, the permissions, and the additional module metadata.
 | `KAFKA_SSL_TRUSTSTORE_PASSWORD` | *(empty)*               | Kafka SSL truststore password |
 | `KAFKA_SSL_TRUSTSTORE_LOCATION` | *(empty)*               | Kafka SSL truststore path |
 | `ENV` | `folio`                 | FOLIO environment name |
-| `OKAPI_URL` | `http://localhost:8081` | Okapi base URL |
+| `OKAPI_URL` | *(required)*             | Okapi base URL |
 | `KAFKA_RETRY_INTERVAL_MS` | `2000`                  | Retry interval |
 | `KAFKA_RETRY_DELIVERY_ATTEMPTS` | `6`                     | Retry attempts |
 | `KAFKA_EVENTS_CONCURRENCY` | `2`                     | Kafka listener concurrency |
 | `KAFKA_EVENTS_CONSUMER_PATTERN` | computed per topic      | Kafka topic pattern override |
-| `SYSTEM_USER_ENABLED` | `false`                 | Enable system user |
-| `SYSTEM_USER_USERNAME` | `mod-rtac-cache`        | System username |
-| `SYSTEM_USER_PASSWORD` | *(none)*                | System password (required when enabled) |
+| `SYSTEM_USER_ENABLED` | `false`                 | Enable legacy Okapi system-user token retrieval |
+| `SYSTEM_USER_USERNAME` | `mod-rtac-cache`        | Legacy Okapi system-user username |
+| `SYSTEM_USER_PASSWORD` | *(none)*                | Legacy Okapi system-user password, required only when enabled in classic Okapi deployments |
 | `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?`           | Cache invalidation schedule |
 | `RTAC_CACHE_RETENTION_DAYS` | `2`                     | Cache retention days |
