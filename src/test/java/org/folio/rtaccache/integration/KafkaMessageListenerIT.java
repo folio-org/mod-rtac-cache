@@ -46,7 +46,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.kafka.ConfluentKafkaContainer;
+import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @Log4j2
@@ -115,8 +115,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  private static final String KAFKA_IMAGE_VERSION = "confluentinc/cp-kafka:7.6.1";
-  private static final ConfluentKafkaContainer kafkaContainer = new ConfluentKafkaContainer(
+  private static final String KAFKA_IMAGE_VERSION = "apache/kafka-native:4.2.0";
+  private static final KafkaContainer kafkaContainer = new KafkaContainer(
     DockerImageName.parse(KAFKA_IMAGE_VERSION));
   private static final String INSTANCE_FORMAT_ID = "549e3381-7d49-44f6-8232-37af1cb5ecf3";
   private static final String INSTANCE_FORMAT_ID_2 = "f95fe9e7-0475-4c5c-bb13-56af8d017f33";
