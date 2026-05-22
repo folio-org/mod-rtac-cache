@@ -48,7 +48,7 @@ Run locally on listening port 8081 (default listening port):
 Using Docker to run the local stand-alone instance:
 
 ```shell
-DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD='<password-if-required>' \
+DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD='<password>' \
    java -Dserver.port=8081 -jar target/mod-rtac-cache-*.jar
 ```
 
@@ -70,7 +70,7 @@ requires and provides, the permissions, and the additional module metadata.
 | Variable | Default                 | Purpose |
 |---|-------------------------|---|
 | `DB_USERNAME` | `folio_admin`           | DB username |
-| `DB_PASSWORD` | *(empty)*                | DB password, if required |
+| `DB_PASSWORD` | *(required)*             | DB password |
 | `DB_HOST` | `localhost`             | Postgres host |
 | `DB_PORT` | `5432`                  | Postgres port |
 | `DB_DATABASE` | `db`                    | Postgres database name |

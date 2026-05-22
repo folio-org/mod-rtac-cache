@@ -294,7 +294,7 @@
     {
       "name": "DB_PASSWORD",
       "value": "",
-      "required": false,
+      "required": true,
       "description": "Password for DB_USERNAME."
     },
     {
