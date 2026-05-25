@@ -10,23 +10,29 @@
 - Read path: controller -> `RtacHoldingStorageService` -> `RtacHoldingRepository` native SQL (`rtac_holdings_multi_tenant(...)`) -> DTOs.
 - Lazy-load path: `RtacHoldingStorageService` calls `RtacHoldingLazyLoadingService`; cache is generated only for missing instances.
 - Generation path: `RtacCacheGenerationService` fetches instance/holdings/items/pieces and bulk-upserts `RtacHoldingEntity` records.
+- Pre-warming path: `RtacCacheController` (`/rtac-cache/prewarm*`) -> `RtacCachePreWarmingService` -> `RtacCacheGenerationService`; job state is persisted via `RtacPreWarmingJobRepository`.
 
 ## Data and tenancy model
 - Core table is JSONB-centric: `rtac_holding_json` stores shape used by API; many updates are JSONB patches in `RtacHoldingBulkRepository`.
 - Multi-tenant/ECS reads depend on DB function `rtac_holdings_multi_tenant` (`src/main/resources/db/changelog/changes/create-rtac-holdings-multi-tenant-function.sql`).
+- A separate search function is registered via `create-rtac-search-function.sql` (same changelog directory).
 - Stale cleanup uses DB function `delete_old_holdings_all_tenants` and scheduler `RtacCacheInvalidationService.invalidateOldHoldingEntries()`.
 - ECS branching is explicit: `RtacHoldingStorageService` uses `EcsUtil` + `ConsortiaService.isCentralTenant()` to choose normal vs ECS lazy-load.
+- Pre-warming jobs are tracked in `rtac_pre_warming_job` (see Liquibase in `src/main/resources/db/changelog/changes/initial_schema.xml`).
 
 ## Event processing pattern
 - Kafka entrypoint is `src/main/java/org/folio/rtaccache/integration/KafkaMessageListener.java`.
 - Dispatch pattern is `KafkaMessageListener` -> `EventHandlerFactory` -> specific handler in `service/handler/impl`.
-- Handlers are keyed by event type + entity type (`getEventType()`, `getEntityType()`), so add both when introducing new event support.
+- Inventory/circulation handlers are keyed by event type + entity type (`getEventType()`, `getEntityType()`); piece handlers are keyed by action (`PieceEventAction`).
 - Example movement logic: `ItemUpdateEventHandler` detects holding moves and calls bulk SQL move/update methods.
 - Instance updates in central tenant fan out to member tenants via `ConsortiaService.getConsortiaTenants()`.
+- Location/library/material-type/loan-type listeners are present but start with `autoStartup = "false"`; do not assume those handlers are active unless listener startup is enabled.
+- Loan and request (circulation) events also have active listeners (`folio.kafka.listener.loan` / `.request` in `application.yml`) handled by `LoanCreate/UpdateEventHandler` and `RequestCreate/UpdateEventHandler` in `service/handler/impl`.
+- `RtacKafkaAdminService` (implements `ApplicationRunner`) tears down and recreates all listener containers on startup; `RtacTenantService.afterTenantUpdate()` triggers the same restart after tenant registration so new topic-pattern changes are picked up.
 
 ## External integrations
 - HTTP clients are declarative `@HttpExchange` interfaces in `src/main/java/org/folio/rtaccache/client` and wired in `HttpClientConfiguration`.
-- Primary dependencies: inventory, circulation, orders pieces, user-tenants, consortia, consortium-search (see `descriptors/ModuleDescriptor-template.json`).
+- Primary dependencies: inventory, circulation, orders pieces, user-tenants, settings, consortia, consortium-search (see `descriptors/ModuleDescriptor-template.json`).
 - System-user tenant scoping is required in async/event code (`SystemUserScopedExecutionService`).
 - Kafka topic/group patterns are in `src/main/resources/application.yml` under `folio.kafka.listener.*`.
 
@@ -37,6 +43,7 @@
   - execution `non-ecs-it` runs `*IT` excluding `*EcsIT` in isolated fork.
   - execution `ecs-it` runs only `*EcsIT` in separate isolated fork.
 - Run only one IT lane via Maven execution ids: `mvn surefire:test@non-ecs-it` or `mvn surefire:test@ecs-it`.
+- Perf tests are opt-in (`*PerfTest`/`*PerfTests` are excluded by default); run with profile: `mvn -Pperf test`.
 - Integration test base classes (`BaseIntegrationTest`, `BaseEcsIntegrationTest`) bootstrap tenant APIs with MockMvc, WireMock, and Testcontainers Postgres.
 - OpenAPI sources are generated to `target/generated-sources`; change `src/main/resources/swagger.api/**` and `RtacCacheController`, not generated files.
 
@@ -45,4 +52,7 @@
 - Keep async boundaries explicit with `applicationTaskExecutor` + `CompletableFuture` joins where ordering matters (`RtacCacheGenerationService`).
 - Use `tools.jackson.*` imports (Jackson 3 toolchain) consistently with existing code.
 - Keep tenant context propagation explicit when crossing threads or tenants; many failures are tenant-context bugs, not business logic bugs.
+- Reference data (locations, libraries, material types, loan types, holdings note types) is fetched and cached in-process by `InventoryReferenceDataService` using Spring `@Cacheable`, keyed by tenant id (e.g., `'locations_'.concat(tenantId)`); invalidate via the corresponding event handlers, not by direct cache eviction calls.
+- Virtual threads are enabled (`spring.threads.virtual.enabled: true`); do not introduce blocking calls that assume platform-thread semantics.
+- Cache invalidation schedule and retention window are externalised as `RTAC_CACHE_INVALIDATION_CRON` / `RTAC_CACHE_RETENTION_DAYS` env vars, mapped through `CacheInvalidationJobProperties`.
 
