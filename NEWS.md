@@ -1,3 +1,10 @@
+## v1.1.1 2026-05-27
+### Bug fixes
+* [MODRTACHCE-53](https://folio-org.atlassian.net/browse/MODRTACHCE-53) - Sensitive data in logs cleanup
+* [MODRTACHCE-49](https://folio-org.atlassian.net/browse/MODRTACHCE-49) - Determine how to improve the rtac-cache summary performance
+* [MODRTACHCE-48](https://folio-org.atlassian.net/browse/MODRTACHCE-48) - Identify and remove code vulnerable to SQL injection
+* [MODRTACHCE-47](https://folio-org.atlassian.net/browse/MODRTACHCE-47) - Disable with purge=true is not working for mod-ratc-cache
+
 ## 17/04/2026 v1.1.0
 
 * [MODRTACHCE-11](https://folio-org.atlassian.net/browse/MODRTACHCE-11) - Implement ECS for mod-rtac-cache (#22)
