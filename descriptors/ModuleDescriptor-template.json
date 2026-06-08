@@ -336,7 +336,7 @@
       "description": "Kafka broker port used to build spring.kafka.bootstrap-servers."
     },
     {
-      "name": "MAX_POLL_RECORDS",
+      "name": "KAFKA_MAX_POLL_RECORDS",
       "value": "50",
       "required": false,
       "description": "Maximum number of Kafka records returned in a single consumer poll."
@@ -461,7 +461,7 @@
       { "name": "DB_MAXPOOLSIZE", "value": "5" },
       { "name": "KAFKA_HOST", "value": "localhost" },
       { "name": "KAFKA_PORT", "value": "9092" },
-      { "name": "MAX_POLL_RECORDS", "value": "50" },
+      { "name": "KAFKA_MAX_POLL_RECORDS", "value": "50" },
       { "name": "KAFKA_SECURITY_PROTOCOL", "value": "PLAINTEXT" },
       { "name": "KAFKA_SSL_KEYSTORE_PASSWORD", "value": "" },
       { "name": "KAFKA_SSL_KEYSTORE_LOCATION", "value": "" },
