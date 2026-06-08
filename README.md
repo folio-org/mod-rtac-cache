@@ -97,13 +97,8 @@ requires and provides, the permissions, and the additional module metadata.
 ## ASF Category B license notice
 
 Apache's [third-party license policy](https://www.apache.org/legal/resolved.html#category-b) allows
-Category B dependencies only under the conditions described there. For this module, that means Category B
-dependencies are labelled here, applicable attribution and notice requirements must be followed, and
-Category B weak-copyleft works must be included only as binary dependencies in built artifacts, not as
-source in source releases.
-
-The dependency license scan for this project reported the following dependencies whose detected licenses
-match ASF Category B license families:
+Category B dependencies only under the conditions described there. The dependency license scan for this project reported
+the following dependencies whose detected licenses match ASF Category B license families:
 
 | Project | Detected dependency or dependencies | Detected license | Project URL |
 |---|---|---|---|
@@ -117,6 +112,3 @@ match ASF Category B license families:
 | JUnit | `org.junit.jupiter:junit-jupiter-api:6.0.3`; `org.junit.jupiter:junit-jupiter-engine:6.0.3`; `org.junit.jupiter:junit-jupiter-params:6.0.3`; `org.junit.platform:junit-platform-commons:6.0.3`; `org.junit.platform:junit-platform-engine:6.0.3`; `org.junit.platform:junit-platform-launcher:6.0.3` | `EPL-2.0` | https://junit.org/ |
 | Mozilla Rhino | `org.mozilla:rhino:1.9.1` | `Mozilla Public License 2.0` | https://mozilla.github.io/rhino/ |
 
-The same scan also reported `org.liquibase:liquibase-core:5.0.2` as `FSL-1.1-ALv2`.
-ASF's policy lists Functional Source License under Category X, not Category B, so that dependency is not
-covered by this Category B notice and should be handled through separate release-license review.
