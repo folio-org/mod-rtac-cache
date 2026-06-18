@@ -76,7 +76,7 @@ requires and provides, the permissions, and the additional module metadata.
 | `DB_DATABASE` | `db`                    | Postgres database name |
 | `KAFKA_HOST` | `localhost`             | Kafka broker host |
 | `KAFKA_PORT` | `9092`                  | Kafka broker port |
-| `MAX_POLL_RECORDS` | `50`                    | Kafka consumer max poll size |
+| `KAFKA_MAX_POLL_RECORDS` | `50`                    | Kafka consumer max poll size |
 | `KAFKA_SECURITY_PROTOCOL` | `PLAINTEXT`             | Kafka security protocol |
 | `KAFKA_SSL_KEYSTORE_PASSWORD` | *(empty)*               | Kafka SSL keystore password |
 | `KAFKA_SSL_KEYSTORE_LOCATION` | *(empty)*               | Kafka SSL keystore path |
@@ -93,3 +93,22 @@ requires and provides, the permissions, and the additional module metadata.
 | `SYSTEM_USER_PASSWORD` | *(none)*                | Legacy Okapi system-user password, required only when enabled in classic Okapi deployments |
 | `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?`           | Cache invalidation schedule |
 | `RTAC_CACHE_RETENTION_DAYS` | `2`                     | Cache retention days |
+
+## ASF Category B license notice
+
+Apache's [third-party license policy](https://www.apache.org/legal/resolved.html#category-b) allows
+Category B dependencies only under the conditions described there. The dependency license scan for this project reported
+the following dependencies whose detected licenses match ASF Category B license families:
+
+| Project | Detected dependency or dependencies | Detected license | Project URL |
+|---|---|---|---|
+| iStack Common Utility Code | `com.sun.istack:istack-commons-runtime:4.1.2` | `EPL-1.0` | https://github.com/eclipse-ee4j/jaxb-istack-commons |
+| Jakarta Activation API | `jakarta.activation:jakarta.activation-api:2.1.4` | `EPL-1.0` | https://github.com/jakartaee/jaf-api |
+| Jakarta XML Binding API | `jakarta.xml.bind:jakarta.xml.bind-api:4.0.4` | `EPL-1.0` | https://github.com/jakartaee/jaxb-api |
+| AspectJ Weaver | `org.aspectj:aspectjweaver:1.9.25.1` | `Eclipse Public License` | https://www.eclipse.org/aspectj/ |
+| Eclipse Angus Activation | `org.eclipse.angus:angus-activation:2.0.3` | `EPL-1.0` | https://github.com/eclipse-ee4j/angus-activation |
+| Eclipse Sisu Plexus | `org.eclipse.sisu:org.eclipse.sisu.plexus:0.9.0.M2` | `Eclipse Public License 1.0` | https://www.eclipse.org/sisu/ |
+| JAXB Runtime | `org.glassfish.jaxb:jaxb-core:4.0.6`; `org.glassfish.jaxb:jaxb-runtime:4.0.6`; `org.glassfish.jaxb:txw2:4.0.6` | `EPL-1.0` | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| JUnit | `org.junit.jupiter:junit-jupiter-api:6.0.3`; `org.junit.jupiter:junit-jupiter-engine:6.0.3`; `org.junit.jupiter:junit-jupiter-params:6.0.3`; `org.junit.platform:junit-platform-commons:6.0.3`; `org.junit.platform:junit-platform-engine:6.0.3`; `org.junit.platform:junit-platform-launcher:6.0.3` | `EPL-2.0` | https://junit.org/ |
+| Mozilla Rhino | `org.mozilla:rhino:1.9.1` | `Mozilla Public License 2.0` | https://mozilla.github.io/rhino/ |
+

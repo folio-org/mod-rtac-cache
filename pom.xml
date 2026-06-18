@@ -44,6 +44,9 @@
     <wiremock-standalone.version>3.13.2</wiremock-standalone.version>
     <testcontainers.extensions.version>1.21.4</testcontainers.extensions.version>
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
+
+    <!-- Downgrade Liquibase to 4.33.0 to avoid FSL license in v5. See https://www.apache.org/legal/resolved.html#category-x and https://folio-org.atlassian.net/browse/MODRTACHCE-58. -->
+    <liquibase.version>4.33.0</liquibase.version>
   </properties>
 
   <dependencies>
