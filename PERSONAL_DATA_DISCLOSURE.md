@@ -52,10 +52,10 @@ Information can be combined with others to form a person’s identity.
 - [ ] Geolocation data
 - [ ] Phone number(s)
 - [ ] Pseudonym / Alias / Nickname
-- [ ] Username / User Identifier (UUID)
+- [x] Username / User Identifier (UUID)
 - [ ] Email address
 - [ ] Financial information / Fees or Fines
-- [ ] Circulation transaction(s)
+- [x] Circulation transaction(s)
 - [ ] Web cookies
 - [ ] IP address / MAC address
 - [ ] Photographs of users (profile picture)
