@@ -24,7 +24,10 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.util.backoff.FixedBackOff;
 
 /**
  * Responsible for configuration of kafka consumer bean factories at application startup for kafka listeners.
@@ -47,6 +50,7 @@ public class KafkaConfiguration {
     var factory = new ConcurrentKafkaListenerContainerFactory<String, InventoryResourceEvent>();
     factory.setBatchListener(false);
     factory.setConsumerFactory(getInventoryResourceEventConsumerFactory());
+    factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(0L, 0L)));
     return factory;
   }
 
@@ -75,11 +79,18 @@ public class KafkaConfiguration {
   }
 
   private ConsumerFactory<String, InventoryResourceEvent> getInventoryResourceEventConsumerFactory() {
-    var deserializer = new JacksonJsonDeserializer<>(InventoryResourceEvent.class, false);
+    var jsonDeserializer = new JacksonJsonDeserializer<>(InventoryResourceEvent.class, false);
+    var errorHandlingDeserializer = new ErrorHandlingDeserializer<>(jsonDeserializer);
+
     Map<String, Object> config = new HashMap<>(kafkaProperties.buildConsumerProperties());
     config.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-    config.put(VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
-    return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
+    config.put(VALUE_DESERIALIZER_CLASS_CONFIG, errorHandlingDeserializer);
+
+    return new DefaultKafkaConsumerFactory<>(
+      config,
+      new StringDeserializer(),
+      errorHandlingDeserializer
+    );
   }
 
   private ConsumerFactory<String, CirculationResourceEvent> getCirculationResourceEventConsumerFactory() {
