@@ -5,6 +5,7 @@
   "enum": [
     "Create",
     "Edit",
-    "Delete"
+    "Delete",
+    "Unknown"
   ]
 }

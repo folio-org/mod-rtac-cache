@@ -11,6 +11,7 @@ import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOAN_TYPE;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.LOCATION;
 import static org.folio.rtaccache.domain.dto.InventoryEntityType.MATERIAL_TYPE;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,9 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['instance'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['instance'].topicPattern}")
   public void handleInstanceRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var currentTenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(currentTenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -72,6 +76,9 @@ public class KafkaMessageListener {
       concurrency = "#{folioKafkaProperties.listener['holdings-record'].concurrency}",
       topicPattern = "#{folioKafkaProperties.listener['holdings-record'].topicPattern}")
   public void handleHoldingsRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -87,6 +94,9 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['item'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['item'].topicPattern}")
   public void handleItemRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -102,6 +112,9 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['loan'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['loan'].topicPattern}")
   public void handleLoanRecord(ConsumerRecord<String, CirculationResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -117,6 +130,9 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['request'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['request'].topicPattern}")
   public void handleRequestRecord(ConsumerRecord<String, CirculationResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -132,13 +148,15 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['piece'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['piece'].topicPattern}")
   public void handlePieceRecord(ConsumerRecord<String, PieceResourceEvent> consumerRecord) {
-    var tenantId = getFolioTenantFromHeader(consumerRecord);
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var resourceEvent = consumerRecord.value();
-    if (resourceEvent != null && resourceEvent.getPieceSnapshot() != null) {
-      var receivingTenantId = resourceEvent.getPieceSnapshot().getReceivingTenantId();
-      if (receivingTenantId != null && !receivingTenantId.isBlank()) {
-        tenantId = receivingTenantId;
-      }
+    var tenantId = resolvePieceTenantId(consumerRecord, resourceEvent);
+    if (tenantId == null || tenantId.isBlank()) {
+      log.warn("Skipping piece event without a resolvable tenant [topic: {}, partition: {}, offset: {}]",
+        consumerRecord.topic(), consumerRecord.partition(), consumerRecord.offset());
+      return;
     }
     executionService.executeAsyncSystemUserScoped(tenantId, () ->
       eventHandlerFactory.getPieceEventHandler(resourceEvent.getAction())
@@ -153,6 +171,9 @@ public class KafkaMessageListener {
     topicPattern = "#{folioKafkaProperties.listener['location'].topicPattern}",
     autoStartup = "false")
   public void handleLocationRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -169,6 +190,9 @@ public class KafkaMessageListener {
     topicPattern = "#{folioKafkaProperties.listener['library'].topicPattern}",
     autoStartup = "false")
   public void handleLibraryRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -185,6 +209,9 @@ public class KafkaMessageListener {
     topicPattern = "#{folioKafkaProperties.listener['material-type'].topicPattern}",
     autoStartup = "false")
   public void handleMaterialTypeRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -201,6 +228,9 @@ public class KafkaMessageListener {
     topicPattern = "#{folioKafkaProperties.listener['loan-type'].topicPattern}",
     autoStartup = "false")
   public void handleLoanTypeRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -216,6 +246,9 @@ public class KafkaMessageListener {
     concurrency = "#{folioKafkaProperties.listener['bound-with'].concurrency}",
     topicPattern = "#{folioKafkaProperties.listener['bound-with'].topicPattern}")
   public void handleBoundWithRecord(ConsumerRecord<String, InventoryResourceEvent> consumerRecord) {
+    if (isTombstone(consumerRecord)) {
+      return;
+    }
     var tenantId = consumerRecord.value().getTenant();
     executionService.executeAsyncSystemUserScoped(tenantId, () -> {
       var resourceEvent = consumerRecord.value();
@@ -270,11 +303,39 @@ public class KafkaMessageListener {
     }
   }
 
+  /**
+   * The piece snapshot's receiving tenant wins over the message header, which is only a fallback for events that
+   * carry no snapshot.
+   */
+  private String resolvePieceTenantId(ConsumerRecord<String, PieceResourceEvent> consumerRecord,
+    PieceResourceEvent resourceEvent) {
+    var pieceSnapshot = resourceEvent.getPieceSnapshot();
+    if (pieceSnapshot != null) {
+      var receivingTenantId = pieceSnapshot.getReceivingTenantId();
+      if (receivingTenantId != null && !receivingTenantId.isBlank()) {
+        return receivingTenantId;
+      }
+    }
+    return getFolioTenantFromHeader(consumerRecord);
+  }
+
   private String getFolioTenantFromHeader(ConsumerRecord<String, PieceResourceEvent> consumerRecord) {
-    return new String(consumerRecord
-      .headers()
-      .lastHeader(FOLIO_TENANT_ID_HEADER)
-      .value());
+    var tenantHeader = consumerRecord.headers().lastHeader(FOLIO_TENANT_ID_HEADER);
+    return tenantHeader == null ? null : new String(tenantHeader.value(), StandardCharsets.UTF_8);
+  }
+
+  /**
+   * A tombstone (null value) is a legitimate kafka record that carries no event to handle. Every listener
+   * dereferences the value to resolve the tenant, so it has to be filtered out first. Poison records never reach
+   * listener code - the container's {@code checkDeser} rejects those before invoking the listener.
+   */
+  private boolean isTombstone(ConsumerRecord<String, ?> consumerRecord) {
+    if (consumerRecord.value() != null) {
+      return false;
+    }
+    log.warn("Skipping record with null value [topic: {}, partition: {}, offset: {}]",
+      consumerRecord.topic(), consumerRecord.partition(), consumerRecord.offset());
+    return true;
   }
 
 }

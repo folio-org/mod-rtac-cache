@@ -1,11 +1,12 @@
 {
   "type": "string",
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Circulation event operation type - one of [updated, created, deleted, all_deleted]",
+  "description": "Circulation event operation type - one of [updated, created, deleted, all_deleted, unknown]",
   "enum": [
     "CREATED",
     "UPDATED",
     "DELETED",
-    "ALL_DELETED"
+    "ALL_DELETED",
+    "UNKNOWN"
   ]
 }
