@@ -5,23 +5,43 @@ import static org.awaitility.Awaitility.await;
 import static org.folio.rtaccache.TestConstant.TEST_CENTRAL_TENANT;
 import static org.folio.rtaccache.TestConstant.TEST_MEMBER_TENANT;
 import static org.folio.rtaccache.TestConstant.TEST_TENANT;
+import static org.folio.rtaccache.config.KafkaConfiguration.DLT_TOPIC_SUFFIX;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import lombok.extern.log4j.Log4j2;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.TestUtil;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
+import org.folio.rtaccache.domain.dto.InventoryEntityType;
+import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
@@ -31,6 +51,8 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldingMaterialType;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
+import org.folio.rtaccache.service.handler.EventHandlerFactory;
+import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -42,10 +64,12 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -90,6 +114,22 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String UPDATE_LOAN_TYPE_EVENT_PATH = "__files/kafka-events/update-loan-type-event.json";
   private static final String CREATE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/create-bound-with-event.json";
   private static final String DELETE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/delete-bound-with-event.json";
+  private static final String MALFORMED_ITEM_EVENT_PATH = "__files/kafka-events/malformed-item-event.json";
+  private static final String MALFORMED_EVENT_ID_PLACEHOLDER = "7f2c0f0e-1c1d-4b7a-9a3c-2b6f1d0b9f11";
+
+  /**
+   * Kept small so the retry test stays well inside the awaitility budget: with a multiplier of 2 the three retries are
+   * spaced ~400ms, ~800ms and ~1600ms apart.
+   */
+  private static final long RETRY_INTERVAL_MS = 400L;
+  private static final long RETRY_DELIVERY_ATTEMPTS = 3L;
+
+  /**
+   * {@code ExponentialBackOff.setMaxAttempts(n)} permits n retries on top of the initial delivery, so the handler is
+   * invoked n+1 times before the record is recovered to the dead-letter topic.
+   */
+  private static final int EXPECTED_DELIVERIES = (int) RETRY_DELIVERY_ATTEMPTS + 1;
+  private static final Duration DLT_POLL_TIMEOUT = Duration.ofSeconds(60);
 
   private static final String OLD_CALL_NUMBER = "OLD-CALL-123";
   private static final String NEW_CALL_NUMBER = "NEW-CALL-456";
@@ -137,10 +177,18 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private InventoryReferenceDataService inventoryReferenceDataService;
   @Autowired
   private CacheManager cacheManager;
+  /**
+   * Spied rather than mocked so every other test keeps using the real handlers; Spring resets the stubbing after each
+   * test method.
+   */
+  @MockitoSpyBean
+  private EventHandlerFactory eventHandlerFactory;
 
   @DynamicPropertySource
   static void dynamicProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+    registry.add("folio.kafka.retry-interval-ms", () -> RETRY_INTERVAL_MS);
+    registry.add("folio.kafka.retry-delivery-attempts", () -> RETRY_DELIVERY_ATTEMPTS);
   }
 
   @AfterEach
@@ -803,6 +851,159 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(movedItem.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
       });
     });
+  }
+
+  @Test
+  @Order(34)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldSendMalformedRecordToDeadLetterTopic_andKeepConsumingFollowingRecords() throws Exception {
+    // Given - a unique marker keeps this assertion independent of anything else already on the dead-letter topic
+    var malformedPayload = TestUtil.readFileContentFromResources(MALFORMED_ITEM_EVENT_PATH)
+      .replace(MALFORMED_EVENT_ID_PLACEHOLDER, UUID.randomUUID().toString());
+    var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    withinTenant(TEST_TENANT, () -> {
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
+
+      // When - the poison pill is committed to the partition first, then a valid record behind it
+      sendRawItemKafkaMessage(ITEM_ID, malformedPayload);
+      sendItemKafkaMessage(validEvent, ITEM_ID);
+
+      // Then - the unparseable record is parked on the dead-letter topic with its bytes untouched
+      var deadLetterRecord = awaitDeadLetterRecord(TestConstant.ITEM_TOPIC + DLT_TOPIC_SUFFIX,
+        malformedPayload::equals);
+      assertThat(new String(deadLetterRecord.value(), StandardCharsets.UTF_8)).isEqualTo(malformedPayload);
+
+      // ...and, crucially, the consumer advanced past it instead of re-polling the same offset forever
+      await().atMost(DLT_POLL_TIMEOUT).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.ITEM);
+      });
+    });
+  }
+
+  @Test
+  @Order(35)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldRetryFailingHandlerWithGrowingDelays_thenSendRecordToDeadLetterTopic() throws Exception {
+    // Given - a handler that keeps failing with a retryable exception, recording when each attempt happened
+    var attemptTimestamps = Collections.synchronizedList(new ArrayList<Long>());
+    doReturn(Optional.of(alwaysFailingItemHandler(attemptTimestamps)))
+      .when(eventHandlerFactory).getInventoryHandler(any(), eq(InventoryEntityType.ITEM));
+
+    // A unique event id makes sure the dead-letter lookup below can only match this test's own record
+    var uniqueEventId = UUID.randomUUID().toString();
+    var event = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH).eventId(uniqueEventId);
+
+    // When
+    withinTenant(TEST_TENANT, () -> sendItemKafkaMessage(event, ITEM_ID));
+
+    // Then - the record is delivered the configured number of times, with a growing pause between attempts.
+    // Waiting for the DLT record first means the retries are known to be exhausted, so the count below is final
+    // rather than a value the assertion might catch mid-flight.
+    var deadLetterRecord = awaitDeadLetterRecord(TestConstant.ITEM_TOPIC + DLT_TOPIC_SUFFIX,
+      value -> value.contains(uniqueEventId));
+
+    assertThat(attemptTimestamps).hasSize(EXPECTED_DELIVERIES);
+    var firstGapNanos = attemptTimestamps.get(1) - attemptTimestamps.get(0);
+    var secondGapNanos = attemptTimestamps.get(2) - attemptTimestamps.get(1);
+    assertThat(firstGapNanos).isGreaterThan(Duration.ofMillis(RETRY_INTERVAL_MS).toNanos());
+    assertThat(secondGapNanos).isGreaterThan(firstGapNanos);
+
+    // The handler failure path forwards the deserialized event, so the DLT gets JSON rather than the raw bytes
+    assertThat(new String(deadLetterRecord.value(), StandardCharsets.UTF_8)).contains(uniqueEventId);
+  }
+
+  @Test
+  @Order(36)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() throws Exception {
+    // Given
+    var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    withinTenant(TEST_TENANT, () -> {
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
+
+      // When - a real tombstone (null value) is committed ahead of a valid record
+      sendRawItemKafkaMessage(ITEM_ID, null);
+      sendItemKafkaMessage(validEvent, ITEM_ID);
+
+      // Then - the tombstone is skipped without tripping the listener, and the record behind it still lands.
+      // Before the null guard this NPE'd on consumerRecord.value().getTenant() and the record was retried to the DLT.
+      await().atMost(DLT_POLL_TIMEOUT).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.ITEM);
+      });
+    });
+  }
+
+  private InventoryEventHandler alwaysFailingItemHandler(List<Long> attemptTimestamps) {
+    return new InventoryEventHandler() {
+      @Override
+      public void handle(InventoryResourceEvent resourceEvent) {
+        attemptTimestamps.add(System.nanoTime());
+        throw new IllegalStateException("Simulated transient failure");
+      }
+
+      @Override
+      public InventoryEventType getEventType() {
+        return InventoryEventType.CREATE;
+      }
+
+      @Override
+      public InventoryEntityType getEntityType() {
+        return InventoryEntityType.ITEM;
+      }
+    };
+  }
+
+  /**
+   * Publishes an arbitrary string so the payload reaches the consumer exactly as written, bypassing the
+   * JSON-serializing template used everywhere else. The send is awaited so the poison pill is guaranteed to sit
+   * before the valid record on the partition.
+   */
+  private void sendRawItemKafkaMessage(String key, String payload) throws Exception {
+    Map<String, Object> config = Map.of(
+      ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
+      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
+      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+    var producerFactory = new DefaultKafkaProducerFactory<String, String>(config);
+    try {
+      new KafkaTemplate<>(producerFactory)
+        .send(new ProducerRecord<>(TestConstant.ITEM_TOPIC, key, payload))
+        .get(30, TimeUnit.SECONDS);
+    } finally {
+      producerFactory.destroy();
+    }
+  }
+
+  /**
+   * The dead-letter topic keeps records from earlier tests, so the caller has to say which record it is waiting for
+   * rather than taking whatever happens to be at the head of the topic.
+   */
+  private ConsumerRecord<String, byte[]> awaitDeadLetterRecord(String deadLetterTopic, Predicate<String> matcher) {
+    Map<String, Object> config = Map.of(
+      ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
+      ConsumerConfig.GROUP_ID_CONFIG, "dlt-assertion-" + UUID.randomUUID(),
+      ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
+      ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
+      ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
+
+    try (var consumer = new KafkaConsumer<String, byte[]>(config)) {
+      consumer.subscribe(List.of(deadLetterTopic));
+      var deadline = Instant.now().plus(DLT_POLL_TIMEOUT);
+      while (Instant.now().isBefore(deadline)) {
+        for (var polled : consumer.poll(Duration.ofMillis(500)).records(deadLetterTopic)) {
+          if (polled.value() != null && matcher.test(new String(polled.value(), StandardCharsets.UTF_8))) {
+            return polled;
+          }
+        }
+      }
+    }
+    throw new AssertionError("No matching record arrived on dead-letter topic " + deadLetterTopic);
   }
 
   private void assertHoldingMovedToInstance(String id, TypeEnum type, String instanceId, String holdingsId,

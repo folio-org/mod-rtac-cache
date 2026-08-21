@@ -31,7 +31,9 @@ class EventHandlerFactoryTest {
     logger = (Logger) LogManager.getLogger(EventHandlerFactory.class);
     appender.start();
     logger.addAppender(appender);
-    logger.setLevel(Level.WARN);
+    // INFO so that the inventory/circulation skip messages are captured too - those are logged below WARN on
+    // purpose, because an unsupported type on those topics is high volume and WARN would flood the log.
+    logger.setLevel(Level.INFO);
   }
 
   @AfterEach
@@ -45,7 +47,7 @@ class EventHandlerFactoryTest {
     var result = factory.getInventoryHandler(InventoryEventType.UNKNOWN, ITEM);
 
     assertTrue(result.isEmpty());
-    assertTrue(appender.hasWarnMessageContaining("ITEM"));
+    assertTrue(appender.hasMessageContaining("ITEM"));
   }
 
   @Test
@@ -53,7 +55,7 @@ class EventHandlerFactoryTest {
     var result = factory.getCirculationHandler(CirculationEventType.UNKNOWN, LOAN);
 
     assertTrue(result.isEmpty());
-    assertTrue(appender.hasWarnMessageContaining("LOAN"));
+    assertTrue(appender.hasMessageContaining("LOAN"));
   }
 
   @Test
@@ -82,10 +84,13 @@ class EventHandlerFactoryTest {
       return events;
     }
 
-    boolean hasWarnMessageContaining(String text) {
+    /**
+     * Deliberately level-agnostic: the contract worth pinning here is that skipping an unsupported type is
+     * observable and names the entity, not which severity it is reported at.
+     */
+    boolean hasMessageContaining(String text) {
       return events.stream()
-        .anyMatch(event -> event.getLevel() == Level.WARN
-          && event.getMessage().getFormattedMessage().contains(text));
+        .anyMatch(event -> event.getMessage().getFormattedMessage().contains(text));
     }
   }
 
