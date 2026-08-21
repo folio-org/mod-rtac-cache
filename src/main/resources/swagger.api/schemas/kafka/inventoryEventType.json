@@ -1,10 +1,11 @@
 {
   "type": "string",
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "Inventory event operation type - one of [update, create, delete]",
+  "description": "Inventory event operation type - one of [update, create, delete, unknown]",
   "enum": [
     "UPDATE",
     "CREATE",
-    "DELETE"
+    "DELETE",
+    "UNKNOWN"
   ]
 }

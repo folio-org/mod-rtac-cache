@@ -5,23 +5,36 @@ import static org.awaitility.Awaitility.await;
 import static org.folio.rtaccache.TestConstant.TEST_CENTRAL_TENANT;
 import static org.folio.rtaccache.TestConstant.TEST_MEMBER_TENANT;
 import static org.folio.rtaccache.TestConstant.TEST_TENANT;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.log4j.Log4j2;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.TestUtil;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
+import org.folio.rtaccache.domain.dto.InventoryEntityType;
+import org.folio.rtaccache.domain.dto.InventoryEventType;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
@@ -31,6 +44,8 @@ import org.folio.rtaccache.domain.dto.RtacHoldingLocation;
 import org.folio.rtaccache.domain.dto.RtacHoldingMaterialType;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.InventoryReferenceDataService;
+import org.folio.rtaccache.service.handler.EventHandlerFactory;
+import org.folio.rtaccache.service.handler.InventoryEventHandler;
 import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -42,10 +57,12 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -90,6 +107,33 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String UPDATE_LOAN_TYPE_EVENT_PATH = "__files/kafka-events/update-loan-type-event.json";
   private static final String CREATE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/create-bound-with-event.json";
   private static final String DELETE_BOUND_WITH_EVENT_PATH = "__files/kafka-events/delete-bound-with-event.json";
+  private static final String MALFORMED_ITEM_EVENT_PATH = "__files/kafka-events/malformed-item-event.json";
+
+  /**
+   * Kept small so the backoff test stays well inside the awaitility budget: with a multiplier of 2 the three retries
+   * are spaced ~400ms, ~800ms and ~1600ms apart, so ~2.8s of waiting in total.
+   */
+  private static final long RETRY_INTERVAL_MS = 400L;
+  private static final long RETRY_DELIVERY_ATTEMPTS = 3L;
+
+  /**
+   * Mirrors the multiplier in {@code KafkaConfiguration}; kept here so the expected delays can be derived rather
+   * than hard-coded.
+   */
+  private static final long RETRY_BACKOFF_MULTIPLIER = 2L;
+
+  /**
+   * Absorbs scheduling jitter around each sleep. Still far tighter than the gap between consecutive expected
+   * delays, so a backoff that failed to grow would be caught.
+   */
+  private static final double BACKOFF_TOLERANCE = 0.9;
+
+  /**
+   * {@code ExponentialBackOff.setMaxAttempts(n)} permits n retries on top of the initial delivery, so the handler is
+   * invoked n+1 times before the record is given up on.
+   */
+  private static final int EXPECTED_DELIVERIES = (int) RETRY_DELIVERY_ATTEMPTS + 1;
+  private static final Duration ASYNC_ASSERTION_TIMEOUT = Duration.ofSeconds(60);
 
   private static final String OLD_CALL_NUMBER = "OLD-CALL-123";
   private static final String NEW_CALL_NUMBER = "NEW-CALL-456";
@@ -137,10 +181,18 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private InventoryReferenceDataService inventoryReferenceDataService;
   @Autowired
   private CacheManager cacheManager;
+  /**
+   * Spied rather than mocked so every other test keeps using the real handlers; Spring resets the stubbing after each
+   * test method.
+   */
+  @MockitoSpyBean
+  private EventHandlerFactory eventHandlerFactory;
 
   @DynamicPropertySource
   static void dynamicProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
+    registry.add("folio.kafka.retry-interval-ms", () -> RETRY_INTERVAL_MS);
+    registry.add("folio.kafka.retry-delivery-attempts", () -> RETRY_DELIVERY_ATTEMPTS);
   }
 
   @AfterEach
@@ -803,6 +855,158 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(movedItem.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
       });
     });
+  }
+
+  @Test
+  @Order(34)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldRetryFailingHandlerWithExponentiallyGrowingDelays_thenDropRecordAndResumeConsuming() throws Exception {
+    // Given - a handler that keeps failing with a retryable exception, recording when each attempt happened
+    var attemptTimestamps = Collections.synchronizedList(new ArrayList<Long>());
+    doReturn(Optional.of(alwaysFailingItemHandler(attemptTimestamps)))
+      .when(eventHandlerFactory).getInventoryHandler(any(), eq(InventoryEntityType.ITEM));
+    var failingEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    // When
+    withinTenant(TEST_TENANT, () -> sendItemKafkaMessage(failingEvent, ITEM_ID));
+
+    // Then - the record is redelivered until the configured attempts are used up
+    await().atMost(ASYNC_ASSERTION_TIMEOUT)
+      .untilAsserted(() -> assertThat(attemptTimestamps).hasSize(EXPECTED_DELIVERIES));
+
+    // ...and every pause is at least the previous one doubled, so the delay really grows exponentially rather than
+    // merely being non-zero. A measured gap also covers the handler's own time, so it can only exceed the configured
+    // delay - never undershoot it beyond scheduling jitter, which the tolerance absorbs.
+    var gapsMs = gapsBetweenAttemptsMs(attemptTimestamps);
+    assertThat(gapsMs).hasSize(EXPECTED_DELIVERIES - 1);
+
+    var expectedMinimumMs = RETRY_INTERVAL_MS;
+    for (var gapMs : gapsMs) {
+      assertThat(gapMs)
+        .as("pause before retry should be at least %sms, measured gaps were %s", expectedMinimumMs, gapsMs)
+        .isGreaterThanOrEqualTo((long) (expectedMinimumMs * BACKOFF_TOLERANCE));
+      expectedMinimumMs *= RETRY_BACKOFF_MULTIPLIER;
+    }
+
+    // ...after which the record is dropped so the partition keeps moving. With no recoverer configured the container
+    // just logs the exhausted record and commits past it, so the proof is that the next record is processed.
+    reset(eventHandlerFactory);
+    var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    withinTenant(TEST_TENANT, () -> {
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
+      sendItemKafkaMessage(validEvent, ITEM_ID);
+
+      await().atMost(ASYNC_ASSERTION_TIMEOUT).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.ITEM);
+      });
+    });
+
+    // The failing record was not resurrected once the backoff gave up on it
+    assertThat(attemptTimestamps).hasSize(EXPECTED_DELIVERIES);
+  }
+
+  @Test
+  @Order(35)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() throws Exception {
+    // Given
+    var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    withinTenant(TEST_TENANT, () -> {
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
+
+      // When - a real tombstone (null value) is committed ahead of a valid record
+      sendRawItemKafkaMessage(ITEM_ID, null);
+      sendItemKafkaMessage(validEvent, ITEM_ID);
+
+      // Then - the tombstone is skipped without tripping the listener, and the record behind it still lands.
+      // Before the null guard this NPE'd on consumerRecord.value().getTenant(), burning the whole retry budget on a
+      // record that carried no event at all.
+      await().atMost(ASYNC_ASSERTION_TIMEOUT).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.ITEM);
+      });
+    });
+  }
+
+  @Test
+  @Order(36)
+  @Execution(ExecutionMode.SAME_THREAD)
+  void shouldSkipMalformedRecord_andKeepConsumingFollowingRecords() throws Exception {
+    // Given
+    var malformedPayload = TestUtil.readFileContentFromResources(MALFORMED_ITEM_EVENT_PATH);
+    var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
+
+    withinTenant(TEST_TENANT, () -> {
+      createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
+
+      // When - the unparseable record is committed to the partition ahead of a valid one
+      sendRawItemKafkaMessage(ITEM_ID, malformedPayload);
+      sendItemKafkaMessage(validEvent, ITEM_ID);
+
+      // Then - the consumer advances past the poison pill instead of re-polling that offset forever, which is the
+      // regression this guards. ErrorHandlingDeserializer is what makes the failure recoverable, and
+      // DeserializationException is classified fatal, so the bad record is dropped on the first attempt rather than
+      // spending the retry budget on a payload that can never parse.
+      await().atMost(ASYNC_ASSERTION_TIMEOUT).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getType()).isEqualTo(TypeEnum.ITEM);
+      });
+    });
+  }
+
+  private InventoryEventHandler alwaysFailingItemHandler(List<Long> attemptTimestamps) {
+    return new InventoryEventHandler() {
+      @Override
+      public void handle(InventoryResourceEvent resourceEvent) {
+        attemptTimestamps.add(System.nanoTime());
+        throw new IllegalStateException("Simulated transient failure");
+      }
+
+      @Override
+      public InventoryEventType getEventType() {
+        return InventoryEventType.CREATE;
+      }
+
+      @Override
+      public InventoryEntityType getEntityType() {
+        return InventoryEntityType.ITEM;
+      }
+    };
+  }
+
+  /**
+   * Publishes an arbitrary string so the payload reaches the consumer exactly as written, bypassing the
+   * JSON-serializing template used everywhere else. The send is awaited so the poison pill is guaranteed to sit
+   * before the valid record on the partition.
+   */
+  private void sendRawItemKafkaMessage(String key, String payload) throws Exception {
+    Map<String, Object> config = Map.of(
+      ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers(),
+      ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
+      ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+
+    var producerFactory = new DefaultKafkaProducerFactory<String, String>(config);
+    try {
+      new KafkaTemplate<>(producerFactory)
+        .send(new ProducerRecord<>(TestConstant.ITEM_TOPIC, key, payload))
+        .get(30, TimeUnit.SECONDS);
+    } finally {
+      producerFactory.destroy();
+    }
+  }
+
+  private List<Long> gapsBetweenAttemptsMs(List<Long> attemptNanos) {
+    var gaps = new ArrayList<Long>();
+    for (var i = 1; i < attemptNanos.size(); i++) {
+      gaps.add(Duration.ofNanos(attemptNanos.get(i) - attemptNanos.get(i - 1)).toMillis());
+    }
+    return gaps;
   }
 
   private void assertHoldingMovedToInstance(String id, TypeEnum type, String instanceId, String holdingsId,
