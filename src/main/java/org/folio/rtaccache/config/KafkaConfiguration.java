@@ -135,7 +135,7 @@ public class KafkaConfiguration {
    * Since an exhausted record is dropped rather than parked anywhere, these are the only record of it - hence ERROR
    * rather than WARN once the retries are used up.
    */
-  private RetryListener loggingRetryListener() {
+  RetryListener loggingRetryListener() {
     return new RetryListener() {
       @Override
       public void failedDelivery(ConsumerRecord<?, ?> consumerRecord, Exception exception, int deliveryAttempt) {
