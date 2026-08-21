@@ -2,13 +2,8 @@ package org.folio.rtaccache.config;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 import org.folio.rtaccache.domain.dto.CirculationResourceEvent;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.PieceResourceEvent;
@@ -17,7 +12,6 @@ import org.folio.rtaccache.service.ConsortiaService;
 import org.folio.rtaccache.service.handler.EventHandlerFactory;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.folio.spring.tools.kafka.FolioKafkaProperties;
-import org.folio.spring.tools.kafka.FolioKafkaProperties.KafkaListenerProperties;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
@@ -25,22 +19,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaAdmin;
-import org.springframework.kafka.core.KafkaOperations;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
-import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.RetryListener;
 import org.springframework.kafka.support.JacksonMapperUtils;
-import org.springframework.kafka.support.serializer.DelegatingByTypeSerializer;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
-import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.util.backoff.ExponentialBackOff;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -48,8 +34,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG;
 
 /**
  * Responsible for configuration of kafka consumer bean factories at application startup for kafka listeners.
@@ -58,18 +42,6 @@ import static org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConfiguration {
-
-  /**
-   * Suffix appended to a source topic name to derive its dead-letter topic.
-   */
-  public static final String DLT_TOPIC_SUFFIX = ".DLT";
-
-  /**
-   * Any partition - the recoverer must not copy the source partition number onto the dead-letter topic, because the
-   * DLT partition count is not guaranteed to match the source topic's, and
-   * {@code DeadLetterPublishingRecoverer.setVerifyPartition} defaults to true.
-   */
-  private static final int DLT_ANY_PARTITION = -1;
 
   private static final double RETRY_BACKOFF_MULTIPLIER = 2.0;
 
@@ -101,13 +73,14 @@ public class KafkaConfiguration {
   }
 
   /**
-   * Retries a failed record with a growing delay and, once the attempts are exhausted, republishes it to the source
-   * topic's {@value #DLT_TOPIC_SUFFIX} topic so that the consumer can move past it.
+   * Retries a failed record with a growing delay and, once the attempts are exhausted, logs it and lets the container
+   * commit past it so that one bad record cannot stall its partition forever. No dead-letter topic is configured, so
+   * an exhausted record is dropped - the log line from {@link #loggingRetryListener()} is the only trace of it.
    *
-   * <p>Deserialization failures need no special handling here: {@link ErrorHandlingDeserializer} defers them to the
-   * listener container, and {@code DeserializationException} is part of
-   * {@code ExceptionClassifier.defaultFatalExceptionsList()}, so such records go to the DLT on the first attempt
-   * instead of being retried.</p>
+   * <p>Deserialization failures are not retried at all: {@link ErrorHandlingDeserializer} defers them to the listener
+   * container rather than throwing inside {@code Consumer.poll()}, and {@code DeserializationException} is part of
+   * {@code ExceptionClassifier.defaultFatalExceptionsList()}, so such records are skipped on the first attempt
+   * instead of burning the retry budget.</p>
    *
    * <p>{@code setMaxAttempts(n)} permits n retries on top of the initial delivery, so the configured
    * {@code retry-delivery-attempts: 6} means seven deliveries in all. With the default 2000ms interval and a
@@ -119,31 +92,11 @@ public class KafkaConfiguration {
     var backOff = new ExponentialBackOff(folioKafkaProperties.getRetryIntervalMs(), RETRY_BACKOFF_MULTIPLIER);
     backOff.setMaxAttempts(folioKafkaProperties.getRetryDeliveryAttempts());
 
-    var errorHandler = new DefaultErrorHandler(deadLetterPublishingRecoverer(), backOff);
+    var errorHandler = new DefaultErrorHandler(backOff);
     // Nothing about a malformed payload or a programming error improves by being retried.
     errorHandler.addNotRetryableExceptions(NullPointerException.class, IllegalArgumentException.class);
     errorHandler.setRetryListeners(loggingRetryListener());
     return errorHandler;
-  }
-
-  /**
-   * Declares the dead-letter topics up front, because FOLIO clusters usually run with
-   * {@code auto.create.topics.enable=false}, and a missing DLT would make the recoverer's send fail and put the
-   * container straight back into the retry loop this configuration exists to break.
-   */
-  @Bean
-  public KafkaAdmin.NewTopics deadLetterTopics() {
-    var topics = folioKafkaProperties.getListener().values().stream()
-      .map(KafkaListenerProperties::getTopicPattern)
-      .filter(topicPattern -> topicPattern != null && !topicPattern.isBlank())
-      .filter(KafkaConfiguration::isLiteralTopicPattern)
-      .map(KafkaConfiguration::toDeadLetterTopicName)
-      .distinct()
-      .map(topicName -> TopicBuilder.name(topicName).build())
-      .toArray(NewTopic[]::new);
-
-    log.info("Declaring {} kafka dead-letter topic(s)", topics.length);
-    return new KafkaAdmin.NewTopics(topics);
   }
 
   @Bean
@@ -178,36 +131,10 @@ public class KafkaConfiguration {
     return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), valueDeserializer);
   }
 
-  private DeadLetterPublishingRecoverer deadLetterPublishingRecoverer() {
-    return new DeadLetterPublishingRecoverer(deadLetterKafkaTemplate(),
-      (consumerRecord, exception) ->
-        new TopicPartition(consumerRecord.topic() + DLT_TOPIC_SUFFIX, DLT_ANY_PARTITION));
-  }
-
   /**
-   * Deliberately not exposed as a bean: Boot's auto-configured {@code kafkaTemplate} is
-   * {@code @ConditionalOnMissingBean}, so publishing a {@link KafkaTemplate} bean here would silently withdraw it
-   * from the rest of the application.
-   *
-   * <p>The value serializer has to delegate by type, because {@link DeadLetterPublishingRecoverer} forwards the raw
-   * {@code byte[]} for a deserialization failure but the already-deserialized event for a handler failure, so no
-   * single serializer covers both.</p>
+   * Since an exhausted record is dropped rather than parked anywhere, these are the only record of it - hence ERROR
+   * rather than WARN once the retries are used up.
    */
-  private KafkaOperations<String, Object> deadLetterKafkaTemplate() {
-    Map<String, Object> config = new HashMap<>(kafkaProperties.buildProducerProperties());
-    // The serializer instances passed below win; leaving the configured classes in the map would only mislead.
-    config.remove(KEY_SERIALIZER_CLASS_CONFIG);
-    config.remove(VALUE_SERIALIZER_CLASS_CONFIG);
-
-    Map<Class<?>, Serializer<?>> delegates = Map.of(
-      byte[].class, new ByteArraySerializer(),
-      Object.class, new JacksonJsonSerializer<>(kafkaJsonMapper()));
-
-    var producerFactory = new DefaultKafkaProducerFactory<String, Object>(config, new StringSerializer(),
-      new DelegatingByTypeSerializer(delegates, true));
-    return new KafkaTemplate<>(producerFactory);
-  }
-
   private RetryListener loggingRetryListener() {
     return new RetryListener() {
       @Override
@@ -219,13 +146,13 @@ public class KafkaConfiguration {
 
       @Override
       public void recovered(ConsumerRecord<?, ?> consumerRecord, Exception exception) {
-        log.error("Kafka record sent to dead-letter topic [topic: {}, partition: {}, offset: {}]",
+        log.error("Retries exhausted, dropping kafka record [topic: {}, partition: {}, offset: {}]",
           consumerRecord.topic(), consumerRecord.partition(), consumerRecord.offset(), exception);
       }
 
       @Override
       public void recoveryFailed(ConsumerRecord<?, ?> consumerRecord, Exception exception, Exception failure) {
-        log.error("Failed to send kafka record to dead-letter topic [topic: {}, partition: {}, offset: {}]",
+        log.error("Failed to drop kafka record after exhausting retries [topic: {}, partition: {}, offset: {}]",
           consumerRecord.topic(), consumerRecord.partition(), consumerRecord.offset(), failure);
       }
     };
@@ -240,29 +167,6 @@ public class KafkaConfiguration {
     return JacksonMapperUtils.enhancedJsonMapper().rebuild()
       .addHandler(new UnknownEventEnumDeserializationProblemHandler())
       .build();
-  }
-
-  /**
-   * A topic can only be pre-created when its pattern names exactly one topic. {@code KAFKA_EVENTS_CONSUMER_PATTERN}
-   * lets an operator supply a genuine multi-topic regex, and turning something like
-   * {@code folio\.(a|b)\.inventory\.item} into a topic name would just ask the broker to create a nonsense topic, so
-   * those are left to {@code auto.create.topics.enable} instead.
-   */
-  private static boolean isLiteralTopicPattern(String topicPattern) {
-    var withoutEscapedDots = topicPattern.replace("\\.", "");
-    if (withoutEscapedDots.matches(".*[\\\\*+?\\[\\]()|^$].*")) {
-      log.warn("Not pre-creating a dead-letter topic for non-literal topic pattern [{}]", topicPattern);
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Listener topics are configured as regular expressions, so the escaping has to be undone to get the literal topic
-   * name to create, e.g. {@code folio\.ALL\.inventory\.instance} to {@code folio.ALL.inventory.instance.DLT}.
-   */
-  private static String toDeadLetterTopicName(String topicPattern) {
-    return topicPattern.replace("\\", "") + DLT_TOPIC_SUFFIX;
   }
 
 }
