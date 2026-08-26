@@ -1,3 +1,13 @@
+## v1.1.2 2026-08-26
+### Bug fixes
+* [MODRTACHCE-63](https://folio-org.atlassian.net/browse/MODRTACHCE-63) - Inventory REINDEX events (Trillium) cause infinite poison-pill retry loop and flood logs
+
+### Other
+* [MODRTACHCE-52](https://folio-org.atlassian.net/browse/MODRTACHCE-52) - Bump testcontainer from cp-kafka:7.6.1 to kafka-native:4.2.0
+* [MODRTACHCE-56](https://folio-org.atlassian.net/browse/MODRTACHCE-56) - Upgrade dependencies for Kafka 4.2 compatibility
+* [FOLIO-4553](https://folio-org.atlassian.net/browse/FOLIO-4553) - Set "permissions: contents: read" in maven.yml
+* Clarify PDD transmission with two more checkmarks
+
 ## v1.1.1 2026-05-27
 ### Bug fixes
 * [MODRTACHCE-53](https://folio-org.atlassian.net/browse/MODRTACHCE-53) - Sensitive data in logs cleanup
