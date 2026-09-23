@@ -51,13 +51,6 @@
     },
     "EnvVars": [
       {
-        "name": "JAVA_OPTIONS",
-        "value": null,
-        "description": "JVM options passed to the Java process. The default reserves 66% of container memory for the heap.",
-        "type": "CONFIG",
-        "essential": true
-      },
-      {
         "name": "DB_HOST",
         "value": null,
         "description": "PostgreSQL host used by the Spring datasource JDBC URL.",
