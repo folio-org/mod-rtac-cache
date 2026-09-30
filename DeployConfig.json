@@ -1,0 +1,244 @@
+{
+  "_disclaimer": "Default values are calibrated against a defined reference baseline of bugfest environment (currently 3 standalone tenants, and 11 consortia tenants). See ADR-0013 (Module configuration management) for the governance model behind this file.",
+  "description": "mod-rtac-cache configuration template",
+  "moduleDefaults": {
+    "resources": [
+      {
+        "name": "cpu",
+        "value": "64",
+        "description": "CPU request/limit for container"
+      },
+      {
+        "name": "memory",
+        "value": "1024",
+        "description": "Memory hard limit for container"
+      },
+      {
+        "name": "memoryReservation",
+        "value": "896",
+        "description": "Memory reservation for container"
+      }
+    ],
+    "java": [
+      {
+        "name": "xmx",
+        "value": "768m",
+        "description": "Maximum Java heap size"
+      },
+      {
+        "name": "MaxMetaspaceSize",
+        "value": "256m",
+        "description": "Maximum Java metaspace size"
+      },
+      {
+        "name": "MetaspaceSize",
+        "value": "88m",
+        "description": "Initial Java metaspace size"
+      }
+    ],
+    "deployment": {
+      "isHaSupported": true,
+      "replicasRecommendedCount": 2,
+      "description": "Deployment configuration for the backend module. Adjust replicas based on expected load and HA requirements. The scheduled cache-invalidation job (RTAC_CACHE_INVALIDATION_CRON) runs unguarded per replica; concurrent runs are idempotent deletes, so HA is safe without a distributed lock."
+    },
+    "kong": {
+      "timeouts": {
+        "connect": "60s",
+        "send": "60s",
+        "read": "120s"
+      },
+      "description": "Custom Kong proxy timeouts. Read timeout is raised above the 60s default because a cache-miss request synchronously fans out to inventory/circulation/orders to lazily generate the RTAC cache before responding."
+    },
+    "EnvVars": [
+      {
+        "name": "DB_HOST",
+        "value": null,
+        "description": "PostgreSQL host used by the Spring datasource JDBC URL.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_PORT",
+        "value": null,
+        "description": "PostgreSQL port used by the Spring datasource JDBC URL.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_USERNAME",
+        "value": null,
+        "description": "PostgreSQL username used by the module datasource.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_PASSWORD",
+        "value": null,
+        "description": "Password for DB_USERNAME.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_DATABASE",
+        "value": null,
+        "description": "PostgreSQL database name used by the module datasource.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_QUERYTIMEOUT",
+        "value": "60000",
+        "description": "PostgreSQL statement timeout in milliseconds applied to Hikari connections by folio-spring-base when set.",
+        "type": "DB",
+        "essential": false
+      },
+      {
+        "name": "DB_CHARSET",
+        "value": "UTF-8",
+        "description": "PostgreSQL connection character encoding applied to Hikari connections by folio-spring-base.",
+        "type": "DB",
+        "essential": false
+      },
+      {
+        "name": "DB_MAXPOOLSIZE",
+        "value": "20",
+        "description": "Legacy FOLIO maximum database pool-size setting kept for descriptor compatibility; this Spring runtime uses DB_MAXSHAREDPOOLSIZE for Hikari maximum pool size.",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_HOST",
+        "value": null,
+        "description": "Kafka broker host used to build spring.kafka.bootstrap-servers.",
+        "type": "KAFKA",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_PORT",
+        "value": null,
+        "description": "Kafka broker port used to build spring.kafka.bootstrap-servers.",
+        "type": "KAFKA",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_MAX_POLL_RECORDS",
+        "value": "50",
+        "description": "Maximum number of Kafka records returned in a single consumer poll.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SECURITY_PROTOCOL",
+        "value": null,
+        "description": "Kafka client security protocol; common values are PLAINTEXT, SSL, SASL_PLAINTEXT, and SASL_SSL.",
+        "type": "KAFKA",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_SSL_KEYSTORE_PASSWORD",
+        "value": null,
+        "description": "Password for the Kafka SSL key store when SSL client authentication is configured.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SSL_KEYSTORE_LOCATION",
+        "value": null,
+        "description": "Filesystem path to the Kafka SSL key store when SSL client authentication is configured.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SSL_TRUSTSTORE_PASSWORD",
+        "value": null,
+        "description": "Password for the Kafka SSL trust store when SSL is configured.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SSL_TRUSTSTORE_LOCATION",
+        "value": null,
+        "description": "Filesystem path to the Kafka SSL trust store when SSL is configured.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "ENV",
+        "value": null,
+        "description": "Logical FOLIO deployment name used as the prefix for Kafka topic patterns and Kafka consumer groups.",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "OKAPI_URL",
+        "value": null,
+        "description": "Okapi base URL used for outbound FOLIO service calls and system-user requests. Must be provided by the deployment environment.",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_RETRY_INTERVAL_MS",
+        "value": "2000",
+        "description": "Interval in milliseconds between Kafka message delivery retry attempts.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_RETRY_DELIVERY_ATTEMPTS",
+        "value": "6",
+        "description": "Maximum number of Kafka message delivery attempts before retry handling is exhausted.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_EVENTS_CONCURRENCY",
+        "value": "2",
+        "description": "Number of concurrent consumers configured for each RTAC cache Kafka listener.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_EVENTS_CONSUMER_PATTERN",
+        "value": null,
+        "description": "Optional topic-pattern override for all RTAC cache Kafka listeners. Leave empty to use the per-entity default patterns based on ENV.",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "SYSTEM_USER_ENABLED",
+        "value": false,
+        "description": "Enables legacy Okapi system-user token retrieval for Kafka and background downstream module calls. Leave false for Eureka deployments where sidecars provide module-to-module system tokens.",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "SYSTEM_USER_USERNAME",
+        "value": "mod-rtac-cache",
+        "description": "Username for the legacy Okapi module system user when SYSTEM_USER_ENABLED is true.",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "SYSTEM_USER_PASSWORD",
+        "value": null,
+        "description": "Password for the legacy Okapi module system user; required only when SYSTEM_USER_ENABLED is true in classic Okapi deployments.",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "RTAC_CACHE_INVALIDATION_CRON",
+        "value": "0 0 2 * * ?",
+        "description": "Spring cron expression for the scheduled purge of stale rtac_holding cache rows.",
+        "type": "CACHE",
+        "essential": false
+      },
+      {
+        "name": "RTAC_CACHE_RETENTION_DAYS",
+        "value": "2",
+        "description": "Number of days to retain cached RTAC holdings before the scheduled invalidation job deletes them.",
+        "type": "CACHE",
+        "essential": false
+      }
+    ]
+  }
+}
