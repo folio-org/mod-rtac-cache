@@ -10,12 +10,12 @@
       },
       {
         "name": "memory",
-        "value": "1024",
+        "value": "1224",
         "description": "Memory hard limit for container"
       },
       {
         "name": "memoryReservation",
-        "value": "896",
+        "value": "1024",
         "description": "Memory reservation for container"
       }
     ],
