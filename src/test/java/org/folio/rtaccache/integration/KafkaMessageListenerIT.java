@@ -859,7 +859,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(34)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldRetryFailingHandlerWithExponentiallyGrowingDelays_thenDropRecordAndResumeConsuming() throws Exception {
+  void shouldRetryFailingHandlerWithExponentiallyGrowingDelays_thenDropRecordAndResumeConsuming() {
     // Given - a handler that keeps failing with a retryable exception, recording when each attempt happened
     var attemptTimestamps = Collections.synchronizedList(new ArrayList<Long>());
     doReturn(Optional.of(alwaysFailingItemHandler(attemptTimestamps)))
@@ -910,7 +910,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(35)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() throws Exception {
+  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() {
     // Given
     var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
 
@@ -935,7 +935,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(36)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldSkipMalformedRecord_andKeepConsumingFollowingRecords() throws Exception {
+  void shouldSkipMalformedRecord_andKeepConsumingFollowingRecords() {
     // Given
     var malformedPayload = TestUtil.readFileContentFromResources(MALFORMED_ITEM_EVENT_PATH);
     var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
