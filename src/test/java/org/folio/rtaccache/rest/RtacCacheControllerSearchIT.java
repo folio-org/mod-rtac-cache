@@ -8,7 +8,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -27,8 +26,17 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 class RtacCacheControllerSearchIT extends BaseIntegrationTest {
+
+  // Server omits empty collections; Jackson 3 would bind a missing "holdings" to null via the all-args constructor.
+  // Without parameter-name detection the DTO keeps its empty-list default (as with Jackson 2).
+  private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
+    .disable(MapperFeature.DETECT_PARAMETER_NAMES)
+    .build();
 
   @Autowired
   private MockMvc mockMvc;
@@ -57,7 +65,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    var rtacHoldings = OBJECT_MAPPER.readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings()).hasSize(1);
     assertThat(rtacHoldings.getHoldings().getFirst().getVolume()).isEqualTo("vol1");
   }
@@ -70,7 +78,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    var rtacHoldings = OBJECT_MAPPER.readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings()).isEmpty();
     assertThat(rtacHoldings.getTotalRecords()).isZero();
   }
@@ -88,7 +96,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    var rtacHoldings = OBJECT_MAPPER.readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings()).hasSize(1);
     assertThat(rtacHoldings.getTotalRecords()).isEqualTo(1);
   }
@@ -122,7 +130,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
       .andExpect(status().isOk())
       .andReturn();
 
-    var rtacHoldings = new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
+    var rtacHoldings = OBJECT_MAPPER.readValue(result.getResponse().getContentAsString(), RtacHoldings.class);
     assertThat(rtacHoldings.getHoldings())
       .extracting(
          RtacHolding::getEffectiveShelvingOrder,

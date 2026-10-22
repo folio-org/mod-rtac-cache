@@ -10,8 +10,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,6 +63,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import tools.jackson.databind.ObjectMapper;
 
 @Log4j2
 @TestMethodOrder(OrderAnnotation.class)
@@ -206,7 +205,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(1)
-  void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() throws JsonProcessingException {
+  void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       var event = loadInventoryResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
@@ -235,7 +234,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(2)
-  void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
@@ -259,7 +258,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(3)
-  void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -277,7 +276,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(4)
-  void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
@@ -1090,17 +1089,17 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     return rtacHolding;
   }
 
-  private InventoryResourceEvent loadInventoryResourceEvent(String path) throws JsonProcessingException {
+  private InventoryResourceEvent loadInventoryResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, InventoryResourceEvent.class);
   }
 
-  private CirculationResourceEvent loadCirculationResourceEvent(String path) throws JsonProcessingException {
+  private CirculationResourceEvent loadCirculationResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, CirculationResourceEvent.class);
   }
 
-  private PieceResourceEvent loadPieceResourceEvent(String path) throws JsonProcessingException {
+  private PieceResourceEvent loadPieceResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, PieceResourceEvent.class);
   }

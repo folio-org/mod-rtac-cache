@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
 import java.util.UUID;
 import org.folio.rtaccache.domain.dto.HoldingsRecord;
@@ -46,7 +45,7 @@ class HoldingsUpdateEventHandlerTest {
   ResourceEventUtil resourceEventUtil;
 
   @Test
-  void holdingsUpdate_shouldSaveAll() throws SQLException, JsonProcessingException {
+  void holdingsUpdate_shouldSaveAll() throws SQLException {
     var oldRecord = holdingsRecord();
     var newRecord = holdingsRecord();
     newRecord.setCopyNumber("HCN2");
@@ -64,7 +63,7 @@ class HoldingsUpdateEventHandlerTest {
   }
 
   @Test
-  void holdingsUpdate_shouldRethrowWhenExceptionHappensDuringSave() throws SQLException, JsonProcessingException {
+  void holdingsUpdate_shouldRethrowWhenExceptionHappensDuringSave() throws SQLException {
     var oldRecord = holdingsRecord();
     var newRecord = holdingsRecord();
     newRecord.setCopyNumber("HCN2");
@@ -79,7 +78,7 @@ class HoldingsUpdateEventHandlerTest {
   }
 
   @Test
-  void holdingsUpdate_shouldMoveHierarchyWhenMovedIntoCachedInstance() throws SQLException, JsonProcessingException {
+  void holdingsUpdate_shouldMoveHierarchyWhenMovedIntoCachedInstance() throws SQLException {
     var oldRecord = holdingsRecord();
     var newRecord = holdingsRecord();
     var targetInstanceId = UUID.randomUUID().toString();
@@ -105,7 +104,7 @@ class HoldingsUpdateEventHandlerTest {
   }
 
   @Test
-  void holdingsUpdate_shouldDeleteTargetInstanceWhenNothingMoved() throws SQLException, JsonProcessingException {
+  void holdingsUpdate_shouldDeleteTargetInstanceWhenNothingMoved() throws SQLException {
     var oldRecord = holdingsRecord();
     var newRecord = holdingsRecord();
     var targetInstanceId = UUID.randomUUID().toString();
@@ -128,7 +127,7 @@ class HoldingsUpdateEventHandlerTest {
   }
 
   @Test
-  void holdingsUpdate_shouldDeleteHierarchyWhenMovedIntoNotCachedInstance() throws SQLException, JsonProcessingException {
+  void holdingsUpdate_shouldDeleteHierarchyWhenMovedIntoNotCachedInstance() throws SQLException {
     var oldRecord = holdingsRecord();
     var newRecord = holdingsRecord();
     var targetInstanceId = UUID.randomUUID().toString();
