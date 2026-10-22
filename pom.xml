@@ -37,7 +37,7 @@
     <!-- runtime dependencies -->
     <folio-spring-support.version>10.0.1</folio-spring-support.version>
     <folio-service-tools.version>6.0.1</folio-service-tools.version>
-    <openapi-generator.version>7.20.0</openapi-generator.version>
+    <openapi-generator.version>7.26.0</openapi-generator.version>
 
     <!-- test dependencies -->
     <wiremock-standalone.version>3.13.2</wiremock-standalone.version>
@@ -309,6 +309,7 @@
                 <interfaceOnly>true</interfaceOnly>
                 <useSpringBoot4>true</useSpringBoot4>
                 <useJackson3>true</useJackson3>
+                <useJspecify>true</useJspecify>
                 <openApiNullable>false</openApiNullable>
                 <useTags>true</useTags>
                 <useUUIDs>true</useUUIDs>
