@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.6</version>
+    <version>4.1.1</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
@@ -35,14 +35,12 @@
     <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
 
     <!-- runtime dependencies -->
-    <folio-spring-support.version>10.0.0</folio-spring-support.version>
-    <folio-service-tools.version>6.0.0</folio-service-tools.version>
-    <openapi-generator.version>7.20.0</openapi-generator.version>
-    <kafka.version>4.2.0</kafka.version>
+    <folio-spring-support.version>10.0.1</folio-spring-support.version>
+    <folio-service-tools.version>6.0.1</folio-service-tools.version>
+    <openapi-generator.version>7.26.0</openapi-generator.version>
 
     <!-- test dependencies -->
     <wiremock-standalone.version>3.13.2</wiremock-standalone.version>
-    <testcontainers.extensions.version>1.21.4</testcontainers.extensions.version>
     <folio-module-descriptor-validator.version>1.0.1</folio-module-descriptor-validator.version>
 
     <!-- Downgrade Liquibase to 4.33.0 to avoid FSL license in v5. See https://www.apache.org/legal/resolved.html#category-x and https://folio-org.atlassian.net/browse/MODRTACHCE-58. -->
@@ -188,20 +186,17 @@
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.extensions.version}</version>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>${testcontainers.extensions.version}</version>
+      <artifactId>testcontainers-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
-      <artifactId>kafka</artifactId>
-      <version>${testcontainers.extensions.version}</version>
+      <artifactId>testcontainers-kafka</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -314,6 +309,7 @@
                 <interfaceOnly>true</interfaceOnly>
                 <useSpringBoot4>true</useSpringBoot4>
                 <useJackson3>true</useJackson3>
+                <useJspecify>true</useJspecify>
                 <openApiNullable>false</openApiNullable>
                 <useTags>true</useTags>
                 <useUUIDs>true</useUUIDs>
