@@ -94,6 +94,7 @@ public class RtacHoldingRepositoryImpl implements RtacHoldingRepositoryCustom {
       case "libraryName" -> "h.rtac_holding_json->'library'->>'name'";
       case "locationName" -> "h.rtac_holding_json->'location'->>'name'";
       case "effectiveShelvingOrder" -> "h.rtac_holding_json->>'effectiveShelvingOrder'";
+      case "manualOrder" -> "(h.rtac_holding_json->>'order')::int";
       case "status" -> "h.rtac_holding_json->>'status'";
       case "id" -> "h.id";
       default -> throw new IllegalArgumentException("Unsupported sort property: " + order.getProperty());

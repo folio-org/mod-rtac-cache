@@ -2,6 +2,7 @@ package org.folio.rtaccache.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -127,6 +128,25 @@ class RtacHoldingMappingServiceTest {
     assertEquals("Main Library", result.getLocation().getName());
     assertNotNull(result.getLibrary());
     assertEquals("Central Library", result.getLibrary().getName());
+  }
+
+  @Test
+  void testMapItemToRtacHolding_withManualOrder() {
+    var holding = new HoldingsRecord();
+    holding.setInstanceId(UUID.randomUUID().toString());
+    holding.setId(UUID.randomUUID().toString());
+    var status = new ItemStatus();
+    status.setName(NameEnum.AVAILABLE);
+
+    var item = new Item();
+    item.setId(UUID.randomUUID().toString());
+    item.setStatus(status);
+    item.setOrder(3);
+    assertEquals(3, rtacHoldingMappingService.mapFrom(holding, item).getOrder());
+    assertEquals(3, rtacHoldingMappingService.mapForUpdateItemFrom(item).getOrder());
+
+    item.setOrder(null);
+    assertNull(rtacHoldingMappingService.mapFrom(holding, item).getOrder());
   }
 
   @Test

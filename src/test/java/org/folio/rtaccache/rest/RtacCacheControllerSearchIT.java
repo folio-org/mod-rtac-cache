@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -138,6 +139,35 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
         tuple("A", "Available", "Lib B", "Loc X"),
         tuple("A", "Checked out", "Lib A", "Loc C")
       );
+  }
+
+  @Test
+  void searchRtacCacheHoldings_sortByOrder_nullsTreatedAsHighest() throws Exception {
+    var instanceId = UUID.randomUUID();
+    // null order models a piece or an item without a manual order
+    var entities = java.util.Arrays.stream(new Integer[] {10, null, 2, 1})
+      .map(order -> {
+        var entity = createRtacHoldingEntity(instanceId, "v", "c", "Loc", "Lib", "Available");
+        entity.getRtacHolding().setOrder(order);
+        return entity;
+      })
+      .toList();
+    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(entities));
+
+    var expected = Map.of(
+      "order", new Integer[] {null, 10, 2, 1},
+      "order,desc", new Integer[] {null, 10, 2, 1},
+      "order,asc", new Integer[] {1, 2, 10, null});
+    for (var entry : expected.entrySet()) {
+      var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", instanceId)
+          .param("query", " ")
+          .param("sort", entry.getKey())
+          .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+        .andExpect(status().isOk())
+        .andReturn();
+      assertThat(new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class).getHoldings())
+        .extracting(RtacHolding::getOrder).containsExactly(entry.getValue());
+    }
   }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {
