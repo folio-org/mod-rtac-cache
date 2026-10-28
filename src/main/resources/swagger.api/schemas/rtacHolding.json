@@ -168,6 +168,10 @@
       "type": "string",
       "description": "A system generated normalization of the call number that allows for call number sorting in reports and search results"
     },
+    "order": {
+      "type": "integer",
+      "description": "Manual sort order of the item, as set in FOLIO Inventory. Absent for pieces, holdings and items without a manual order. Opt-in alternative to effectiveShelvingOrder"
+    },
     "isBoundWith": {
       "type": "boolean",
       "default": false,

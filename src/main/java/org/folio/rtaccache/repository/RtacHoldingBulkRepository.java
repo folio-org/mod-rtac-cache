@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -148,6 +149,7 @@ public class RtacHoldingBulkRepository {
       'itemCopyNumber', ?::text,
       'volume', ?::text,
       'effectiveShelvingOrder', ?::text,
+      'order', ?::int,
       'status', ?::text,
       'suppressFromDiscovery', ?::boolean,
       'location', ?::jsonb,
@@ -341,14 +343,15 @@ public class RtacHoldingBulkRepository {
       ps.setString(3, rtacHolding.getItemCopyNumber());
       ps.setString(4, rtacHolding.getVolume());
       ps.setString(5, rtacHolding.getEffectiveShelvingOrder());
-      ps.setString(6, rtacHolding.getStatus());
-      ps.setBoolean(7, rtacHolding.getSuppressFromDiscovery() != null && rtacHolding.getSuppressFromDiscovery());
-      ps.setString(8, objectMapper.writeValueAsString(rtacHolding.getLocation()));
-      ps.setString(9, objectMapper.writeValueAsString(rtacHolding.getLibrary()));
-      ps.setString(10, objectMapper.writeValueAsString(rtacHolding.getMaterialType()));
-      ps.setString(11, rtacHolding.getTemporaryLoanType());
-      ps.setString(12, rtacHolding.getPermanentLoanType());
-      ps.setObject(13, itemId);
+      ps.setObject(6, rtacHolding.getOrder(), Types.INTEGER);
+      ps.setString(7, rtacHolding.getStatus());
+      ps.setBoolean(8, rtacHolding.getSuppressFromDiscovery() != null && rtacHolding.getSuppressFromDiscovery());
+      ps.setString(9, objectMapper.writeValueAsString(rtacHolding.getLocation()));
+      ps.setString(10, objectMapper.writeValueAsString(rtacHolding.getLibrary()));
+      ps.setString(11, objectMapper.writeValueAsString(rtacHolding.getMaterialType()));
+      ps.setString(12, rtacHolding.getTemporaryLoanType());
+      ps.setString(13, rtacHolding.getPermanentLoanType());
+      ps.setObject(14, itemId);
       ps.executeUpdate();
     } finally {
       DataSourceUtils.releaseConnection(connection, dataSource);
