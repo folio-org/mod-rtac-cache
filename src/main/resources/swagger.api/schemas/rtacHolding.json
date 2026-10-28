@@ -170,7 +170,7 @@
     },
     "order": {
       "type": "integer",
-      "description": "Manual sort order of the item within its holdings record, as set in FOLIO Inventory. Absent for pieces, holdings and items without a manual order. Opt-in alternative to effectiveShelvingOrder"
+      "description": "Manual sort order of the item, as set in FOLIO Inventory. Absent for pieces, holdings and items without a manual order. Opt-in alternative to effectiveShelvingOrder"
     },
     "isBoundWith": {
       "type": "boolean",

@@ -4,7 +4,7 @@ description: |
   A list of sort criteria in the format: `property,(asc|desc)`.
   Supported properties are: effectiveShelvingOrder, libraryName, locationName, order, status.
   If the direction is omitted for a property, the default direction is `desc` for effectiveShelvingOrder and order, and `asc` for other properties.
-  `order` is the manual item order set in FOLIO Inventory, an opt-in alternative to effectiveShelvingOrder with the same direction and null handling. Records without an order (pieces, holdings, items with no manual order) are treated as the highest value: they sort first when descending and last when ascending. Order is relative to the holdings record, so combine it with other properties, e.g. `order,libraryName,locationName`.
+  `order` is the manual item order set in FOLIO Inventory, an opt-in alternative to effectiveShelvingOrder with the same direction and null handling. Records without an order (pieces, holdings, items with no manual order) are treated as the highest value: they sort first when descending and last when ascending.
   The default sort order is effectiveShelvingOrder (descending), status (ascending), libraryName (ascending), locationName (ascending).
 schema:
   type: array
