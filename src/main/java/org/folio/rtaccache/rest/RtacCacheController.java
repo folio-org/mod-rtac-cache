@@ -175,7 +175,12 @@ public class RtacCacheController implements RtacApi {
       }
       sortOrder = Sort.by(orders);
     }
-    return PageRequest.of(offset / limit, limit, sortOrder);
+    return PageRequest.of(offset / limit, limit, tieBreakOnId(sortOrder));
+  }
+
+  // final tiebreaker so rows tied on every requested key page in a stable order
+  private Sort tieBreakOnId(Sort sort) {
+    return sort.and(Sort.by(Sort.Order.asc("id")));
   }
 
   private void validateSortProperty(String property) {

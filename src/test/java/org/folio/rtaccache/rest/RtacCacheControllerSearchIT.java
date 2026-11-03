@@ -10,9 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.domain.RtacHoldingId;
@@ -28,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 class RtacCacheControllerSearchIT extends BaseIntegrationTest {
 
@@ -145,7 +149,7 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
   void searchRtacCacheHoldings_sortByOrder_nullsTreatedAsHighest() throws Exception {
     var instanceId = UUID.randomUUID();
     // null order models a piece or an item without a manual order
-    var entities = java.util.Arrays.stream(new Integer[] {10, null, 2, 1})
+    var entities = Arrays.stream(new Integer[] {10, null, 2, 1})
       .map(order -> {
         var entity = createRtacHoldingEntity(instanceId, "v", "c", "Loc", "Lib", "Available");
         entity.getRtacHolding().setOrder(order);
@@ -165,9 +169,42 @@ class RtacCacheControllerSearchIT extends BaseIntegrationTest {
           .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
         .andExpect(status().isOk())
         .andReturn();
-      assertThat(new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class).getHoldings())
+      assertThat(parseRtacHoldingsResponse(result))
         .extracting(RtacHolding::getOrder).containsExactly(entry.getValue());
     }
+  }
+
+  @Test
+  void searchRtacCacheHoldings_pagingThroughTies_isStable() throws Exception {
+    var instanceId = UUID.randomUUID();
+    // every row ties on the requested sort key
+    var ids = IntStream.range(0, 5).mapToObj(i -> UUID.randomUUID()).toList();
+    var entities = ids.stream().map(id -> createRtacHoldingWithTiedOrder(instanceId, id)).toList();
+    withinTenant(TEST_TENANT, () -> rtacHoldingRepository.saveAll(entities));
+
+    var paged = new ArrayList<String>();
+    for (int offset = 0; offset < ids.size(); offset += 2) {
+      var result = mockMvc.perform(get("/rtac-cache/search/{instanceId}", instanceId).param("query", " ")
+          .param("sort", "order")
+          .param("offset", String.valueOf(offset))
+          .param("limit", "2")
+          .headers(defaultHeaders(TEST_TENANT, APPLICATION_JSON)))
+        .andExpect(status().isOk())
+        .andReturn();
+      parseRtacHoldingsResponse(result).forEach(h -> paged.add(h.getId()));
+    }
+
+    // no row repeated or skipped, and ties resolve by id
+    assertThat(paged).containsExactlyElementsOf(ids.stream().map(UUID::toString).sorted().toList());
+  }
+
+  private List<RtacHolding> parseRtacHoldingsResponse(MvcResult result) throws Exception {
+    return new ObjectMapper().readValue(result.getResponse().getContentAsString(), RtacHoldings.class).getHoldings();
+  }
+
+  private RtacHoldingEntity createRtacHoldingWithTiedOrder(UUID instanceId, UUID id) {
+    return new RtacHoldingEntity(new RtacHoldingId(instanceId, TypeEnum.ITEM, id), false,
+      new RtacHolding().id(id.toString()).order(1), Instant.now());
   }
 
   private RtacHoldingEntity createRtacHoldingEntity(UUID instanceId, String volume, String callNumber, String locationName, String libraryName, String status) {
