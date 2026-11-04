@@ -16,7 +16,6 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.spring.DefaultFolioExecutionContext;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.FolioModuleMetadata;
-import org.folio.spring.config.properties.FolioEnvironment;
 import org.folio.spring.integration.XOkapiHeaders;
 import org.folio.spring.scope.FolioExecutionContextSetter;
 import org.folio.tenant.domain.dto.Parameter;
@@ -32,9 +31,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @Log4j2
 @SpringBootTest
@@ -53,7 +51,7 @@ public abstract class BaseIntegrationTest {
       .globalTemplating(false));
 
   private static final String POSTGRE_IMAGE_VERSION = "postgres:16-alpine";
-  public static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(POSTGRE_IMAGE_VERSION);
+  public static PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer(POSTGRE_IMAGE_VERSION);
 
   static {
     postgreSQLContainer.start();
@@ -67,15 +65,17 @@ public abstract class BaseIntegrationTest {
 
   @DynamicPropertySource
   static void dynamicProperties(DynamicPropertyRegistry registry) {
+    if (!WIRE_MOCK.isRunning()) {
+      WIRE_MOCK.start();
+    }
+    registry.add("folio.okapi-url", WIRE_MOCK::baseUrl);
     registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
     registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
     registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
   }
 
   @BeforeAll
-  static void beforeAll(@Autowired MockMvc mockMvc, @Autowired FolioEnvironment folioEnvironment) throws Exception {
-    WIRE_MOCK.start();
-    ReflectionTestUtils.setField(folioEnvironment, "okapiUrl", WIRE_MOCK.baseUrl());
+  static void beforeAll(@Autowired MockMvc mockMvc) throws Exception {
     setUpTenant(mockMvc, TEST_TENANT);
   }
 
