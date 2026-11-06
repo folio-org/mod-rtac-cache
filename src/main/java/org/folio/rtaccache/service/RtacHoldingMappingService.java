@@ -49,6 +49,7 @@ public class RtacHoldingMappingService {
     rtacHolding.setItemCopyNumber(item.getCopyNumber());
     rtacHolding.setVolume(mapVolumeFrom(item));
     rtacHolding.setEffectiveShelvingOrder(item.getEffectiveShelvingOrder());
+    rtacHolding.setOrder(item.getOrder());
     rtacHolding.setStatus(item.getStatus().getName().getValue());
     rtacHolding.setSuppressFromDiscovery(item.getDiscoverySuppress());
     rtacHolding.setLocation(mapLocationFrom(item.getEffectiveLocationId()));
@@ -118,6 +119,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setItemCopyNumber(item.getCopyNumber());
     newRtacHolding.setVolume(mapVolumeFrom(item));
     newRtacHolding.setEffectiveShelvingOrder(item.getEffectiveShelvingOrder());
+    newRtacHolding.setOrder(item.getOrder());
     newRtacHolding.setStatus(item.getStatus().getName().getValue());
     newRtacHolding.setSuppressFromDiscovery(item.getDiscoverySuppress());
     newRtacHolding.setLocation(mapLocationFrom(item.getEffectiveLocationId()));
@@ -141,6 +143,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setItemCopyNumber(item.getCopyNumber());
     newRtacHolding.setVolume(mapVolumeFrom(item));
     newRtacHolding.setEffectiveShelvingOrder(item.getEffectiveShelvingOrder());
+    newRtacHolding.setOrder(item.getOrder());
     newRtacHolding.setStatus(item.getStatus().getName().getValue());
     newRtacHolding.setSuppressFromDiscovery(item.getDiscoverySuppress());
     newRtacHolding.setLocation(mapLocationFrom(item.getEffectiveLocationId()));
@@ -164,6 +167,7 @@ public class RtacHoldingMappingService {
     newRtacHolding.setItemCopyNumber(itemRtacHolding.getItemCopyNumber());
     newRtacHolding.setVolume(itemRtacHolding.getVolume());
     newRtacHolding.setEffectiveShelvingOrder(itemRtacHolding.getEffectiveShelvingOrder());
+    newRtacHolding.setOrder(itemRtacHolding.getOrder());
     newRtacHolding.setStatus(itemRtacHolding.getStatus());
     newRtacHolding.setSuppressFromDiscovery(itemRtacHolding.getSuppressFromDiscovery());
     newRtacHolding.setLocation(itemRtacHolding.getLocation());

@@ -29,6 +29,7 @@ public interface RtacHoldingRepository extends JpaRepository<RtacHoldingEntity, 
       SELECT
           *,
           rtac_holding_json->>'effectiveShelvingOrder' AS effectiveShelvingOrder,
+          (rtac_holding_json->>'order')::int AS manualOrder,
           rtac_holding_json->'library'->>'name' AS libraryName,
           rtac_holding_json->'location'->>'name' AS locationName,
           rtac_holding_json->>'status' AS status

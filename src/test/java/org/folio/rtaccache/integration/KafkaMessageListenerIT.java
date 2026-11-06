@@ -52,6 +52,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
@@ -86,6 +88,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
+  private static final String UPDATE_ITEM_NULL_ORDER_EVENT_PATH = "__files/kafka-events/update-item-null-order-event.json";
+  private static final String UPDATE_ITEM_WITHOUT_ORDER_EVENT_PATH = "__files/kafka-events/update-item-without-order-event.json";
   private static final String UPDATE_ITEM_MOVE_TO_ANOTHER_HOLDING_EVENT_PATH = "__files/kafka-events/update-item-move-to-another-holding-event.json";
   private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
   private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
@@ -355,6 +359,32 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(holding.get().getRtacHolding().getMaterialType().getName()).isEqualTo(NEW_MATERIAL_TYPE_NAME);
         assertThat(holding.get().getRtacHolding().getBarcode()).isEqualTo(NEW_BARCODE);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
+        assertThat(holding.get().getRtacHolding().getOrder()).isEqualTo(4);
+      });
+    });
+  }
+
+  // The update event carries the full new item, so an item without a manual order must clear any previously cached one.
+  // Runs once with "order": null in the event and once with the "order" key missing entirely; both must behave the same.
+  @ParameterizedTest
+  @ValueSource(strings = {UPDATE_ITEM_NULL_ORDER_EVENT_PATH, UPDATE_ITEM_WITHOUT_ORDER_EVENT_PATH})
+  @Order(37)
+  void shouldClearOrder_whenItemUpdateEventHasNullOrNoOrder(String eventPath) {
+    withinTenant(TEST_TENANT, () -> {
+      // Given a cached item that currently has a manual order of 7
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var existing = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+      existing.getRtacHolding().setOrder(7);
+      holdingRepository.save(existing);
+      var event = loadInventoryResourceEvent(eventPath);
+      // When inventory publishes an update for that item whose new state has no order
+      sendItemKafkaMessage(event, ITEM_ID);
+      // Then the update was applied (new barcode) and the old order is gone
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getBarcode()).isEqualTo(NEW_BARCODE);
+        assertThat(holding.get().getRtacHolding().getOrder()).isNull();
       });
     });
   }
