@@ -34,13 +34,14 @@ public class RtacHoldingLazyLoadingService {
 
   private final RtacHoldingRepository rtacHoldingRepository;
   private final RtacCacheGenerationService rtacCacheGenerationService;
+  private final DbConcurrencyLimiter dbConcurrencyLimiter;
   private final SearchClient searchClient;
   private final SystemUserScopedExecutionService executionService;
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
 
   public void lazyLoadRtacHoldings(UUID instanceId) {
-    if (rtacHoldingRepository.countByIdInstanceId(instanceId) == 0) {
+    if (dbConcurrencyLimiter.call(() -> rtacHoldingRepository.countByIdInstanceId(instanceId)) == 0) {
       try {
         var future = rtacCacheGenerationService.generateRtacCache(instanceId.toString());
         future.join();
@@ -48,11 +49,11 @@ public class RtacHoldingLazyLoadingService {
         Throwable rootCause = unwrapCompletionException(ex);
         if (isNotFound(rootCause)) {
           log.warn("Instance {} not found during RTAC cache generation; skipping.", instanceId);
-          rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
+          dbConcurrencyLimiter.run(() -> rtacHoldingRepository.deleteAllByIdInstanceId(instanceId));
           return;
         }
         log.error("RTAC cache generation failed for instanceId: {}", instanceId, ex);
-        rtacHoldingRepository.deleteAllByIdInstanceId(instanceId);
+        dbConcurrencyLimiter.run(() -> rtacHoldingRepository.deleteAllByIdInstanceId(instanceId));
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
           String.format("RTAC cache generation failed for instanceId: %s", instanceId));
       }
@@ -60,7 +61,7 @@ public class RtacHoldingLazyLoadingService {
   }
 
   public List<Throwable> lazyLoadRtacHoldings(List<UUID> instanceIds) {
-    var foundInstanceIds = rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds).stream()
+    var foundInstanceIds = dbConcurrencyLimiter.call(() -> rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).stream()
       .map(RtacBatchCountProjection::instanceId).toList();
     var missingInstanceIds = instanceIds.stream().filter(id -> !foundInstanceIds.contains(id))
       .toList();

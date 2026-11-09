@@ -1,5 +1,6 @@
 package org.folio.rtaccache.service;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,6 +37,7 @@ public class RtacCacheGenerationService {
   private final AsyncTaskExecutor taskExecutor;
   private final InventoryClient inventoryClient;
   private final RtacHoldingBulkRepository rtacHoldingBulkRepository;
+  private final DbConcurrencyLimiter dbConcurrencyLimiter;
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
@@ -84,13 +86,23 @@ public class RtacCacheGenerationService {
     };
   }
 
+  private void upsert(List<RtacHoldingEntity> holdings) {
+    dbConcurrencyLimiter.run(() -> {
+      try {
+        rtacHoldingBulkRepository.bulkUpsert(holdings);
+      } catch (SQLException e) {
+        throw new IllegalStateException(e);
+      }
+    });
+  }
+
   private void saveHolding(Instance instance, HoldingsRecord holding) {
     var rtacHolding = rtacHoldingMappingService.mapFrom(holding);
     rtacHolding.setInstanceFormatIds(instance.getInstanceFormatIds());
     var entityId = RtacHoldingId.from(rtacHolding);
     var rtacHoldingEntity = new RtacHoldingEntity(entityId, isInstanceShared(instance), rtacHolding, Instant.now());
     try {
-      rtacHoldingBulkRepository.bulkUpsert(List.of(rtacHoldingEntity));
+      upsert(List.of(rtacHoldingEntity));
     } catch (Exception e) {
       log.error("Error during bulk upsert of RTAC holdings for holding: {}", e.getMessage(), e);
     }
@@ -163,7 +175,7 @@ public class RtacCacheGenerationService {
             RtacHoldingId.from(rtacHolding), isInstanceShared(instance), rtacHolding, Instant.now()))
           .toList();
         try {
-          rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
+          upsert(rtacHoldings);
           log.info("Saved pieces for holding: {}", holding.getId());
         } catch (Exception e) {
           log.error("Error during bulk upsert of RTAC holdings for pieces: {}", e.getMessage(), e);
@@ -196,7 +208,7 @@ public class RtacCacheGenerationService {
         .map(item -> processIndividualItem(instance, holding, item, itemsLoanDueDateMap, itemsHoldCountMap))
         .toList();
       try {
-        rtacHoldingBulkRepository.bulkUpsert(rtacHoldings);
+        upsert(rtacHoldings);
         log.info("Saved items batch for holding: {} offset: {}", holding.getId(), request.getOffset());
       } catch (Exception e) {
         log.error("Error during bulk upsert of RTAC holdings: {}", e.getMessage(), e);

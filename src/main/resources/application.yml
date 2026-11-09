@@ -116,6 +116,8 @@ folio:
 
 rtac:
   cache:
+    # Max concurrent DB calls from lazy loading / cache generation; 0 = Hikari max pool size - 2
+    db-max-concurrency: ${RTAC_CACHE_DB_MAX_CONCURRENCY:0}
     invalidation:
       cron: ${RTAC_CACHE_INVALIDATION_CRON:0 0 2 * * ?}
       retention-days: ${RTAC_CACHE_RETENTION_DAYS:2}
