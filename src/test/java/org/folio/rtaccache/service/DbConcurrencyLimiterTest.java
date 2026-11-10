@@ -7,7 +7,10 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 class DbConcurrencyLimiterTest {
@@ -28,7 +31,33 @@ class DbConcurrencyLimiterTest {
       }
       for (var f : futures) { f.get(); }
     }
-    assertThat(peak.get()).isLessThanOrEqualTo(3).isGreaterThan(0);
+    assertThat(peak.get()).isLessThanOrEqualTo(3);
+  }
+
+  @Test
+  void allowsExactlyConfiguredPermitsAndBlocksTheNext() throws Exception {
+    var limiter = new DbConcurrencyLimiter(3);
+    var entered = new CountDownLatch(3);
+    var release = new CountDownLatch(1);
+    var fourthEntered = new CountDownLatch(1);
+    var threads = new ArrayList<Thread>();
+    for (int i = 0; i < 3; i++) {
+      threads.add(Thread.ofVirtual().start(() -> limiter.run(() -> {
+        entered.countDown();
+        try { release.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+      })));
+    }
+    // All three permits are taken and held.
+    assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
+
+    threads.add(Thread.ofVirtual().start(() -> limiter.run(fourthEntered::countDown)));
+    // The fourth caller must not get in while the three holders are still inside.
+    assertThat(fourthEntered.await(300, TimeUnit.MILLISECONDS)).isFalse();
+
+    release.countDown();
+    // Once permits are released the fourth caller proceeds.
+    assertThat(fourthEntered.await(5, TimeUnit.SECONDS)).isTrue();
+    for (var t : threads) { t.join(); }
   }
 
   @Test
@@ -50,8 +79,8 @@ class DbConcurrencyLimiterTest {
     }));
     holder.start();
     holding.await();
-    var failure = new java.util.concurrent.atomic.AtomicReference<Throwable>();
-    var interrupted = new java.util.concurrent.atomic.AtomicBoolean();
+    var failure = new AtomicReference<Throwable>();
+    var interrupted = new AtomicBoolean();
     var waiter = new Thread(() -> {
       try { limiter.run(() -> { }); } catch (Throwable t) { failure.set(t); }
       interrupted.set(Thread.currentThread().isInterrupted());

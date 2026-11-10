@@ -23,8 +23,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
 /**
- * Theory 1: lazy-loading many uncached instances fans out an unbounded number of virtual-thread
- * tasks that each need a DB connection, so threads queue on the pool regardless of its size.
+ * Lazy-loading many uncached instances fans out into many tasks that each need a DB connection.
+ * Their DB work must be bounded (see {@code DbConcurrencyLimiter}) so they do not queue on, and
+ * time out waiting for, the Hikari pool, whatever its size.
  */
 @TestPropertySource(properties = {
   "spring.datasource.hikari.maximum-pool-size=5",
@@ -70,9 +71,9 @@ class LazyLoadFanOutIT extends BaseIntegrationTest {
     ctx.getConfiguration().getRootLogger().removeAppender("poolReproCapture");
     ctx.updateLoggers();
     long timeouts = captured.stream().filter(LazyLoadFanOutIT::hasTimeoutCause).count();
-    System.out.println("REPRO1 pool=5 instances=500 peakActive=" + peakActive.get()
+    System.out.println("LAZY-LOAD-FANOUT pool=5 instances=500 peakActive=" + peakActive.get()
       + " peakWaiting=" + peakWaiting.get() + " errors=" + errors.size() + " poolTimeoutsLogged=" + timeouts);
-    errors.stream().limit(3).forEach(e -> System.out.println("REPRO1 error: " + e));
+    errors.stream().limit(3).forEach(e -> System.out.println("LAZY-LOAD-FANOUT error: " + e));
     withinTenant(TestConstant.TEST_TENANT, repository::deleteAll);
     // Both assertions fail on v1.1.1 and should pass once DB-using concurrency is bounded.
     assertThat(timeouts).as("pool timeouts (logged or thrown); expect none").isZero();
