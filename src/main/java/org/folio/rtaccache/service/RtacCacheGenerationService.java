@@ -20,7 +20,6 @@ import org.folio.rtaccache.domain.dto.HoldingsRecord;
 import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.Item;
 import org.folio.rtaccache.domain.dto.ItemStatus.NameEnum;
-import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.util.QueryParametersUtil;
 import org.folio.spring.FolioExecutionContext;
 import org.folio.spring.service.SystemUserScopedExecutionService;
@@ -36,8 +35,7 @@ public class RtacCacheGenerationService {
   @Qualifier("applicationTaskExecutor")
   private final AsyncTaskExecutor taskExecutor;
   private final InventoryClient inventoryClient;
-  private final RtacHoldingBulkRepository rtacHoldingBulkRepository;
-  private final DbConcurrencyLimiter dbConcurrencyLimiter;
+  private final LazyLoadDbOperations lazyLoadDbOperations;
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
@@ -87,13 +85,11 @@ public class RtacCacheGenerationService {
   }
 
   private void upsert(List<RtacHoldingEntity> holdings) {
-    dbConcurrencyLimiter.run(() -> {
-      try {
-        rtacHoldingBulkRepository.bulkUpsert(holdings);
-      } catch (SQLException e) {
-        throw new IllegalStateException(e);
-      }
-    });
+    try {
+      lazyLoadDbOperations.bulkUpsert(holdings);
+    } catch (SQLException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private void saveHolding(Instance instance, HoldingsRecord holding) {
