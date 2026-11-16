@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-@ConcurrencyLimit(limitString = "${rtac.cache.db-max-concurrency}")
+// option 3: limit moved to AllDbOperationsLimitConfiguration
 public class LazyLoadDbOperations {
 
   private final RtacHoldingRepository rtacHoldingRepository;
