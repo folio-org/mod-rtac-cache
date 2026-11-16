@@ -36,6 +36,7 @@ public class RtacCacheGenerationService {
   private final AsyncTaskExecutor taskExecutor;
   private final InventoryClient inventoryClient;
   private final LazyLoadDbOperations lazyLoadDbOperations;
+  private final ItemsBatchGate itemsBatchGate;
   private final RtacHoldingMappingService rtacHoldingMappingService;
   private final CirculationService circulationService;
   private final OrdersService ordersService;
@@ -192,11 +193,9 @@ public class RtacCacheGenerationService {
   }
 
   private CompletableFuture<Void> processItemsBatch(Instance instance, HoldingsRecord holding, FolioCqlRequest request) {
-    return CompletableFuture.supplyAsync(() -> {
+    return CompletableFuture.runAsync(() -> itemsBatchGate.run(() -> {
       log.info("Sending request for items batch for holding id: {}, offset {}", holding.getId(), request.getOffset());
-      var itemsResponse = inventoryClient.getItems(request);
-      return itemsResponse.getItems();
-    }, taskExecutor).thenAcceptAsync(items -> {
+      var items = inventoryClient.getItems(request).getItems();
       log.info("Processing items batch {}", request.getOffset());
       var itemsHoldCountMap = retrieveItemsHoldCountMap(items);
       var itemsLoanDueDateMap = retrieveItemsLoanDueDateMap(items);
@@ -209,7 +208,8 @@ public class RtacCacheGenerationService {
       } catch (Exception e) {
         log.error("Error during bulk upsert of RTAC holdings: {}", e.getMessage(), e);
       }
-    }, taskExecutor);
+      return null;
+    }), taskExecutor);
   }
 
   private Instance getInstanceById(String instanceId) {
