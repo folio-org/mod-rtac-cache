@@ -1,4 +1,4 @@
-package org.folio.rtaccache.poolrepro;
+package org.folio.rtaccache.perf;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

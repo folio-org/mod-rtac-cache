@@ -30,16 +30,45 @@ mvn clean install
 
 ## Perf tests (opt-in)
 
-This repo includes a small perf-only test lane (excluded from normal `mvn test` / `mvn verify`) to iterate on RTAC read-path performance locally.
+This repo includes a small perf-only test lane (excluded from normal `mvn test` / `mvn verify`) to iterate on RTAC performance locally. The tests live in `src/test/java/org/folio/rtaccache/perf`; classes named `*PerfTest` run only in this lane.
 
-Run:
+Run all perf tests, or one of them:
 ```shell
 mvn -Pperf test
+mvn -Pperf test -Dtest=PoolContentionPerfTest
 ```
+
+### Read-path latency (`EcsLoadedDataRepositoryPerfTest`)
+
+Seeds one large instance across several ECS member tenants and times the GET, search and batch summary queries, with `EXPLAIN` output.
+
 Optional knobs:
 - `-Dperf.itemsTotal=10000`
 - `-Dperf.instanceId=11111111-1111-1111-1111-111111111111`
 - `-Dperf.maxGetMs=...` / `-Dperf.maxSearchMs=...` / `-Dperf.maxBatchMs=...` (turn perf measurements into assertions)
+
+### Connection-pool contention (`PoolContentionPerfTest`)
+
+Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out of many uncached instances, readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts, p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt`.
+
+Use it to check the lazy-load concurrency limit (`rtac.cache.db-max-concurrency`, applied in `LazyLoadDbOperations`) against pool sizes and workloads. The pool size and limit default to the module's production defaults, but the connection timeout is 250ms rather than 30s, so contention shows up as timeouts. For example, comparing a fan-out with reads and Kafka at rest:
+```shell
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=fanout
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=at-rest -Dperf.contention.fanOut=false
+```
+
+Optional knobs (defaults in brackets):
+- `-Dperf.contention.label=...` (tags the output line and thread dump)
+- `-Dperf.contention.pool=10` / `-Dperf.contention.timeoutMillis=250` (Hikari pool size and connection timeout)
+- `-Dperf.contention.limit=8` (`rtac.cache.db-max-concurrency`)
+- `-Dperf.contention.fanOut=true` / `-Dperf.contention.instances=500` (set `fanOut=false` to measure reads and Kafka at rest for `durationMillis=5000`)
+- `-Dperf.contention.readers=50` / `-Dperf.contention.readPath=service` (`service` reads the way the REST endpoints do, including their cache check; `repository` queries the repository directly)
+- `-Dperf.contention.kafka=10` (Kafka-style workers)
+- `-Dperf.contention.httpDelayMillis=0` (latency added to the mocked inventory responses)
+- `-Dperf.contention.hangSeconds=180` (how long to wait for the fan-out)
+- `-Dperf.contention.maxFanOutErrors=...` / `-Dperf.contention.maxReadTimeouts=...` / `-Dperf.contention.maxKafkaTimeouts=...` (turn measurements into assertions; setting any of them also fails the test if the fan-out doesn't finish)
+
+`LazyLoadFanOutIT`, in the same package, is the CI regression check for the same limit: it runs with the normal integration tests and asserts that a fan-out on a small pool has no pool timeouts.
 
 ### Running mod-rtac-cache
 

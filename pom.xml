@@ -444,6 +444,8 @@
                     <include>**/*PerfTest.java</include>
                     <include>**/*PerfTests.java</include>
                   </includes>
+                  <!-- Otherwise this inherits the plugin-level excludes of these same classes and runs nothing -->
+                  <excludes combine.self="override"/>
                 </configuration>
               </execution>
             </executions>
