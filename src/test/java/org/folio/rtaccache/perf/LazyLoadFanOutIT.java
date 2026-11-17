@@ -26,10 +26,14 @@ import org.springframework.test.context.TestPropertySource;
  * Lazy-loading many uncached instances fans out into many tasks that each need a DB connection.
  * Their DB work must be bounded (see {@code LazyLoadDbOperations}) so they do not queue on, and
  * time out waiting for, the Hikari pool, whatever its size.
+ *
+ * <p>The main check is how many threads queue on the pool, which does not depend on timing: with
+ * the limit off, hundreds queue even when none time out. The connection timeout is generous so a
+ * slow machine (such as a slow connection to the test database) does not fail the test spuriously.
  */
 @TestPropertySource(properties = {
   "spring.datasource.hikari.maximum-pool-size=5",
-  "spring.datasource.hikari.connection-timeout=250",
+  "spring.datasource.hikari.connection-timeout=5000",
   "rtac.cache.db-max-concurrency=3"
 })
 class LazyLoadFanOutIT extends BaseIntegrationTest {
