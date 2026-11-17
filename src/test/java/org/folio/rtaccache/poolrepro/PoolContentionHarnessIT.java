@@ -40,6 +40,7 @@ import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.rtaccache.service.RtacHoldingLazyLoadingService;
+import org.folio.rtaccache.service.RtacHoldingStorageService;
 import org.folio.rtaccache.service.handler.impl.InstanceUpdateEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * <p>Only runs with {@code -Dharness=true}. Knobs (system properties, defaults in brackets):
  * {@code harness.label}, {@code harness.pool} [5], {@code harness.timeoutMillis} [250],
  * {@code harness.limit} [3], {@code harness.fanOut} [true], {@code harness.instances} [500],
- * {@code harness.readers} [50], {@code harness.kafka} [10], {@code harness.httpDelayMillis} [0],
+ * {@code harness.readers} [50], {@code harness.readPath} [repository, or service],
+ * {@code harness.kafka} [10], {@code harness.httpDelayMillis} [0],
  * {@code harness.durationMillis} [5000, used when the fan-out is off],
  * {@code harness.hangSeconds} [180].
  */
@@ -78,6 +80,8 @@ class PoolContentionHarnessIT extends BaseIntegrationTest {
   private static final boolean FAN_OUT = Boolean.parseBoolean(System.getProperty("harness.fanOut", "true"));
   private static final int INSTANCES = Integer.getInteger("harness.instances", 500);
   private static final int READERS = Integer.getInteger("harness.readers", 50);
+  /** {@code service} reads like the REST endpoints, including their lazy-load cache check. */
+  private static final boolean READ_VIA_SERVICE = "service".equals(System.getProperty("harness.readPath", "repository"));
   private static final int KAFKA_WORKERS = Integer.getInteger("harness.kafka", 10);
   private static final int HTTP_DELAY_MILLIS = Integer.getInteger("harness.httpDelayMillis", 0);
   private static final long DURATION_MILLIS = Long.getLong("harness.durationMillis", 5000);
@@ -92,6 +96,7 @@ class PoolContentionHarnessIT extends BaseIntegrationTest {
 
   @Autowired RtacHoldingLazyLoadingService lazyLoadingService;
   @Autowired RtacHoldingRepository repository;
+  @Autowired RtacHoldingStorageService storageService;
   @Autowired InstanceUpdateEventHandler instanceHandler;
   @Autowired DataSource dataSource;
   @MockitoBean ResourceEventUtil resourceEventUtil;
@@ -134,7 +139,11 @@ class PoolContentionHarnessIT extends BaseIntegrationTest {
       for (int i = 0; i < READERS; i++) {
         background.add(CompletableFuture.runAsync(() -> withinTenant(TestConstant.TEST_TENANT, () -> {
           while (!done.get()) {
-            reads.time(() -> repository.findAllByIdInstanceId(readInstance, PageRequest.of(0, 5)));
+            if (READ_VIA_SERVICE) {
+              reads.time(() -> storageService.getRtacHoldingsByInstanceId(readInstance, PageRequest.of(0, 5)));
+            } else {
+              reads.time(() -> repository.findAllByIdInstanceId(readInstance, PageRequest.of(0, 5)));
+            }
           }
         }), executor));
       }
@@ -174,7 +183,7 @@ class PoolContentionHarnessIT extends BaseIntegrationTest {
     long elapsedMillis = (System.nanoTime() - start) / 1_000_000;
     long loggedTimeouts = logged.stream().filter(PoolContentionHarnessIT::hasTimeoutCause).count();
     System.out.println("HARNESS label=" + LABEL + " pool=" + POOL + " timeoutMillis=" + TIMEOUT_MILLIS
-      + " limit=" + LIMIT + " fanOut=" + FAN_OUT + " instances=" + INSTANCES + " readers=" + READERS
+      + " limit=" + LIMIT + " readPath=" + (READ_VIA_SERVICE ? "service" : "repository") + " fanOut=" + FAN_OUT + " instances=" + INSTANCES + " readers=" + READERS
       + " kafka=" + KAFKA_WORKERS + " httpDelayMillis=" + HTTP_DELAY_MILLIS
       + " | hung=" + hung + " elapsedMillis=" + elapsedMillis
       + " fanOutErrors=" + fanOutErrors.size() + " loggedTimeouts=" + loggedTimeouts

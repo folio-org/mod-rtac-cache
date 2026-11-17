@@ -21,6 +21,7 @@ import org.folio.rtaccache.client.SearchClient;
 import org.folio.rtaccache.domain.RtacBatchCountProjection;
 import org.folio.rtaccache.domain.dto.ConsortiumHolding;
 import org.folio.rtaccache.domain.dto.ConsortiumHoldings;
+import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,8 @@ class RtacHoldingLazyLoadingServiceTest {
 
   @Mock
   private LazyLoadDbOperations lazyLoadDbOperations;
+  @Mock
+  private RtacHoldingRepository rtacHoldingRepository;
   @Mock
   private RtacCacheGenerationService rtacCacheGenerationService;
   @Mock
@@ -153,7 +156,7 @@ class RtacHoldingLazyLoadingServiceTest {
     var instanceIds = List.of(instanceId1, instanceId2, instanceId3);
 
     var projection1 = new RtacBatchCountProjection(instanceId1, 1L);
-    when(lazyLoadDbOperations.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of(projection1));
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of(projection1));
 
     // Mock for the inner call to lazyLoadRtacHoldings(UUID)
     when(lazyLoadDbOperations.countByIdInstanceId(instanceId2)).thenReturn(0);
@@ -174,7 +177,7 @@ class RtacHoldingLazyLoadingServiceTest {
     var instanceId2 = UUID.randomUUID();
     var instanceIds = List.of(instanceId1, instanceId2);
 
-    when(lazyLoadDbOperations.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
     when(lazyLoadDbOperations.countByIdInstanceId(any())).thenReturn(0);
 
     var failedFuture = new CompletableFuture<Void>();
@@ -211,7 +214,7 @@ class RtacHoldingLazyLoadingServiceTest {
     var responseStatusFuture = CompletableFuture.<Void>failedFuture(new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
     var restClientFuture = CompletableFuture.<Void>failedFuture(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
-    when(lazyLoadDbOperations.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
     doReturn(responseStatusFuture, restClientFuture).when(taskExecutor).submitCompletable(any(Runnable.class));
 
     var exceptions = service.lazyLoadRtacHoldings(instanceIds);
@@ -226,7 +229,7 @@ class RtacHoldingLazyLoadingServiceTest {
     var badRequest = new HttpClientErrorException(HttpStatus.BAD_REQUEST);
     var failedFuture = CompletableFuture.<Void>failedFuture(badRequest);
 
-    when(lazyLoadDbOperations.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
+    when(rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds)).thenReturn(List.of());
     doReturn(failedFuture).when(taskExecutor).submitCompletable(any(Runnable.class));
 
     var exceptions = service.lazyLoadRtacHoldings(instanceIds);

@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.folio.rtaccache.domain.RtacBatchCountProjection;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
@@ -20,6 +19,9 @@ import org.springframework.stereotype.Component;
  * only for one leaf database call, never while waiting on other tasks, so parent tasks that join
  * child tasks cannot deadlock on it. Keep the limit below the pool size so other callers, such as
  * the Kafka handlers and REST reads, still get connections.
+ *
+ * <p>The per-request check for which instances are already cached is deliberately not here: every
+ * REST read makes it, so limiting it would make cached reads queue behind a lazy-load fan-out.
  */
 @Component
 @RequiredArgsConstructor
@@ -31,10 +33,6 @@ public class LazyLoadDbOperations {
 
   public int countByIdInstanceId(UUID instanceId) {
     return rtacHoldingRepository.countByIdInstanceId(instanceId);
-  }
-
-  public List<RtacBatchCountProjection> countBatchByIdInstanceIdIn(List<UUID> instanceIds) {
-    return rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds);
   }
 
   public void deleteAllByIdInstanceId(UUID instanceId) {
