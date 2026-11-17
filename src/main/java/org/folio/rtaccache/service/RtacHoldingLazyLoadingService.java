@@ -18,6 +18,7 @@ import org.folio.rtaccache.domain.RtacBatchCountProjection;
 import org.folio.rtaccache.domain.dto.BatchIdsDto;
 import org.folio.rtaccache.domain.dto.BatchIdsDto.IdentifierTypeEnum;
 import org.folio.rtaccache.domain.dto.ConsortiumHoldings;
+import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.folio.spring.service.SystemUserScopedExecutionService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -33,6 +34,7 @@ public class RtacHoldingLazyLoadingService {
 
   private final RtacCacheGenerationService rtacCacheGenerationService;
   private final LazyLoadDbOperations lazyLoadDbOperations;
+  private final RtacHoldingRepository rtacHoldingRepository;
   private final SearchClient searchClient;
   private final SystemUserScopedExecutionService executionService;
   @Qualifier("applicationTaskExecutor")
@@ -59,7 +61,8 @@ public class RtacHoldingLazyLoadingService {
   }
 
   public List<Throwable> lazyLoadRtacHoldings(List<UUID> instanceIds) {
-    var foundInstanceIds = lazyLoadDbOperations.countBatchByIdInstanceIdIn(instanceIds).stream()
+    // Not behind LazyLoadDbOperations' limit: every REST read makes this check, cached or not.
+    var foundInstanceIds = rtacHoldingRepository.countBatchByIdInstanceIdIn(instanceIds).stream()
       .map(RtacBatchCountProjection::instanceId).toList();
     var missingInstanceIds = instanceIds.stream().filter(id -> !foundInstanceIds.contains(id))
       .toList();

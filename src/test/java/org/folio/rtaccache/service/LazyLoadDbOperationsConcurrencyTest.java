@@ -54,14 +54,13 @@ class LazyLoadDbOperationsConcurrencyTest {
       inFlight.decrementAndGet();
     };
     when(repository.countByIdInstanceId(any())).thenAnswer(inv -> { blockingCall.run(); return 0; });
-    when(repository.countBatchByIdInstanceIdIn(any())).thenAnswer(inv -> { blockingCall.run(); return List.of(); });
     doAnswer(inv -> { blockingCall.run(); return null; }).when(repository).deleteAllByIdInstanceId(any());
     doAnswer(inv -> { blockingCall.run(); return null; }).when(bulkRepository).bulkUpsert(any());
 
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var calls = new ArrayList<CompletableFuture<Void>>();
       for (int i = 0; i < CALLERS; i++) {
-        int which = i % 4;
+        int which = i % 3;
         calls.add(CompletableFuture.runAsync(() -> callOne(which), executor));
       }
 
@@ -80,8 +79,7 @@ class LazyLoadDbOperationsConcurrencyTest {
     try {
       switch (which) {
         case 0 -> operations.countByIdInstanceId(UUID.randomUUID());
-        case 1 -> operations.countBatchByIdInstanceIdIn(List.of(UUID.randomUUID()));
-        case 2 -> operations.deleteAllByIdInstanceId(UUID.randomUUID());
+        case 1 -> operations.deleteAllByIdInstanceId(UUID.randomUUID());
         default -> operations.bulkUpsert(List.of());
       }
     } catch (Exception e) {
