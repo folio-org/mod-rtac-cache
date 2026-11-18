@@ -11,7 +11,10 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
 import java.sql.SQLTransientConnectionException;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
 import org.folio.rtaccache.BaseIntegrationTest;
@@ -60,19 +63,18 @@ class LazyLoadFanOutIT extends BaseIntegrationTest {
     var hikari = dataSource.unwrap(HikariDataSource.class);
     var peakActive = new AtomicInteger();
     var peakWaiting = new AtomicInteger();
-    var sampler = new Thread(() -> {
-      while (!Thread.currentThread().isInterrupted()) {
+    List<Throwable> errors;
+    // Closing the sampler cancels its periodic task and waits for any sample in progress.
+    try (var sampler = Executors.newSingleThreadScheduledExecutor()) {
+      sampler.scheduleAtFixedRate(() -> {
         var mx = hikari.getHikariPoolMXBean();
         peakActive.accumulateAndGet(mx.getActiveConnections(), Math::max);
         peakWaiting.accumulateAndGet(mx.getThreadsAwaitingConnection(), Math::max);
-        try { Thread.sleep(5); } catch (InterruptedException e) { return; }
-      }
-    });
-    sampler.start();
+      }, 0, 5, TimeUnit.MILLISECONDS);
 
-    var ids = Collections.nCopies(500, INSTANCE_1);
-    var errors = withinTenantWithResult(TestConstant.TEST_TENANT, () -> service.lazyLoadRtacHoldings(ids));
-    sampler.interrupt();
+      var ids = Collections.nCopies(500, INSTANCE_1);
+      errors = withinTenantWithResult(TestConstant.TEST_TENANT, () -> service.lazyLoadRtacHoldings(ids));
+    }
     ctx.getConfiguration().getRootLogger().removeAppender("poolReproCapture");
     ctx.updateLoggers();
     long timeouts = captured.stream().filter(LazyLoadFanOutIT::hasTimeoutCause).count();

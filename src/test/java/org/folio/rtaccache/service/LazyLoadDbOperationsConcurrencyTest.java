@@ -1,10 +1,12 @@
 package org.folio.rtaccache.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -65,9 +67,9 @@ class LazyLoadDbOperationsConcurrencyTest {
       }
 
       assertThat(limitReached.await(10, TimeUnit.SECONDS)).as("limit reached").isTrue();
-      // Give any caller that slipped past the limit time to show up.
-      Thread.sleep(200);
-      assertThat(inFlight.get()).as("calls in flight while the limit is held").isEqualTo(LIMIT);
+      // While the limit is held, no other caller may slip past it.
+      await().during(Duration.ofMillis(200)).atMost(Duration.ofSeconds(1))
+        .untilAsserted(() -> assertThat(inFlight.get()).as("calls in flight while the limit is held").isEqualTo(LIMIT));
 
       release.countDown();
       CompletableFuture.allOf(calls.toArray(new CompletableFuture[0])).get(10, TimeUnit.SECONDS);

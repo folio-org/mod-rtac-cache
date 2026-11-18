@@ -132,16 +132,15 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
     boolean hung = false;
     long start = System.nanoTime();
 
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+    // Closing the scheduler (after the executor's workloads finish) cancels the sampler.
+    try (var scheduler = Executors.newSingleThreadScheduledExecutor();
+         var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      scheduler.scheduleAtFixedRate(() -> {
+        var mx = hikari.getHikariPoolMXBean();
+        peakActive.accumulateAndGet(mx.getActiveConnections(), Math::max);
+        peakWaiting.accumulateAndGet(mx.getThreadsAwaitingConnection(), Math::max);
+      }, 0, 5, TimeUnit.MILLISECONDS);
       var background = new ArrayList<CompletableFuture<Void>>();
-      background.add(CompletableFuture.runAsync(() -> {
-        while (!done.get()) {
-          var mx = hikari.getHikariPoolMXBean();
-          peakActive.accumulateAndGet(mx.getActiveConnections(), Math::max);
-          peakWaiting.accumulateAndGet(mx.getThreadsAwaitingConnection(), Math::max);
-          sleep(5);
-        }
-      }, executor));
       for (int i = 0; i < READERS; i++) {
         background.add(CompletableFuture.runAsync(() -> withinTenant(TestConstant.TEST_TENANT, () -> {
           while (!done.get()) {
@@ -169,7 +168,8 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
               () -> lazyLoadingService.lazyLoadRtacHoldings(Collections.nCopies(INSTANCES, UNCACHED_INSTANCE))),
             executor).get(HANG_SECONDS, TimeUnit.SECONDS);
         } else {
-          sleep(DURATION_MILLIS);
+          // Let the reads and Kafka workloads run for the duration; the finally block then stops them.
+          scheduler.schedule(() -> { }, DURATION_MILLIS, TimeUnit.MILLISECONDS).get();
         }
       } catch (TimeoutException e) {
         hung = true;
@@ -269,14 +269,6 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
       System.out.println("RTAC PERF CONTENTION thread dump: " + file);
     } catch (Exception e) {
       System.out.println("RTAC PERF CONTENTION thread dump failed: " + e);
-    }
-  }
-
-  private static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
     }
   }
 
