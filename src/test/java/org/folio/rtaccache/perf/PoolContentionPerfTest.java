@@ -201,10 +201,10 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
     fanOutErrors.stream().limit(2).forEach(e -> System.out.println("RTAC PERF CONTENTION fan-out error: " + e));
     withinTenant(TestConstant.TEST_TENANT, repository::deleteAll);
 
-    boolean anyAssertion = assertOptionalMax("perf.contention.maxFanOutErrors", fanOutErrors.size())
-      | assertOptionalMax("perf.contention.maxReadTimeouts", reads.timeouts())
-      | assertOptionalMax("perf.contention.maxKafkaTimeouts", kafka.timeouts());
-    if (anyAssertion) {
+    boolean fanOutChecked = assertOptionalMax("perf.contention.maxFanOutErrors", fanOutErrors.size());
+    boolean readsChecked = assertOptionalMax("perf.contention.maxReadTimeouts", reads.timeouts());
+    boolean kafkaChecked = assertOptionalMax("perf.contention.maxKafkaTimeouts", kafka.timeouts());
+    if (fanOutChecked || readsChecked || kafkaChecked) {
       assertThat(hung).as("fan-out still running after %s seconds", HANG_SECONDS).isFalse();
     }
   }
