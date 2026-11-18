@@ -6,18 +6,21 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
+import java.sql.SQLException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import org.folio.rtaccache.config.ResilienceConfiguration;
 import org.folio.rtaccache.repository.RtacHoldingBulkRepository;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -29,63 +32,94 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
  * methods share one limit.
  */
 @SpringJUnitConfig({ResilienceConfiguration.class, LazyLoadDbOperations.class})
-@TestPropertySource(properties = "rtac.cache.db-max-concurrency=3")
+@TestPropertySource(properties = "rtac.cache.db-max-concurrency=" + LazyLoadDbOperationsConcurrencyTest.LIMIT)
 class LazyLoadDbOperationsConcurrencyTest {
 
-  private static final int LIMIT = 3;
+  static final int LIMIT = 3;
   private static final int CALLERS = 12;
+  private static final int METHODS = 3;
+  private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
   @Autowired LazyLoadDbOperations operations;
   @MockitoBean RtacHoldingRepository repository;
   @MockitoBean RtacHoldingBulkRepository bulkRepository;
 
+  private final AtomicInteger inFlight = new AtomicInteger();
+  private final AtomicInteger peak = new AtomicInteger();
+  private final CountDownLatch limitReached = new CountDownLatch(LIMIT);
+  private final CountDownLatch release = new CountDownLatch(1);
+
+  @BeforeEach
+  void blockEveryRepositoryCall() throws SQLException {
+    when(repository.countByIdInstanceId(any())).thenAnswer(inv -> {
+      blockUntilReleased();
+      return 0;
+    });
+    doAnswer(inv -> {
+      blockUntilReleased();
+      return null;
+    }).when(repository).deleteAllByIdInstanceId(any());
+    doAnswer(inv -> {
+      blockUntilReleased();
+      return null;
+    }).when(bulkRepository).bulkUpsert(any());
+  }
+
   @Test
   void allMethodsShareOneLimit() throws Exception {
-    var inFlight = new AtomicInteger();
-    var peak = new AtomicInteger();
-    var limitReached = new CountDownLatch(LIMIT);
-    var release = new CountDownLatch(1);
-    Runnable blockingCall = () -> {
-      peak.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
-      limitReached.countDown();
-      try {
-        release.await(10, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      inFlight.decrementAndGet();
-    };
-    when(repository.countByIdInstanceId(any())).thenAnswer(inv -> { blockingCall.run(); return 0; });
-    doAnswer(inv -> { blockingCall.run(); return null; }).when(repository).deleteAllByIdInstanceId(any());
-    doAnswer(inv -> { blockingCall.run(); return null; }).when(bulkRepository).bulkUpsert(any());
-
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      var calls = new ArrayList<CompletableFuture<Void>>();
-      for (int i = 0; i < CALLERS; i++) {
-        int which = i % 3;
-        calls.add(CompletableFuture.runAsync(() -> callOne(which), executor));
-      }
+      var calls = startCallers(executor);
 
-      assertThat(limitReached.await(10, TimeUnit.SECONDS)).as("limit reached").isTrue();
-      // While the limit is held, no other caller may slip past it.
-      await().during(Duration.ofMillis(200)).atMost(Duration.ofSeconds(1))
-        .untilAsserted(() -> assertThat(inFlight.get()).as("calls in flight while the limit is held").isEqualTo(LIMIT));
+      awaitLimitReached();
+      assertLimitHolds();
 
       release.countDown();
-      CompletableFuture.allOf(calls.toArray(new CompletableFuture[0])).get(10, TimeUnit.SECONDS);
+      awaitAll(calls);
     }
     assertThat(peak.get()).as("peak concurrent calls").isEqualTo(LIMIT);
   }
 
-  private void callOne(int which) {
+  /** Stands in for a DB call: counts itself in flight until the test releases it. */
+  private void blockUntilReleased() throws InterruptedException {
+    peak.accumulateAndGet(inFlight.incrementAndGet(), Math::max);
+    limitReached.countDown();
     try {
-      switch (which) {
+      release.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+    } finally {
+      inFlight.decrementAndGet();
+    }
+  }
+
+  /** Starts more callers than the limit allows, spread across every method of {@link LazyLoadDbOperations}. */
+  private List<CompletableFuture<Void>> startCallers(ExecutorService executor) {
+    return IntStream.range(0, CALLERS)
+      .mapToObj(i -> CompletableFuture.runAsync(() -> callMethod(i % METHODS), executor))
+      .toList();
+  }
+
+  private void callMethod(int method) {
+    try {
+      switch (method) {
         case 0 -> operations.countByIdInstanceId(UUID.randomUUID());
         case 1 -> operations.deleteAllByIdInstanceId(UUID.randomUUID());
         default -> operations.bulkUpsert(List.of());
       }
-    } catch (Exception e) {
+    } catch (SQLException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  private void awaitLimitReached() throws InterruptedException {
+    assertThat(limitReached.await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)).as("limit reached").isTrue();
+  }
+
+  /** While the limit is held, no other caller may slip past it. */
+  private void assertLimitHolds() {
+    await().during(Duration.ofMillis(200)).atMost(Duration.ofSeconds(1))
+      .untilAsserted(() -> assertThat(inFlight.get()).as("calls in flight while the limit is held").isEqualTo(LIMIT));
+  }
+
+  private static void awaitAll(List<CompletableFuture<Void>> calls) throws Exception {
+    CompletableFuture.allOf(calls.toArray(new CompletableFuture[0])).get(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
   }
 }
