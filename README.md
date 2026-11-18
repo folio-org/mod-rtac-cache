@@ -49,7 +49,7 @@ Optional knobs:
 
 ### Connection-pool contention (`PoolContentionPerfTest`)
 
-Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out of many uncached instances, readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts, p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt`.
+Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out of many uncached instances, readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts, p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt` and abandons the fan-out, so the test ends instead of waiting for it.
 
 Use it to check the lazy-load concurrency limit (`rtac.cache.db-max-concurrency`, applied in `LazyLoadDbOperations`) against pool sizes and workloads. The pool size and limit default to the module's production defaults, but the connection timeout is 250ms rather than 30s, so contention shows up as timeouts. For example, comparing a fan-out with reads and Kafka at rest:
 ```shell
@@ -65,10 +65,12 @@ Optional knobs (defaults in brackets):
 - `-Dperf.contention.readers=50` / `-Dperf.contention.readPath=service` (`service` reads the way the REST endpoints do, including their cache check; `repository` queries the repository directly)
 - `-Dperf.contention.kafka=10` (Kafka-style workers)
 - `-Dperf.contention.httpDelayMillis=0` (latency added to the mocked inventory responses)
-- `-Dperf.contention.hangSeconds=180` (how long to wait for the fan-out)
+- `-Dperf.contention.hangSeconds=180` (how long to wait for the fan-out before abandoning it)
 - `-Dperf.contention.maxFanOutErrors=...` / `-Dperf.contention.maxReadTimeouts=...` / `-Dperf.contention.maxKafkaTimeouts=...` (turn measurements into assertions; setting any of them also fails the test if the fan-out doesn't finish)
 
-`LazyLoadFanOutIT`, in the same package, is the CI regression check for the same limit: it runs with the normal integration tests and asserts that a fan-out on a small pool has no pool timeouts.
+### Lazy-load fan-out (`LazyLoadFanOutPerfTest`)
+
+A pass/fail check of the same limit, with no knobs: it lazy-loads 500 uncached instances on a pool of 5 with a limit of 3, and asserts that the fan-out has no errors or pool timeouts, and that no more threads queue on the pool than it has connections. It's in this lane rather than CI because its outcome can depend on the hardware; CI covers the limit itself with the unit test `LazyLoadDbOperationsConcurrencyTest`.
 
 ### Running mod-rtac-cache
 
