@@ -32,7 +32,7 @@ final class WorkloadStats {
   @Override
   public String toString() {
     var sorted = micros.stream().mapToLong(Long::longValue).sorted().toArray();
-    return "ops=" + sorted.length + " failures=" + failures.size() + " timeouts=" + timeouts()
+    return "ops=" + sorted.length + " failures=" + failures.size() + " timeouts=" + PoolTimeouts.bySite(failures)
       + " p50Ms=" + percentileMillis(sorted, 50) + " p99Ms=" + percentileMillis(sorted, 99)
       + " maxMs=" + percentileMillis(sorted, 100);
   }

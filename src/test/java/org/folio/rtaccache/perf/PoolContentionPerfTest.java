@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import java.lang.management.ManagementFactory;
@@ -11,10 +14,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,8 +36,9 @@ import org.folio.rtaccache.domain.dto.Instance;
 import org.folio.rtaccache.domain.dto.InventoryResourceEvent;
 import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
+import org.folio.rtaccache.domain.dto.RtacHoldingsBatch;
+import org.folio.rtaccache.domain.dto.RtacRequest;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
-import org.folio.rtaccache.service.RtacHoldingLazyLoadingService;
 import org.folio.rtaccache.service.RtacHoldingStorageService;
 import org.folio.rtaccache.service.handler.impl.InstanceUpdateEventHandler;
 import org.folio.rtaccache.util.ResourceEventUtil;
@@ -43,49 +49,58 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Measures DB connection-pool contention by running three workloads against one small pool at the
  * same time, and logging one {@code RTAC PERF CONTENTION} line of metrics:
  * <ul>
- *   <li>a lazy-load fan-out of many uncached instances;</li>
- *   <li>readers, standing in for REST reads of cached holdings;</li>
+ *   <li>a lazy-load fan-out: concurrent batch requests for many uncached instances;</li>
+ *   <li>readers, each reading one cached instance over and over;</li>
  *   <li>Kafka-style workers, each running a {@code @Transactional} event handler in a loop.</li>
  * </ul>
  *
+ * <p>By default the batch requests and the reads go through Spring MVC (MockMvc), as real REST
+ * requests do, so whatever MVC adds is in play: open-in-view, for one, makes a request hold its
+ * connection while it waits for its fan-out, and with it on this test's batch requests fail.
+ * {@code path=service} calls the same service methods directly instead, to compare.
+ *
  * <p>Runs in the perf lane ({@code mvn -Pperf test}). Knobs (system properties, defaults in
  * brackets): {@code perf.contention.label}, {@code perf.contention.pool} [10],
- * {@code perf.contention.timeoutMillis} [250], {@code perf.contention.limit} [8],
- * {@code perf.contention.fanOut} [true], {@code perf.contention.instances} [500],
- * {@code perf.contention.readers} [50], {@code perf.contention.readPath} [service, or repository],
- * {@code perf.contention.kafka} [10], {@code perf.contention.httpDelayMillis} [0],
+ * {@code perf.contention.timeoutMillis} [2000], {@code perf.contention.limit} [8],
+ * {@code perf.contention.path} [rest, or service], {@code perf.contention.fanOut} [true],
+ * {@code perf.contention.batchRequests} [20], {@code perf.contention.idsPerBatch} [25],
+ * {@code perf.contention.readers} [10], {@code perf.contention.kafka} [5],
+ * {@code perf.contention.httpDelayMillis} [0],
  * {@code perf.contention.durationMillis} [5000, used when the fan-out is off],
  * {@code perf.contention.hangSeconds} [180].
  *
- * <p>Optional assertions, off unless set: {@code perf.contention.maxFanOutErrors},
- * {@code perf.contention.maxReadTimeouts}, {@code perf.contention.maxKafkaTimeouts}. Setting any of
- * them also fails the test if the fan-out does not finish within {@code hangSeconds}.
+ * <p>Optional assertions, off unless set: {@code perf.contention.maxFanOutErrors} (failed batch
+ * requests plus lazy-load errors in their responses), {@code perf.contention.maxReadTimeouts},
+ * {@code perf.contention.maxKafkaTimeouts}. Setting any of them also fails the test if the fan-out
+ * does not finish within {@code hangSeconds}.
  */
 class PoolContentionPerfTest extends BaseIntegrationTest {
 
   private static final Logger log = LoggerFactory.getLogger(PoolContentionPerfTest.class);
   private static final UUID UNCACHED_INSTANCE = UUID.fromString("4de861ab-af9e-4247-bc16-c547d982eb5d");
+  private static final ObjectMapper JSON = new ObjectMapper();
 
   private static final String LABEL = System.getProperty("perf.contention.label", "unlabeled");
   /** Pool and limit default to the module's production defaults; the timeout is far shorter than 30s. */
   private static final int POOL = Integer.getInteger("perf.contention.pool", 10);
-  private static final int TIMEOUT_MILLIS = Integer.getInteger("perf.contention.timeoutMillis", 250);
+  private static final int TIMEOUT_MILLIS = Integer.getInteger("perf.contention.timeoutMillis", 2000);
   private static final int LIMIT = Integer.getInteger("perf.contention.limit", 8);
+  private static final boolean VIA_REST = !"service".equals(System.getProperty("perf.contention.path", "rest"));
   private static final boolean FAN_OUT = Boolean.parseBoolean(System.getProperty("perf.contention.fanOut", "true"));
-  private static final int INSTANCES = Integer.getInteger("perf.contention.instances", 500);
-  private static final int READERS = Integer.getInteger("perf.contention.readers", 50);
-  /** {@code service} reads like the REST endpoints, including their lazy-load cache check. */
-  private static final boolean READ_VIA_SERVICE =
-    "service".equals(System.getProperty("perf.contention.readPath", "service"));
-  private static final int KAFKA_WORKERS = Integer.getInteger("perf.contention.kafka", 10);
+  private static final int BATCH_REQUESTS = Integer.getInteger("perf.contention.batchRequests", 20);
+  private static final int IDS_PER_BATCH = Integer.getInteger("perf.contention.idsPerBatch", 25);
+  private static final int READERS = Integer.getInteger("perf.contention.readers", 10);
+  private static final int KAFKA_WORKERS = Integer.getInteger("perf.contention.kafka", 5);
   private static final int HTTP_DELAY_MILLIS = Integer.getInteger("perf.contention.httpDelayMillis", 0);
   private static final long DURATION_MILLIS = Long.getLong("perf.contention.durationMillis", 5000);
   private static final long HANG_SECONDS = Long.getLong("perf.contention.hangSeconds", 180);
@@ -97,7 +112,6 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
     registry.add("rtac.cache.db-max-concurrency", () -> LIMIT);
   }
 
-  @Autowired RtacHoldingLazyLoadingService lazyLoadingService;
   @Autowired RtacHoldingRepository repository;
   @Autowired RtacHoldingStorageService storageService;
   @Autowired InstanceUpdateEventHandler instanceHandler;
@@ -108,12 +122,11 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
   private final ThreadLocal<Instance> workerInstance = new ThreadLocal<>();
   /** Tells the readers and Kafka workers to stop. */
   private final AtomicBoolean done = new AtomicBoolean();
+  private final WorkloadStats batches = new WorkloadStats();
+  /** Lazy-load errors that batch responses reported; the requests themselves succeeded. */
+  private final Collection<String> lazyLoadErrors = new ConcurrentLinkedQueue<>();
   private final WorkloadStats reads = new WorkloadStats();
   private final WorkloadStats kafka = new WorkloadStats();
-
-  /** What the fan-out returned, or that it was abandoned after {@code hangSeconds}. */
-  private record FanOutResult(List<Throwable> errors, boolean hung) {
-  }
 
   @BeforeEach
   void setUp() {
@@ -134,7 +147,7 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
     var kafkaInstances = IntStream.range(0, KAFKA_WORKERS).mapToObj(i -> seedCachedInstance()).toList();
 
     long start = System.nanoTime();
-    FanOutResult fanOut;
+    boolean hung;
     try (var logged = LoggedErrors.capture();
          var pool = PoolSampler.start(dataSource)) {
       try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -142,23 +155,23 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
         background.addAll(startReaders(executor, readInstance));
         background.addAll(startKafkaWorkers(executor, kafkaInstances));
         try {
-          fanOut = FAN_OUT ? runFanOut() : idleForDuration();
+          hung = FAN_OUT ? runFanOut() : idleForDuration();
         } finally {
           done.set(true);
         }
         CompletableFuture.allOf(background.toArray(new CompletableFuture[0])).get(60, TimeUnit.SECONDS);
       }
-      report(fanOut, (System.nanoTime() - start) / 1_000_000, logged, pool);
+      report(hung, (System.nanoTime() - start) / 1_000_000, logged, pool);
     }
 
-    assertOptionalLimits(fanOut);
+    assertOptionalLimits(hung);
   }
 
   private List<CompletableFuture<Void>> startReaders(ExecutorService executor, UUID instanceId) {
-    var page = PageRequest.of(0, 5);
-    ThrowingRunnable read = READ_VIA_SERVICE
-      ? () -> storageService.getRtacHoldingsByInstanceId(instanceId, page)
-      : () -> repository.findAllByIdInstanceId(instanceId, page);
+    ThrowingRunnable read = VIA_REST
+      ? () -> expectOk(mockMvc.perform(get("/rtac-cache/{id}", instanceId).param("offset", "0").param("limit", "5")
+          .headers(defaultHeaders(TestConstant.TEST_TENANT, APPLICATION_JSON))).andReturn().getResponse().getStatus())
+      : () -> storageService.getRtacHoldingsByInstanceId(instanceId, PageRequest.of(0, 5));
     return IntStream.range(0, READERS)
       .mapToObj(i -> repeatUntilDone(executor, () -> reads.time(read)))
       .toList();
@@ -184,61 +197,87 @@ class PoolContentionPerfTest extends BaseIntegrationTest {
   }
 
   /**
-   * Runs the fan-out on its own executor, so that a hung fan-out can be abandoned instead of waited
-   * for: it blocks in {@code CompletableFuture.join}, which ignores interrupts.
+   * Sends the batch requests all at once, and returns whether they hung. They run on their own
+   * executor so that hung requests can be abandoned instead of waited for: each one blocks in
+   * {@code CompletableFuture.join}, which ignores interrupts.
    */
-  private FanOutResult runFanOut() throws InterruptedException {
+  private boolean runFanOut() throws InterruptedException, ExecutionException {
+    var ids = Collections.nCopies(IDS_PER_BATCH, UNCACHED_INSTANCE);
     var fanOutExecutor = Executors.newVirtualThreadPerTaskExecutor();
     try {
-      var errors = CompletableFuture.supplyAsync(() -> withinTenantWithResult(TestConstant.TEST_TENANT,
-          () -> lazyLoadingService.lazyLoadRtacHoldings(Collections.nCopies(INSTANCES, UNCACHED_INSTANCE))),
-        fanOutExecutor).get(HANG_SECONDS, TimeUnit.SECONDS);
-      return new FanOutResult(errors, false);
+      var requests = IntStream.range(0, BATCH_REQUESTS)
+        .mapToObj(i -> CompletableFuture.runAsync(() -> withinTenant(TestConstant.TEST_TENANT,
+          () -> batches.time(() -> collectLazyLoadErrors(VIA_REST ? postBatch(ids) : summarize(ids)))), fanOutExecutor))
+        .toArray(CompletableFuture[]::new);
+      CompletableFuture.allOf(requests).get(HANG_SECONDS, TimeUnit.SECONDS);
+      return false;
     } catch (TimeoutException e) {
       dumpThreads();
-      return new FanOutResult(List.of(), true);
-    } catch (ExecutionException e) {
-      // The fan-out's own first DB call failed, before it fanned out.
-      return new FanOutResult(List.of(e.getCause()), false);
+      return true;
     } finally {
-      // Not close(): after a timeout that would wait for the hung fan-out.
+      // Not close(): after a timeout that would wait for the hung requests.
       fanOutExecutor.shutdownNow();
     }
   }
 
-  /** Lets the readers and Kafka workers run for {@code durationMillis} when there is no fan-out. */
-  private static FanOutResult idleForDuration() throws InterruptedException, ExecutionException {
-    CompletableFuture.runAsync(() -> { }, CompletableFuture.delayedExecutor(DURATION_MILLIS, TimeUnit.MILLISECONDS))
-      .get();
-    return new FanOutResult(List.of(), false);
+  private RtacHoldingsBatch postBatch(List<UUID> ids) throws Exception {
+    var response = mockMvc.perform(post("/rtac-cache/batch")
+        .headers(defaultHeaders(TestConstant.TEST_TENANT, APPLICATION_JSON))
+        .content(JSON.writeValueAsString(new RtacRequest().instanceIds(ids.stream().map(UUID::toString).toList()))))
+      .andReturn().getResponse();
+    expectOk(response.getStatus());
+    return JSON.readValue(response.getContentAsString(), RtacHoldingsBatch.class);
   }
 
-  private void report(FanOutResult fanOut, long elapsedMillis, LoggedErrors logged, PoolSampler pool) {
-    log.info("RTAC PERF CONTENTION label={} pool={} timeoutMillis={} limit={} readPath={} fanOut={} instances={}"
-        + " readers={} kafka={} httpDelayMillis={} | hung={} elapsedMillis={} fanOutErrors={} loggedTimeouts={}"
-        + " | reads {} | kafka {} | peakActive={} peakWaiting={}",
-      LABEL, POOL, TIMEOUT_MILLIS, LIMIT, READ_VIA_SERVICE ? "service" : "repository", FAN_OUT, INSTANCES,
-      READERS, KAFKA_WORKERS, HTTP_DELAY_MILLIS, fanOut.hung(), elapsedMillis, fanOut.errors().size(),
-      logged.poolTimeouts(), reads, kafka, pool.peakActive(), pool.peakWaiting());
-    logSamples("read failure", reads.failures());
-    logSamples("kafka failure", kafka.failures());
-    logSamples("fan-out error", fanOut.errors());
+  /** What the batch endpoint does, without Spring MVC. */
+  private RtacHoldingsBatch summarize(List<UUID> ids) {
+    return storageService.getRtacHoldingsSummaryForInstanceIds(ids);
   }
 
-  /** Logs the first two, as text so the log capture and the console stay readable. */
-  private static void logSamples(String kind, Iterable<Throwable> failures) {
-    var it = failures.iterator();
-    for (int i = 0; i < 2 && it.hasNext(); i++) {
-      log.info("RTAC PERF CONTENTION {}: {}", kind, it.next().toString());
+  private void collectLazyLoadErrors(RtacHoldingsBatch batch) {
+    batch.getErrors().stream()
+      .filter(error -> String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()).equals(error.getCode()))
+      .forEach(error -> lazyLoadErrors.add(error.getMessage()));
+  }
+
+  private static void expectOk(int status) {
+    if (status != HttpStatus.OK.value()) {
+      throw new IllegalStateException("HTTP " + status);
     }
   }
 
-  private void assertOptionalLimits(FanOutResult fanOut) {
-    boolean fanOutChecked = assertOptionalMax("perf.contention.maxFanOutErrors", fanOut.errors().size());
+  /** Lets the readers and Kafka workers run for {@code durationMillis} when there is no fan-out. */
+  private static boolean idleForDuration() throws InterruptedException, ExecutionException {
+    CompletableFuture.runAsync(() -> { }, CompletableFuture.delayedExecutor(DURATION_MILLIS, TimeUnit.MILLISECONDS))
+      .get();
+    return false;
+  }
+
+  private void report(boolean hung, long elapsedMillis, LoggedErrors logged, PoolSampler pool) {
+    log.info("RTAC PERF CONTENTION label={} pool={} timeoutMillis={} limit={} path={} fanOut={} batchRequests={}"
+        + " idsPerBatch={} readers={} kafka={} httpDelayMillis={} | hung={} elapsedMillis={} lazyLoadErrors={}"
+        + " loggedTimeouts={} | batches {} | reads {} | kafka {} | peakActive={} peakWaiting={}",
+      LABEL, POOL, TIMEOUT_MILLIS, LIMIT, VIA_REST ? "rest" : "service", FAN_OUT, BATCH_REQUESTS, IDS_PER_BATCH,
+      READERS, KAFKA_WORKERS, HTTP_DELAY_MILLIS, hung, elapsedMillis, lazyLoadErrors.size(),
+      logged.poolTimeoutsBySite(), batches, reads, kafka, pool.peakActive(), pool.peakWaiting());
+    logSamples("batch failure", batches.failures().stream().map(Throwable::toString).toList());
+    logSamples("lazy-load error", lazyLoadErrors);
+    logSamples("read failure", reads.failures().stream().map(Throwable::toString).toList());
+    logSamples("kafka failure", kafka.failures().stream().map(Throwable::toString).toList());
+  }
+
+  /** Logs the first two, as text so the log capture and the console stay readable. */
+  private static void logSamples(String kind, Collection<String> samples) {
+    samples.stream().limit(2).forEach(sample -> log.info("RTAC PERF CONTENTION {}: {}", kind, sample));
+  }
+
+  private void assertOptionalLimits(boolean hung) {
+    boolean fanOutChecked = assertOptionalMax("perf.contention.maxFanOutErrors",
+      batches.failures().size() + lazyLoadErrors.size());
     boolean readsChecked = assertOptionalMax("perf.contention.maxReadTimeouts", reads.timeouts());
     boolean kafkaChecked = assertOptionalMax("perf.contention.maxKafkaTimeouts", kafka.timeouts());
     if (fanOutChecked || readsChecked || kafkaChecked) {
-      assertThat(fanOut.hung()).as("fan-out still running after %s seconds", HANG_SECONDS).isFalse();
+      assertThat(hung).as("fan-out still running after %s seconds", HANG_SECONDS).isFalse();
     }
   }
 

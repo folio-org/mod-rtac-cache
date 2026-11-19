@@ -1,6 +1,7 @@
 package org.folio.rtaccache.perf;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
@@ -40,6 +41,11 @@ final class LoggedErrors implements AutoCloseable {
 
   long poolTimeouts() {
     return errors.stream().filter(PoolTimeouts::isPoolTimeout).count();
+  }
+
+  /** Logged pool timeouts, counted by {@link PoolTimeouts#site}. */
+  Map<String, Long> poolTimeoutsBySite() {
+    return PoolTimeouts.bySite(errors);
   }
 
   @Override

@@ -49,24 +49,28 @@ Optional knobs:
 
 ### Connection-pool contention (`PoolContentionPerfTest`)
 
-Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out of many uncached instances, readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts, p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt` and abandons the fan-out, so the test ends instead of waiting for it.
+Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out (concurrent batch requests for many uncached instances), readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts (by where they happened: `batchCheck` is a request's own cache check, `lazyLoadTask` one of the fan-out's tasks), p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt` and abandons the fan-out, so the test ends instead of waiting for it.
 
-Use it to check the lazy-load concurrency limit (`rtac.cache.db-max-concurrency`, applied in `LazyLoadDbOperations`) against pool sizes and workloads. The pool size and limit default to the module's production defaults, but the connection timeout is 250ms rather than 30s, so contention shows up as timeouts. For example, comparing a fan-out with reads and Kafka at rest:
+By default the batch requests and reads go through Spring MVC (MockMvc), as real REST requests do, because MVC changes how connections are held: with `spring.jpa.open-in-view` on, a request holds its connection while it waits for its fan-out, and once there are more batch requests than connections the fan-out can't get any. With the defaults this test is clean with open-in-view off and fails with it on (`SPRING_JPA_OPENINVIEW=true`). `path=service` calls the same service methods without MVC, and so can't see that.
+
+Use it to check the lazy-load concurrency limit (`rtac.cache.db-max-concurrency`, applied in `LazyLoadDbOperations`) and how connections are held, against pool sizes and workloads. The pool size and limit default to the module's production defaults, but the connection timeout is 2s rather than 30s, so contention shows up as timeouts. For example, checking for errors, or comparing a fan-out with reads and Kafka at rest:
 ```shell
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.maxFanOutErrors=0 -Dperf.contention.maxReadTimeouts=0 -Dperf.contention.maxKafkaTimeouts=0
 mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=fanout
 mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=at-rest -Dperf.contention.fanOut=false
 ```
 
 Optional knobs (defaults in brackets):
 - `-Dperf.contention.label=...` (tags the output line and thread dump)
-- `-Dperf.contention.pool=10` / `-Dperf.contention.timeoutMillis=250` (Hikari pool size and connection timeout)
+- `-Dperf.contention.pool=10` / `-Dperf.contention.timeoutMillis=2000` (Hikari pool size and connection timeout)
 - `-Dperf.contention.limit=8` (`rtac.cache.db-max-concurrency`)
-- `-Dperf.contention.fanOut=true` / `-Dperf.contention.instances=500` (set `fanOut=false` to measure reads and Kafka at rest for `durationMillis=5000`)
-- `-Dperf.contention.readers=50` / `-Dperf.contention.readPath=service` (`service` reads the way the REST endpoints do, including their cache check; `repository` queries the repository directly)
-- `-Dperf.contention.kafka=10` (Kafka-style workers)
+- `-Dperf.contention.path=rest` (`rest` goes through Spring MVC; `service` calls the service methods that the endpoints call)
+- `-Dperf.contention.fanOut=true` / `-Dperf.contention.batchRequests=20` / `-Dperf.contention.idsPerBatch=25` (set `fanOut=false` to measure reads and Kafka at rest for `durationMillis=5000`)
+- `-Dperf.contention.readers=10` (readers of a cached instance, in a loop)
+- `-Dperf.contention.kafka=5` (Kafka-style workers)
 - `-Dperf.contention.httpDelayMillis=0` (latency added to the mocked inventory responses)
 - `-Dperf.contention.hangSeconds=180` (how long to wait for the fan-out before abandoning it)
-- `-Dperf.contention.maxFanOutErrors=...` / `-Dperf.contention.maxReadTimeouts=...` / `-Dperf.contention.maxKafkaTimeouts=...` (turn measurements into assertions; setting any of them also fails the test if the fan-out doesn't finish)
+- `-Dperf.contention.maxFanOutErrors=...` (failed batch requests plus lazy-load errors in their responses) / `-Dperf.contention.maxReadTimeouts=...` / `-Dperf.contention.maxKafkaTimeouts=...` (turn measurements into assertions; setting any of them also fails the test if the fan-out doesn't finish)
 
 ### Lazy-load fan-out (`LazyLoadFanOutPerfTest`)
 
