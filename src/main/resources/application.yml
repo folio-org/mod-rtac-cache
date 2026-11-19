@@ -18,6 +18,10 @@ spring:
       # to boot up application despite of any DB connection issues
       continue-on-error: true
   jpa:
+    # Off so that a REST request holds a DB connection only for each query, not for the whole request.
+    # On (Spring Boot's default), a request that lazy-loads holds its connection while it waits for its
+    # fan-out, and concurrent requests exhaust the pool that the fan-out needs.
+    open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
