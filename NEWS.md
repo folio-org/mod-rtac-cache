@@ -1,3 +1,22 @@
+## v1.1.3 2026-11-20
+### Features
+* [MODRTACHCE-71](https://folio-org.atlassian.net/browse/MODRTACHCE-71) - Include new manual sort order field as a sort option
+* [MODRTACHCE-66](https://folio-org.atlassian.net/browse/MODRTACHCE-66) - Add DeployConfig.json per ADR-0013
+
+### Bug fixes
+* [MODRTACHCE-47](https://folio-org.atlassian.net/browse/MODRTACHCE-47) - Disable with purge=true is not working for mod-rtac-cache
+* [MODRTACHCE-70](https://folio-org.atlassian.net/browse/MODRTACHCE-70) - Remove undefined required properties from prewarm schemas
+* [MODRTACHCE-72](https://folio-org.atlassian.net/browse/MODRTACHCE-72) - Bound lazy-load DB concurrency; add DB_MAXSHAREDPOOLSIZE to DeployConfig.json
+* [MODRTACHCE-73](https://folio-org.atlassian.net/browse/MODRTACHCE-73) - Use the transaction's connection in bulk repository methods
+
+### Other
+* [MODRTACHCE-69](https://folio-org.atlassian.net/browse/MODRTACHCE-69) - Upgrade to Spring Boot 4.1.1
+* [MODRTACHCE-48](https://folio-org.atlassian.net/browse/MODRTACHCE-48) - Identify and remove code vulnerable to SQL injection
+* [MODRTACHCE-49](https://folio-org.atlassian.net/browse/MODRTACHCE-49) - Determine how to improve the rtac-cache summary performance
+* [MODRTACHCE-50](https://folio-org.atlassian.net/browse/MODRTACHCE-50) - Set up dependabot
+* [MODRTACHCE-54](https://folio-org.atlassian.net/browse/MODRTACHCE-54) - Make env variables documentation compliant with new TC recommendation
+* [MODRTACHCE-58](https://folio-org.atlassian.net/browse/MODRTACHCE-58) - Make additional changes per TC review recommendations
+
 ## v1.1.2 2026-08-26
 ### Bug fixes
 * [MODRTACHCE-63](https://folio-org.atlassian.net/browse/MODRTACHCE-63) - Inventory REINDEX events (Trillium) cause infinite poison-pill retry loop and flood logs
