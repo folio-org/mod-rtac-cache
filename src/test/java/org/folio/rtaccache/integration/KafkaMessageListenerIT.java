@@ -10,8 +10,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.reset;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,6 +52,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
@@ -65,6 +65,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import tools.jackson.databind.ObjectMapper;
 
 @Log4j2
 @TestMethodOrder(OrderAnnotation.class)
@@ -87,6 +88,8 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   private static final String CREATE_ITEM_EVENT_PATH = "__files/kafka-events/create-item-event.json";
   private static final String DELETE_ITEM_EVENT_PATH = "__files/kafka-events/delete-item-event.json";
   private static final String UPDATE_ITEM_EVENT_PATH = "__files/kafka-events/update-item-event.json";
+  private static final String UPDATE_ITEM_NULL_ORDER_EVENT_PATH = "__files/kafka-events/update-item-null-order-event.json";
+  private static final String UPDATE_ITEM_WITHOUT_ORDER_EVENT_PATH = "__files/kafka-events/update-item-without-order-event.json";
   private static final String UPDATE_ITEM_MOVE_TO_ANOTHER_HOLDING_EVENT_PATH = "__files/kafka-events/update-item-move-to-another-holding-event.json";
   private static final String CREATE_LOAN_EVENT_PATH = "__files/kafka-events/create-loan-event.json";
   private static final String UPDATE_LOAN_EVENT_PATH = "__files/kafka-events/update-loan-event.json";
@@ -206,7 +209,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(1)
-  void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() throws JsonProcessingException {
+  void shouldCreateRtacHolding_withHoldingType_whenHoldingCreateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       var event = loadInventoryResourceEvent(CREATE_HOLDINGS_EVENT_PATH);
@@ -235,7 +238,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(2)
-  void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withHoldingType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(HOLDINGS_ID_1, TypeEnum.HOLDING);
@@ -259,7 +262,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(3)
-  void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withItemType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
@@ -277,7 +280,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
 
   @Test
   @Order(4)
-  void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() throws JsonProcessingException {
+  void shouldUpdateRtacHolding_withPieceType_whenHoldingsUpdateEventIsSent() {
     withinTenant(TEST_TENANT, () -> {
       // Given
       createExistingRtacHoldingEntity(PIECE_ID, TypeEnum.PIECE);
@@ -356,6 +359,32 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
         assertThat(holding.get().getRtacHolding().getMaterialType().getName()).isEqualTo(NEW_MATERIAL_TYPE_NAME);
         assertThat(holding.get().getRtacHolding().getBarcode()).isEqualTo(NEW_BARCODE);
         assertThat(holding.get().getRtacHolding().getStatus()).isEqualTo(NEW_STATUS);
+        assertThat(holding.get().getRtacHolding().getOrder()).isEqualTo(4);
+      });
+    });
+  }
+
+  // The update event carries the full new item, so an item without a manual order must clear any previously cached one.
+  // Runs once with "order": null in the event and once with the "order" key missing entirely; both must behave the same.
+  @ParameterizedTest
+  @ValueSource(strings = {UPDATE_ITEM_NULL_ORDER_EVENT_PATH, UPDATE_ITEM_WITHOUT_ORDER_EVENT_PATH})
+  @Order(37)
+  void shouldClearOrder_whenItemUpdateEventHasNullOrNoOrder(String eventPath) {
+    withinTenant(TEST_TENANT, () -> {
+      // Given a cached item that currently has a manual order of 7
+      createExistingRtacHoldingEntity(ITEM_ID, TypeEnum.ITEM);
+      var existing = holdingRepository.findByIdId(UUID.fromString(ITEM_ID)).orElseThrow();
+      existing.getRtacHolding().setOrder(7);
+      holdingRepository.save(existing);
+      var event = loadInventoryResourceEvent(eventPath);
+      // When inventory publishes an update for that item whose new state has no order
+      sendItemKafkaMessage(event, ITEM_ID);
+      // Then the update was applied (new barcode) and the old order is gone
+      await().atMost(Duration.ofSeconds(60)).untilAsserted(() -> {
+        var holding = holdingRepository.findByIdId(UUID.fromString(ITEM_ID));
+        assertThat(holding).isPresent();
+        assertThat(holding.get().getRtacHolding().getBarcode()).isEqualTo(NEW_BARCODE);
+        assertThat(holding.get().getRtacHolding().getOrder()).isNull();
       });
     });
   }
@@ -860,7 +889,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(34)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldRetryFailingHandlerWithExponentiallyGrowingDelays_thenDropRecordAndResumeConsuming() throws Exception {
+  void shouldRetryFailingHandlerWithExponentiallyGrowingDelays_thenDropRecordAndResumeConsuming() {
     // Given - a handler that keeps failing with a retryable exception, recording when each attempt happened
     var attemptTimestamps = Collections.synchronizedList(new ArrayList<Long>());
     doReturn(Optional.of(alwaysFailingItemHandler(attemptTimestamps)))
@@ -911,7 +940,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(35)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() throws Exception {
+  void shouldSkipTombstoneRecord_andKeepConsumingFollowingRecords() {
     // Given
     var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
 
@@ -936,7 +965,7 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
   @Test
   @Order(36)
   @Execution(ExecutionMode.SAME_THREAD)
-  void shouldSkipMalformedRecord_andKeepConsumingFollowingRecords() throws Exception {
+  void shouldSkipMalformedRecord_andKeepConsumingFollowingRecords() {
     // Given
     var malformedPayload = TestUtil.readFileContentFromResources(MALFORMED_ITEM_EVENT_PATH);
     var validEvent = loadInventoryResourceEvent(CREATE_ITEM_EVENT_PATH);
@@ -1090,17 +1119,17 @@ class KafkaMessageListenerIT extends BaseIntegrationTest {
     return rtacHolding;
   }
 
-  private InventoryResourceEvent loadInventoryResourceEvent(String path) throws JsonProcessingException {
+  private InventoryResourceEvent loadInventoryResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, InventoryResourceEvent.class);
   }
 
-  private CirculationResourceEvent loadCirculationResourceEvent(String path) throws JsonProcessingException {
+  private CirculationResourceEvent loadCirculationResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, CirculationResourceEvent.class);
   }
 
-  private PieceResourceEvent loadPieceResourceEvent(String path) throws JsonProcessingException {
+  private PieceResourceEvent loadPieceResourceEvent(String path) {
     var content = TestUtil.readFileContentFromResources(path);
     return OBJECT_MAPPER.readValue(content, PieceResourceEvent.class);
   }

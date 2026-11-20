@@ -11,22 +11,22 @@ spring:
       enabled: true
   datasource:
     username: ${DB_USERNAME:folio_admin}
-    password: ${DB_PASSWORD:folio_admin}
+    password: ${DB_PASSWORD:}
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DATABASE:db}?ApplicationName=${spring.application.name}
-  hikari:
-    data-source-properties:
-      # see https://jdbc.postgresql.org/documentation/use/#connection-parameters
-      ApplicationName: ${spring.application.name}
   sql:
     init:
       # to boot up application despite of any DB connection issues
       continue-on-error: true
   jpa:
+    # Off so that a REST request holds a DB connection only for each query, not for the whole request.
+    # On (Spring Boot's default), a request that lazy-loads holds its connection while it waits for its
+    # fan-out, and concurrent requests exhaust the pool that the fan-out needs.
+    open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
       naming:
-        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
     properties:
       hibernate:
@@ -46,7 +46,7 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
     consumer:
-      max-poll-records: ${MAX_POLL_RECORDS:50}
+      max-poll-records: ${KAFKA_MAX_POLL_RECORDS:50}
     security:
       protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
     ssl:
@@ -57,7 +57,7 @@ spring:
 
 folio:
   environment: ${ENV:folio}
-  okapiUrl: ${OKAPI_URL:http://localhost:8082}
+  okapiUrl: ${OKAPI_URL:}
   tenant:
     validation:
       enabled: true
@@ -120,6 +120,10 @@ folio:
 
 rtac:
   cache:
+    # Max concurrent DB calls from lazy loading / cache generation (@ConcurrencyLimit on
+    # LazyLoadDbOperations). Keep it below the Hikari maximum pool size (default 10) so other
+    # callers still get connections.
+    db-max-concurrency: ${RTAC_CACHE_DB_MAX_CONCURRENCY:8}
     invalidation:
       cron: ${RTAC_CACHE_INVALIDATION_CRON:0 0 2 * * ?}
       retention-days: ${RTAC_CACHE_RETENTION_DAYS:2}

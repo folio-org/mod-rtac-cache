@@ -5,7 +5,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.sql.SQLException;
 import java.util.UUID;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
@@ -46,7 +45,7 @@ class ItemUpdateEventHandlerTest {
   ResourceEventUtil resourceEventUtil;
 
   @Test
-  void itemUpdate_shouldSaveEntity() throws SQLException, JsonProcessingException {
+  void itemUpdate_shouldSaveEntity() throws SQLException {
     var oldItem = item();
     var newItem = item();
     var event = new InventoryResourceEvent().type(InventoryEventType.UPDATE).old(oldItem)._new(newItem);
@@ -60,7 +59,7 @@ class ItemUpdateEventHandlerTest {
   }
 
   @Test
-  void itemUpdate_shouldMoveItemToAnotherInstanceAndHoldingWhenTargetIsCached() throws SQLException, JsonProcessingException {
+  void itemUpdate_shouldMoveItemToAnotherInstanceAndHoldingWhenTargetIsCached() throws SQLException {
     var oldItem = item();
     var newItem = item();
     var newInstanceId = UUID.randomUUID().toString();
@@ -94,7 +93,7 @@ class ItemUpdateEventHandlerTest {
   }
 
   @Test
-  void itemUpdate_shouldNotMoveWhenOnlyInstanceIdChanged() throws SQLException, JsonProcessingException {
+  void itemUpdate_shouldNotMoveWhenOnlyInstanceIdChanged() throws SQLException {
     var oldItem = item();
     var newItem = item();
     var newInstanceId = UUID.randomUUID().toString();
@@ -112,7 +111,7 @@ class ItemUpdateEventHandlerTest {
   }
 
   @Test
-  void itemUpdate_shouldDeleteItemWhenTargetHoldingIsNotFound() throws SQLException, JsonProcessingException {
+  void itemUpdate_shouldDeleteItemWhenTargetHoldingIsNotFound() throws SQLException {
     var oldItem = item();
     var newItem = item();
     var newInstanceId = UUID.randomUUID().toString();
@@ -136,7 +135,7 @@ class ItemUpdateEventHandlerTest {
 
   @Test
   void itemUpdate_shouldMoveItemToAnotherHoldingWithinSameInstance()
-    throws SQLException, JsonProcessingException {
+    throws SQLException {
     var oldItem = item();
     var newItem = item();
     var newHoldingsId = UUID.randomUUID().toString();
@@ -168,7 +167,7 @@ class ItemUpdateEventHandlerTest {
   }
 
   @Test
-  void itemUpdate_shouldDeleteTargetInstanceCacheWhenMovedItemIsNotFound() throws SQLException, JsonProcessingException {
+  void itemUpdate_shouldDeleteTargetInstanceCacheWhenMovedItemIsNotFound() throws SQLException {
     var oldItem = item();
     var newItem = item();
     var newInstanceId = UUID.randomUUID().toString();
