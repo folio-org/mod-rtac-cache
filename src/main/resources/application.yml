@@ -18,6 +18,10 @@ spring:
       # to boot up application despite of any DB connection issues
       continue-on-error: true
   jpa:
+    # Off so that a REST request holds a DB connection only for each query, not for the whole request.
+    # On (Spring Boot's default), a request that lazy-loads holds its connection while it waits for its
+    # fan-out, and concurrent requests exhaust the pool that the fan-out needs.
+    open-in-view: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: none
@@ -116,6 +120,10 @@ folio:
 
 rtac:
   cache:
+    # Max concurrent DB calls from lazy loading / cache generation (@ConcurrencyLimit on
+    # LazyLoadDbOperations). Keep it below the Hikari maximum pool size (default 10) so other
+    # callers still get connections.
+    db-max-concurrency: ${RTAC_CACHE_DB_MAX_CONCURRENCY:8}
     invalidation:
       cron: ${RTAC_CACHE_INVALIDATION_CRON:0 0 2 * * ?}
       retention-days: ${RTAC_CACHE_RETENTION_DAYS:2}
