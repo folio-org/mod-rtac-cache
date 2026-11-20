@@ -1,6 +1,5 @@
 package org.folio.rtaccache.repository;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -236,8 +235,8 @@ public class RtacHoldingBulkRepository {
   private static final int BATCH_SIZE = 200;
 
   public void bulkUpsert(List<RtacHoldingEntity> holdings) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(BULK_UPSERT_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(BULK_UPSERT_SQL)) {
 
       int count = 0;
       for (var holding : holdings) {
@@ -255,41 +254,49 @@ public class RtacHoldingBulkRepository {
       }
 
       ps.executeBatch();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkUpdateLocationData(Location location) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(LOCATION_DATA_UPDATE_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(LOCATION_DATA_UPDATE_SQL)) {
       ps.setString(1, location.getName());
       ps.setString(2, location.getCode());
       ps.setString(3, location.getId());
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkUpdateLibraryData(Loclib library) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(LIBRARY_DATA_UPDATE_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(LIBRARY_DATA_UPDATE_SQL)) {
       ps.setString(1, library.getName());
       ps.setString(2, library.getCode());
       ps.setString(3, library.getId());
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkUpdateMaterialTypeData(MaterialType materialType) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(MATERIAL_TYPE_DATA_UPDATE_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(MATERIAL_TYPE_DATA_UPDATE_SQL)) {
       ps.setString(1, materialType.getName());
       ps.setString(2, materialType.getId());
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkUpdateLoanTypeData(LoanType oldLoanType, LoanType newLoanType) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(LOAN_TYPE_DATA_UPDATE_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(LOAN_TYPE_DATA_UPDATE_SQL)) {
       ps.setString(1, oldLoanType.getName());
       ps.setString(2, newLoanType.getName());
       ps.setString(3, oldLoanType.getName());
@@ -297,12 +304,14 @@ public class RtacHoldingBulkRepository {
       ps.setString(5, oldLoanType.getName());
       ps.setString(6, oldLoanType.getName());
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkUpdateInstanceFormatIds(Instance instance) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-      PreparedStatement ps = connection.prepareStatement(FORMAT_IDS_DATA_UPDATE_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(FORMAT_IDS_DATA_UPDATE_SQL)) {
       var formatIds = instance.getInstanceFormatIds();
       var formatIdsArray = connection.createArrayOf(
         "text",
@@ -311,14 +320,18 @@ public class RtacHoldingBulkRepository {
       ps.setArray(1, formatIdsArray);
       ps.setObject(2, instance.getId());
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
   public void bulkMarkHoldingsAsSharedByInstanceId(UUID instanceId) throws SQLException {
-    try (Connection connection = dataSource.getConnection();
-         PreparedStatement ps = connection.prepareStatement(MARK_AS_SHARED_SQL)) {
+    var connection = DataSourceUtils.getConnection(dataSource);
+    try (PreparedStatement ps = connection.prepareStatement(MARK_AS_SHARED_SQL)) {
       ps.setObject(1, instanceId);
       ps.executeUpdate();
+    } finally {
+      DataSourceUtils.releaseConnection(connection, dataSource);
     }
   }
 
