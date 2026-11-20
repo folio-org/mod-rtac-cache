@@ -107,6 +107,13 @@
         "essential": true
       },
       {
+        "name": "DB_MAXSHAREDPOOLSIZE",
+        "value": "20",
+        "description": "Maximum size of the shared Hikari database connection pool used by this Spring runtime.",
+        "type": "DB",
+        "essential": true
+      },
+      {
         "name": "KAFKA_HOST",
         "value": null,
         "description": "Kafka broker host used to build spring.kafka.bootstrap-servers.",
