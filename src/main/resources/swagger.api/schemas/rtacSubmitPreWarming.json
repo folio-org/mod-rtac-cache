@@ -3,7 +3,7 @@
   "type": "object",
   "properties": {
     "instanceIds": {
-      "description": "Prewarm instances with at least this many items",
+      "description": "Inventory instance identifiers to pre-warm",
       "type": "array",
       "items": {
         "type": "string",
@@ -11,8 +11,5 @@
       }
     }
   },
-  "additionalProperties": false,
-  "required": [
-    "minItemCount"
-  ]
+  "additionalProperties": false
 }

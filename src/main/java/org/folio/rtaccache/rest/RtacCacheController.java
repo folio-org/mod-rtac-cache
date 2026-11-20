@@ -36,10 +36,13 @@ import org.springframework.web.server.ResponseStatusException;
 public class RtacCacheController implements RtacApi {
 
   private static final Logger log = LoggerFactory.getLogger(RtacCacheController.class);
+  // "order" is a reserved SQL word, so it is sorted on under an alias
+  private static final String MANUAL_ORDER_SORT_PROPERTY = "manualOrder";
   private static final Set<String> SUPPORTED_SORT_PROPERTIES = Set.of(
     "effectiveShelvingOrder",
     "libraryName",
     "locationName",
+    "order",
     "status"
   );
 
@@ -168,11 +171,16 @@ public class RtacCacheController implements RtacApi {
             parts.removeFirst();
           }
         }
-        orders.add(new Sort.Order(direction, property));
+        orders.add(new Sort.Order(direction, "order".equals(property) ? MANUAL_ORDER_SORT_PROPERTY : property));
       }
       sortOrder = Sort.by(orders);
     }
-    return PageRequest.of(offset / limit, limit, sortOrder);
+    return PageRequest.of(offset / limit, limit, tieBreakOnId(sortOrder));
+  }
+
+  // final tiebreaker so rows tied on every requested key page in a stable order
+  private Sort tieBreakOnId(Sort sort) {
+    return sort.and(Sort.by(Sort.Order.asc("id")));
   }
 
   private void validateSortProperty(String property) {
@@ -182,6 +190,6 @@ public class RtacCacheController implements RtacApi {
   }
 
   private Sort.Direction getDefaultSortDirection(String property) {
-    return "effectiveShelvingOrder".equals(property) ? Sort.Direction.DESC : Sort.Direction.ASC;
+    return "effectiveShelvingOrder".equals(property) || "order".equals(property) ? Sort.Direction.DESC : Sort.Direction.ASC;
   }
 }

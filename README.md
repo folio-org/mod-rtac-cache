@@ -30,16 +30,51 @@ mvn clean install
 
 ## Perf tests (opt-in)
 
-This repo includes a small perf-only test lane (excluded from normal `mvn test` / `mvn verify`) to iterate on RTAC read-path performance locally.
+This repo includes a small perf-only test lane (excluded from normal `mvn test` / `mvn verify`) to iterate on RTAC performance locally. The tests live in `src/test/java/org/folio/rtaccache/perf`; classes named `*PerfTest` run only in this lane.
 
-Run:
+Run all perf tests, or one of them:
 ```shell
 mvn -Pperf test
+mvn -Pperf test -Dtest=PoolContentionPerfTest
 ```
+
+### Read-path latency (`EcsLoadedDataRepositoryPerfTest`)
+
+Seeds one large instance across several ECS member tenants and times the GET, search and batch summary queries, with `EXPLAIN` output.
+
 Optional knobs:
 - `-Dperf.itemsTotal=10000`
 - `-Dperf.instanceId=11111111-1111-1111-1111-111111111111`
 - `-Dperf.maxGetMs=...` / `-Dperf.maxSearchMs=...` / `-Dperf.maxBatchMs=...` (turn perf measurements into assertions)
+
+### Connection-pool contention (`PoolContentionPerfTest`)
+
+Runs three workloads at once against a deliberately small Hikari pool: a lazy-load fan-out (concurrent batch requests for many uncached instances), readers of a cached instance, and Kafka-style workers running the `@Transactional` instance-update handler. It logs one `RTAC PERF CONTENTION` line with failures, pool timeouts (by where they happened: `batchCheck` is a request's own cache check, `lazyLoadTask` one of the fan-out's tasks), p50/p99/max latency per workload, and the pool's peak active and waiting counts. If the fan-out doesn't finish in time, it writes a thread dump (virtual threads included) to `target/perf-contention-<label>-threads.txt` and abandons the fan-out, so the test ends instead of waiting for it.
+
+By default the batch requests and reads go through Spring MVC (MockMvc), as real REST requests do, because MVC changes how connections are held: with `spring.jpa.open-in-view` on, a request holds its connection while it waits for its fan-out, and once there are more batch requests than connections the fan-out can't get any. With the defaults this test is clean with open-in-view off and fails with it on (`SPRING_JPA_OPENINVIEW=true`). `path=service` calls the same service methods without MVC, and so can't see that.
+
+Use it to check the lazy-load concurrency limit (`rtac.cache.db-max-concurrency`, applied in `LazyLoadDbOperations`) and how connections are held, against pool sizes and workloads. The pool size and limit default to the module's production defaults, but the connection timeout is 2s rather than 30s, so contention shows up as timeouts. For example, checking for errors, or comparing a fan-out with reads and Kafka at rest:
+```shell
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.maxFanOutErrors=0 -Dperf.contention.maxReadTimeouts=0 -Dperf.contention.maxKafkaTimeouts=0
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=fanout
+mvn -Pperf test -Dtest=PoolContentionPerfTest -Dperf.contention.label=at-rest -Dperf.contention.fanOut=false
+```
+
+Optional knobs (defaults in brackets):
+- `-Dperf.contention.label=...` (tags the output line and thread dump)
+- `-Dperf.contention.pool=10` / `-Dperf.contention.timeoutMillis=2000` (Hikari pool size and connection timeout)
+- `-Dperf.contention.limit=8` (`rtac.cache.db-max-concurrency`)
+- `-Dperf.contention.path=rest` (`rest` goes through Spring MVC; `service` calls the service methods that the endpoints call)
+- `-Dperf.contention.fanOut=true` / `-Dperf.contention.batchRequests=20` / `-Dperf.contention.idsPerBatch=25` (set `fanOut=false` to measure reads and Kafka at rest for `durationMillis=5000`)
+- `-Dperf.contention.readers=10` (readers of a cached instance, in a loop)
+- `-Dperf.contention.kafka=5` (Kafka-style workers)
+- `-Dperf.contention.httpDelayMillis=0` (latency added to the mocked inventory responses)
+- `-Dperf.contention.hangSeconds=180` (how long to wait for the fan-out before abandoning it)
+- `-Dperf.contention.maxFanOutErrors=...` (failed batch requests plus lazy-load errors in their responses) / `-Dperf.contention.maxReadTimeouts=...` / `-Dperf.contention.maxKafkaTimeouts=...` (turn measurements into assertions; setting any of them also fails the test if the fan-out doesn't finish)
+
+### Lazy-load fan-out (`LazyLoadFanOutPerfTest`)
+
+A pass/fail check of the same limit, with no knobs: it lazy-loads 500 uncached instances on a pool of 5 with a limit of 3, and asserts that the fan-out has no errors or pool timeouts, and that no more threads queue on the pool than it has connections. It's in this lane rather than CI because its outcome can depend on the hardware; CI covers the limit itself with the unit test `LazyLoadDbOperationsConcurrencyTest`.
 
 ### Running mod-rtac-cache
 
@@ -48,7 +83,7 @@ Run locally on listening port 8081 (default listening port):
 Using Docker to run the local stand-alone instance:
 
 ```shell
-DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD=folio_admin \
+DB_HOST=localhost DB_PORT=5432 DB_DATABASE=okapi_modules DB_USERNAME=folio_admin DB_PASSWORD='<password>' \
    java -Dserver.port=8081 -jar target/mod-rtac-cache-*.jar
 ```
 
@@ -70,26 +105,45 @@ requires and provides, the permissions, and the additional module metadata.
 | Variable | Default                 | Purpose |
 |---|-------------------------|---|
 | `DB_USERNAME` | `folio_admin`           | DB username |
-| `DB_PASSWORD` | `folio_admin`           | DB password |
+| `DB_PASSWORD` | *(required)*             | DB password |
 | `DB_HOST` | `localhost`             | Postgres host |
 | `DB_PORT` | `5432`                  | Postgres port |
 | `DB_DATABASE` | `db`                    | Postgres database name |
 | `KAFKA_HOST` | `localhost`             | Kafka broker host |
 | `KAFKA_PORT` | `9092`                  | Kafka broker port |
-| `MAX_POLL_RECORDS` | `50`                    | Kafka consumer max poll size |
+| `KAFKA_MAX_POLL_RECORDS` | `50`                    | Kafka consumer max poll size |
 | `KAFKA_SECURITY_PROTOCOL` | `PLAINTEXT`             | Kafka security protocol |
 | `KAFKA_SSL_KEYSTORE_PASSWORD` | *(empty)*               | Kafka SSL keystore password |
 | `KAFKA_SSL_KEYSTORE_LOCATION` | *(empty)*               | Kafka SSL keystore path |
 | `KAFKA_SSL_TRUSTSTORE_PASSWORD` | *(empty)*               | Kafka SSL truststore password |
 | `KAFKA_SSL_TRUSTSTORE_LOCATION` | *(empty)*               | Kafka SSL truststore path |
 | `ENV` | `folio`                 | FOLIO environment name |
-| `OKAPI_URL` | `http://localhost:8081` | Okapi base URL |
+| `OKAPI_URL` | *(required)*             | Okapi base URL |
 | `KAFKA_RETRY_INTERVAL_MS` | `2000`                  | Retry interval |
 | `KAFKA_RETRY_DELIVERY_ATTEMPTS` | `6`                     | Retry attempts |
 | `KAFKA_EVENTS_CONCURRENCY` | `2`                     | Kafka listener concurrency |
 | `KAFKA_EVENTS_CONSUMER_PATTERN` | computed per topic      | Kafka topic pattern override |
-| `SYSTEM_USER_ENABLED` | `false`                 | Enable system user |
-| `SYSTEM_USER_USERNAME` | `mod-rtac-cache`        | System username |
-| `SYSTEM_USER_PASSWORD` | *(none)*                | System password (required when enabled) |
+| `SYSTEM_USER_ENABLED` | `false`                 | Enable legacy Okapi system-user token retrieval |
+| `SYSTEM_USER_USERNAME` | `mod-rtac-cache`        | Legacy Okapi system-user username |
+| `SYSTEM_USER_PASSWORD` | *(none)*                | Legacy Okapi system-user password, required only when enabled in classic Okapi deployments |
 | `RTAC_CACHE_INVALIDATION_CRON` | `0 0 2 * * ?`           | Cache invalidation schedule |
 | `RTAC_CACHE_RETENTION_DAYS` | `2`                     | Cache retention days |
+
+## ASF Category B license notice
+
+Apache's [third-party license policy](https://www.apache.org/legal/resolved.html#category-b) allows
+Category B dependencies only under the conditions described there. The dependency license scan for this project reported
+the following dependencies whose detected licenses match ASF Category B license families:
+
+| Project | Detected dependency or dependencies | Detected license | Project URL |
+|---|---|---|---|
+| iStack Common Utility Code | `com.sun.istack:istack-commons-runtime:4.1.2` | `EPL-1.0` | https://github.com/eclipse-ee4j/jaxb-istack-commons |
+| Jakarta Activation API | `jakarta.activation:jakarta.activation-api:2.1.4` | `EPL-1.0` | https://github.com/jakartaee/jaf-api |
+| Jakarta XML Binding API | `jakarta.xml.bind:jakarta.xml.bind-api:4.0.4` | `EPL-1.0` | https://github.com/jakartaee/jaxb-api |
+| AspectJ Weaver | `org.aspectj:aspectjweaver:1.9.25.1` | `Eclipse Public License` | https://www.eclipse.org/aspectj/ |
+| Eclipse Angus Activation | `org.eclipse.angus:angus-activation:2.0.3` | `EPL-1.0` | https://github.com/eclipse-ee4j/angus-activation |
+| Eclipse Sisu Plexus | `org.eclipse.sisu:org.eclipse.sisu.plexus:0.9.0.M2` | `Eclipse Public License 1.0` | https://www.eclipse.org/sisu/ |
+| JAXB Runtime | `org.glassfish.jaxb:jaxb-core:4.0.6`; `org.glassfish.jaxb:jaxb-runtime:4.0.6`; `org.glassfish.jaxb:txw2:4.0.6` | `EPL-1.0` | https://eclipse-ee4j.github.io/jaxb-ri/ |
+| JUnit | `org.junit.jupiter:junit-jupiter-api:6.0.3`; `org.junit.jupiter:junit-jupiter-engine:6.0.3`; `org.junit.jupiter:junit-jupiter-params:6.0.3`; `org.junit.platform:junit-platform-commons:6.0.3`; `org.junit.platform:junit-platform-engine:6.0.3`; `org.junit.platform:junit-platform-launcher:6.0.3` | `EPL-2.0` | https://junit.org/ |
+| Mozilla Rhino | `org.mozilla:rhino:1.9.1` | `Mozilla Public License 2.0` | https://mozilla.github.io/rhino/ |
+

@@ -28,6 +28,6 @@
       "description": "Error details if job failed."
     }
   },
-  "required": ["id", "startDate", "status", "minItemsCount"],
+  "required": ["id", "startDate", "status"],
   "additionalProperties": false
 }

@@ -2,17 +2,20 @@ package org.folio.rtaccache.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 import org.folio.rtaccache.BaseIntegrationTest;
 import org.folio.rtaccache.TestConstant;
 import org.folio.rtaccache.domain.RtacHoldingEntity;
+import org.folio.rtaccache.domain.dto.RtacHolding;
 import org.folio.rtaccache.domain.dto.RtacHolding.TypeEnum;
 import org.folio.rtaccache.repository.RtacHoldingRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
@@ -21,6 +24,7 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
   private static final String INSTANCE_ID_2 = "5dbab2d4-42f6-47e0-b0c6-023040bd19ff";
   private static final String ITEM_WITH_LOANS_AND_REQUESTS_ID = "9a772288-ead3-4033-b07b-87eff643710f";
   private static final String BOUND_WITH_ITEM_ID = "02b9b326-903b-41d7-b947-fc809e9d38c1";
+  private static final String ITEM_WITHOUT_ORDER_ID = "222a6b61-91a5-46bf-8e2d-962a23f1338e";
   private static final String PIECE_ID = "aaf7be29-a8cc-4b0a-9975-bf39e9a71696";
   private static final String INSTANCE_FORMAT_ID = "6314d6f5-8f1a-4f2b-9c3d-2e5f6a7b8c9d";
 
@@ -67,6 +71,33 @@ class RtacCacheGenerationServiceIT extends BaseIntegrationTest {
       assertEquals(INSTANCE_FORMAT_ID, holding.get().getRtacHolding().getInstanceFormatIds().getFirst());
       assertTrue(rtacHoldings.get().allMatch(RtacHoldingEntity::isShared));
     });
+  }
+
+  @Test
+  void generateRtacCache_shouldMapManualOrderOnlyForItemsThatHaveOne() {
+    withinTenant(TestConstant.TEST_TENANT, () -> {
+      //given
+      //when
+      rtacCacheGenerationService.generateRtacCache(INSTANCE_ID_1).join();
+      //then
+      var rtacHoldings = rtacHoldingRepository.findAllByIdInstanceId(UUID.fromString(INSTANCE_ID_1), PageRequest.of(0, 50));
+      // item with an order in inventory
+      assertEquals(2, findById(rtacHoldings, ITEM_WITH_LOANS_AND_REQUESTS_ID).getOrder());
+      // item without an order, piece and holding have none
+      assertNull(findById(rtacHoldings, ITEM_WITHOUT_ORDER_ID).getOrder());
+      assertNull(findById(rtacHoldings, PIECE_ID).getOrder());
+      rtacHoldings.get()
+        .filter(entity -> TypeEnum.HOLDING.equals(entity.getRtacHolding().getType()))
+        .forEach(entity -> assertNull(entity.getRtacHolding().getOrder()));
+    });
+  }
+
+  private RtacHolding findById(Page<RtacHoldingEntity> rtacHoldings, String id) {
+    return rtacHoldings.get()
+      .map(RtacHoldingEntity::getRtacHolding)
+      .filter(rtacHolding -> id.equals(rtacHolding.getId()))
+      .findFirst()
+      .orElseThrow();
   }
 
   @Test
